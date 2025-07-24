@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import ScrollVelocity from './ScrollVelocity'
 
 const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { title?: string, location?: string }) => {
   return (
@@ -12,34 +13,30 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
         }}
       />
       
-      {/* Title - Continuous scrolling text */}
+      {/* Title - ScrollVelocity text */}
       <motion.div 
-        className="absolute bottom-[122px] md:bottom-[122px] sm:bottom-[380px] bottom-[200px] left-[-260px] z-10 overflow-hidden" 
+        className="absolute bottom-[122px] md:bottom-[122px] sm:bottom-[380px] bottom-[200px] left-[-260px] z-10" 
         style={{ height: '150px' }}
         initial={{ x: 400, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 2, ease: "easeOut" }}
       >
-        <motion.div 
-          className="flex whitespace-nowrap items-center"
-          style={{ height: '150px', lineHeight: '150px' }}
-          animate={{ x: [0, -1000] }}
-          transition={{ 
-            duration: 30, 
-            repeat: Infinity, 
-            ease: "linear"
+        <ScrollVelocity
+          texts={[`${title} – `]}
+          velocity={-50}
+          className="hero-text text-white font-space-grotesk font-bold"
+          parallaxClassName=""
+          scrollerClassName=""
+          parallaxStyle={{ height: '150px' }}
+          scrollerStyle={{ 
+            height: '150px', 
+            lineHeight: '150px',
+            fontSize: 'inherit',
+            fontFamily: 'inherit',
+            fontWeight: 'inherit'
           }}
-        >
-          <div className="hero-text text-white font-space-grotesk font-bold whitespace-pre">
-            {title} – {title} – 
-          </div>
-          <div className="hero-text text-white font-space-grotesk font-bold whitespace-pre">
-          {title} – {title} – 
-          </div>
-          <div className="hero-text text-white font-space-grotesk font-bold whitespace-pre">
-          {title} – {title} – 
-          </div>
-        </motion.div>
+          numCopies={8}
+        />
       </motion.div>
 
       {/* Info Section - Updated layout based on Figma design */}

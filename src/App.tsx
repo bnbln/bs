@@ -73,12 +73,13 @@ function App() {
       <Navigation />
       <Hero />
       <About />
+      <Work />
 
       <div className="featured-projects">
         <FeaturedProjects />
       </div>
       
-      {/* <Work /> */}
+      
       <Contact />
       <div className="brand-experience">
         <BrandExperience />

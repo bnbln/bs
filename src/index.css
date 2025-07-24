@@ -28,7 +28,7 @@
 /* Hero text styles - Correct font size from Figma */
 .hero-text {
   font-size: 136.87px;
-  line-height: 41.22px;
+  line-height: 136.87px;
 }
 
 /* Debug overlay styles */
@@ -71,12 +71,7 @@
 }
 
 @layer components {
-  .hero-text {
-    font-size: 136.87px;
-    line-height: 41.22px;
-    font-weight: 700;
-    font-family: 'Space Grotesk', sans-serif;
-  }
+
   
   .heading-large {
     font-size: 76.87px;
