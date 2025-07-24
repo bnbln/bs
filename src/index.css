@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom text selection colors */
+::selection {
+  background-color: #3b82f6; /* blue-500 */
+  color: white;
+}
+
+::-moz-selection {
+  background-color: #3b82f6; /* blue-500 */
+  color: white;
+}
+
+/* Custom font classes */
+.font-space-grotesk {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Hero text styles - Correct font size from Figma */
+.hero-text {
+  font-size: 136.87px;
+  line-height: 41.22px;
+}
+
+/* Debug overlay styles */
+.debug-overlay {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 9999;
+}
+
+/* Font test styles */
+.font-test {
+  position: fixed;
+  top: 50px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  z-index: 9999;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .hero-text {
+    font-size: 136.87px;
+    line-height: 41.22px;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  
+  .heading-large {
+    font-size: 76.87px;
+    line-height: 81.2px;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  
+  .project-card {
+    @apply relative overflow-hidden rounded-[4.5px] bg-white p-[18px] flex flex-col gap-[363.55px] h-[471.55px];
+  }
+  
+  .project-card-blue {
+    @apply bg-blue-600;
+  }
+  
+  .project-card-azure {
+    @apply bg-[#172340];
+  }
+  
+  .project-card-orange {
+    @apply bg-[#f18825];
+  }
+
+  .brand-logo {
+    @apply transition-transform duration-300 hover:scale-105;
+  }
+  
+  /* Hide scrollbar for webkit browsers */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+} 
