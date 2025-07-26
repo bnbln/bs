@@ -147,7 +147,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         // Load frames from sequenceFrames range
         for (let i = startFrame; i <= endFrame; i++) {
           const paddedNumber = i.toString().padStart(4, '0');
-          const imageUrl = project.sequence + `${paddedNumber}.jpg`;
+          const imageUrl = project.sequence + `${paddedNumber}.webp`;
           images.push(imageUrl);
         }
         

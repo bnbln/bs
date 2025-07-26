@@ -74,7 +74,7 @@ function App() {
       slug: 'book-3d-animation',
       category: 'Book',
       image: book,
-      sequence: "./book/book_", // path to the sequence folder
+      sequence: "./book/book-webp/book_", // path to the sequence folder
       sequenceFrames: [0, 500], // [First frame, last frame]
   
     },
@@ -98,7 +98,7 @@ function App() {
       id: 5,
       title: 'Relaunching a Berlin Lawyers Corporate Design and Website',
       slug: 'relaunching-a-berlin-lawyers-corporate-design-and-website',
-      category: 'UX&UI, Development',
+      category: 'UX&UI, Developement',
       image: rk,
       bgColor: 'bg-azure'
     },
@@ -121,7 +121,7 @@ function App() {
       allProjects[3],
       allProjects[4],
       allProjects[5],
-      allProjects[6]
+      
     ]
   }
 
