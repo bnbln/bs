@@ -126,6 +126,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       const loadImages = async () => {
         const images: string[] = [];
         const { startFrame, endFrame, basePath } = project.animationSequence!;
+        
         // Load frames from animation sequence range
         for (let i = startFrame; i <= endFrame; i++) {
           const paddedNumber = i.toString().padStart(4, '0');
@@ -133,19 +134,42 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           images.push(imageUrl);
         }
         
-        // Preload images for better performance
-        const preloadPromises = images.map((url) => {
-          return new Promise<void>((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve();
-            img.onerror = () => resolve(); // Continue even if some images fail
-            img.src = url;
-          });
-        });
+        // Preload images in batches to avoid overwhelming the server
+        const batchSize = 10; // Load 10 images at a time
+        const loadedImages: string[] = [];
         
-        await Promise.all(preloadPromises);
-        setLoadedImages(images);
+        for (let i = 0; i < images.length; i += batchSize) {
+          const batch = images.slice(i, i + batchSize);
+          
+          const batchPromises = batch.map((url) => {
+            return new Promise<{ url: string; success: boolean }>((resolve) => {
+              const img = new Image();
+              img.onload = () => resolve({ url, success: true });
+              img.onerror = () => resolve({ url, success: false });
+              img.src = url;
+            });
+          });
+          
+          const batchResults = await Promise.all(batchPromises);
+          
+          // Add successfully loaded images
+          batchResults.forEach(result => {
+            if (result.success) {
+              loadedImages.push(result.url);
+            }
+          });
+          
+          // Small delay between batches to be nice to the server
+          if (i + batchSize < images.length) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+        
+        setLoadedImages(loadedImages);
         setIsLoading(false);
+        
+        // Log loading statistics
+        console.log(`Loaded ${loadedImages.length}/${images.length} images successfully`);
       };
       
       loadImages();
