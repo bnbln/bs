@@ -1,10 +1,10 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import ScrollVelocity from './ScrollVelocity'
-import heroImage from '../assets/heroimage.jpg'
-import locationIcon from '../assets/locationBackground.svg'
-import worldIcon from '../assets/World Icon.svg'
-import arrowIcon from '../assets/arrow.svg'
+const heroImage = '/assets/heroimage.jpg'
+const locationIcon = '/assets/locationBackground.svg'
+const worldIcon = '/assets/World Icon.svg'
+const arrowIcon = '/assets/arrow.svg'
 
 const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { title?: string, location?: string }) => {
   return (
@@ -60,7 +60,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
                 src={locationIcon}
                 alt="Location"
                 className="block max-w-none size-full"
-                onError={(e) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                   console.log('Location icon failed to load, using fallback');
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
@@ -80,7 +80,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
                 src={worldIcon}
                 alt="World Icon"
                 className="block max-w-none size-full"
-                onError={(e) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                   console.log('World icon failed to load, using fallback');
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
@@ -97,7 +97,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
                   src={arrowIcon}
                   alt="Arrow"
                   className="block max-w-none size-full"
-                  onError={(e) => {
+                  onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                     console.log('Arrow icon failed to load, using fallback');
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
@@ -132,7 +132,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
                   src={arrowIcon}
                   alt="Arrow"
                   className="block max-w-none size-full"
-                  onError={(e) => {
+                  onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                     console.log('Arrow icon failed to load, using fallback');
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
@@ -161,7 +161,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
               src={worldIcon}
               alt="World Icon"
               className="block max-w-none size-full"
-              onError={(e) => {
+              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                 console.log('World icon failed to load, using fallback');
                 (e.target as HTMLImageElement).style.display = 'none';
               }}

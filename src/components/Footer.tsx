@@ -52,7 +52,7 @@ const Footer = () => {
           Contact
         </motion.a>
         <motion.a 
-          href="#contact" 
+          href="/datenschutzerklaerung" 
           className="text-[rgba(255,255,255,0.5)] font-space-grotesk font-medium text-[14.375px] leading-[16.5px] whitespace-pre cursor-pointer"
           whileHover={{ color: 'rgba(255,255,255,0.8)' }}
           transition={{ duration: 0.2 }}
@@ -60,7 +60,7 @@ const Footer = () => {
           Datenschutzerklärung
         </motion.a>
         <motion.a 
-          href="#contact" 
+          href="/impressum" 
           className="text-[rgba(255,255,255,0.5)] font-space-grotesk font-medium text-[14.375px] leading-[16.5px] whitespace-pre cursor-pointer"
           whileHover={{ color: 'rgba(255,255,255,0.8)' }}
           transition={{ duration: 0.2 }}

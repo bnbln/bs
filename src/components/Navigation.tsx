@@ -92,7 +92,7 @@ const Navigation = () => {
       </motion.nav>
 
       {/* Circular Hamburger Menu - Appears when scrolled */}
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {showHamburger && (
           <motion.div
             className="fixed top-6 right-6 z-50"
@@ -131,7 +131,7 @@ const Navigation = () => {
             </motion.button>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>

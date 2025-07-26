@@ -1,27 +1,11 @@
 import React, { useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/router'
+import { Project } from '../lib/markdown'
 
-interface FeaturedProject {
-  id: number
-  title: string
-  slug: string
-  category?: string
-  excerpts?: string
-  published?: string
-  description?: string
-  color?: string
-  image: string
-  video?: string
-  sequence?: string
-  sequenceFrames?: number[]
-  content?: unknown[]
-  bgColor?: string
-}
-
-
-
-const FeaturedProjects = ({ data }: { data: FeaturedProject[] }) => {
+const FeaturedProjects = ({ data }: { data: Project[] }) => {
   
+  const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const scrollLeft = () => {
@@ -125,7 +109,7 @@ const FeaturedProjects = ({ data }: { data: FeaturedProject[] }) => {
 
   // Debounced scroll handler
   const debouncedHandleScroll = useCallback(() => {
-    let timeoutId: number
+    let timeoutId: NodeJS.Timeout
     return () => {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(() => {
@@ -146,6 +130,11 @@ const FeaturedProjects = ({ data }: { data: FeaturedProject[] }) => {
       }
     }
   }, [debouncedHandleScroll])
+
+  // Handle project click
+  const handleProjectClick = useCallback((slug: string) => {
+    router.push(`/project/${slug}`)
+  }, [router])
 
   return (
     <section className="bg-white h-[737px] relative w-full" id="work">
@@ -196,12 +185,13 @@ const FeaturedProjects = ({ data }: { data: FeaturedProject[] }) => {
           {data.map((project, index) => (
             <motion.div
               key={project.id}
-              className={`project-card ${project.bgColor} w-[353.66px] flex-shrink-0`}
+              className={`project-card ${project.bgColor} w-[353.66px] flex-shrink-0 cursor-pointer relative overflow-hidden`}
               initial={{ y: 50, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: index * 0.1 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.02 }}
+              onClick={() => handleProjectClick(project.slug)}
+              whileHover="hover"
             >
               {/* Background Image */}
               <div 
@@ -210,11 +200,24 @@ const FeaturedProjects = ({ data }: { data: FeaturedProject[] }) => {
               />
               
               {/* Category */}
-              <div className="relative z-10">
+              <motion.div 
+                className="relative z-10"
+                initial="initial"
+                animate="initial"
+                whileHover="hover"
+                variants={{
+                  initial: { y: -20, opacity: 0 },
+                  hover: { y: 0, opacity: 1 }
+                }}
+                transition={{ 
+                  duration: 0.3, 
+                  ease: "easeOut"
+                }}
+              >
                 <p className="text-white font-inter font-normal text-[16px] leading-[24px] whitespace-pre">
                   {project.category}
                 </p>
-              </div>
+              </motion.div>
               
               {/* Title */}
               <div className="relative z-10 mt-auto">

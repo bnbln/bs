@@ -1,34 +1,16 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { motion, useScroll } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-import arrowSvg from '../assets/arrow.svg'
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, useScroll } from 'framer-motion';
+import { useRouter } from 'next/router';
+const arrowSvg = '/assets/arrow.svg';
+import { Project } from '../lib/markdown';
 
-
-
-interface Project {
-  id: number
-  title: string
-  slug: string
-  category?: string
-  excerpts?: string
-  published?: string
-  description?: string
-  color?: string
-  image: string
-  video?: string
-  sequence?: string
-  sequenceFrames?: number[]
-  content?: unknown[]
-  bgColor?: string
-}
-
-interface ProjectCardProps {
-  project: Project
-  index: number
+interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
+  project: Project;
+  index: number;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [currentFrame, setCurrentFrame] = useState(0);
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +21,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
-  const scrollTimeoutRef = useRef<number | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -70,7 +52,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         }
         
         // Re-enable after short delay and check if mouse is still inside
-        scrollTimeoutRef.current = window.setTimeout(() => {
+        scrollTimeoutRef.current = setTimeout(() => {
           setIsFastScrolling(false);
           // If mouse is still inside this project after scrolling stops, show hover again
           if (isMouseInsideThisProject) {
@@ -90,7 +72,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, []);
+  }, [isMouseInsideThisProject]);
 
   // Hide hover when fast scrolling starts
   useEffect(() => {
@@ -134,20 +116,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
 
   // Handle project click
   const handleProjectClick = useCallback(() => {
-    navigate(`/project/${project.slug}`);
-  }, [navigate, project.slug]);
+    router.push(`/project/${project.slug}`);
+  }, [router, project.slug]);
 
   // Load images when component mounts
   useEffect(() => {
-    if (project.sequence && project.sequenceFrames) {
+    if (project.hasAnimation && project.animationSequence) {
       setIsLoading(true);
       const loadImages = async () => {
         const images: string[] = [];
-        const [startFrame, endFrame] = project.sequenceFrames!;
-        // Load frames from sequenceFrames range
+        const { startFrame, endFrame, basePath } = project.animationSequence!;
+        // Load frames from animation sequence range
         for (let i = startFrame; i <= endFrame; i++) {
           const paddedNumber = i.toString().padStart(4, '0');
-          const imageUrl = project.sequence + `${paddedNumber}.webp`;
+          const imageUrl = basePath + `${paddedNumber}.webp`;
           images.push(imageUrl);
         }
         
@@ -168,7 +150,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       
       loadImages();
     }
-  }, [project.sequence, project.sequenceFrames]);
+  }, [project.hasAnimation, project.animationSequence]);
 
   // High-performance frame update using requestAnimationFrame
   const updateFrame = useCallback((scrollProgress: number) => {
@@ -193,7 +175,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
 
   // High-performance scroll handler
   useEffect(() => {
-    if (project.sequence && loadedImages.length > 0) {
+    if (project.hasAnimation && project.animationSequence && loadedImages.length > 0) {
       const unsubscribe = scrollYProgress.on("change", (latest) => {
         // Use requestAnimationFrame for smooth updates
         if (animationRef.current) {
@@ -212,7 +194,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         unsubscribe();
       };
     }
-  }, [scrollYProgress, project.sequence, loadedImages.length, updateFrame]);
+  }, [scrollYProgress, project.hasAnimation, project.animationSequence, loadedImages.length, updateFrame]);
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
@@ -244,12 +226,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       onClick={handleProjectClick}
     >
       {/* Background Image or Sequence */}
-      {project.sequence && loadedImages.length > 0 && !isLoading ? (
+      {project.hasAnimation && project.animationSequence && loadedImages.length > 0 && !isLoading ? (
         // Image sequence animation with high-performance rendering
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat">
           <img
             src={loadedImages[currentFrame]}
-            alt={`Book animation frame ${currentFrame + 1}`}
+            alt={`Animation frame ${currentFrame + 1}`}
             className="w-full h-full object-cover"
             style={{
               // High-performance rendering optimizations
@@ -268,19 +250,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: project.sequence && isLoading 
+            backgroundImage: project.hasAnimation && project.animationSequence && isLoading 
               ? 'none' 
               : `url('${project.image}')` 
           }}
         >
-          {project.sequence && isLoading && (
+          {project.hasAnimation && project.animationSequence && isLoading && (
             <div className="flex items-center justify-center h-full">
               <div className="text-gray-500">Loading animation...</div>
             </div>
           )}
         </div>
       )}
-      
+
       {/* Video Overlay - Only show if project has a video */}
       {project.video && (
         <video
@@ -328,7 +310,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           </motion.div>
         </div>
       )}
-      
+
       {/* Mobile arrow button (mobile only) */}
       <motion.button
         className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
@@ -338,7 +320,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           duration: 0.1,
           ease: "easeOut"
         }}
-        onClick={(e) => {
+        onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
           handleProjectClick();
         }}
@@ -347,21 +329,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           willChange: 'transform', // Optimize for animations
         }}
       >
-        <img 
-          src={arrowSvg} 
-          alt="View project" 
+        <img
+          src={arrowSvg}
+          alt="View project"
           className="w-4 h-4" 
           style={{ filter: 'brightness(0) invert(1)' }} // Ensure white arrow
         />
       </motion.button>
-
-
     </motion.div>
-  )
+  );
+};
+
+interface WorkProps {
+  data: Project[];
 }
 
-const Work = ({ data }: { data: Project[] }) => {
-  
+const Work: React.FC<WorkProps> = ({ data }) => {
   return (
     <section className="bg-white w-full relative">
       {/* Section Title */}
@@ -388,7 +371,7 @@ const Work = ({ data }: { data: Project[] }) => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default Work 
+export default Work; 

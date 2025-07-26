@@ -1,10 +1,10 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import profileImage from '../assets/portrait.png'
+const profileImage = '/assets/portrait.png'
 
 const Contact = () => {
   return (
-    <section className="bg-white py-20 px-4 sm:px-8 md:px-16 lg:px-[159px] relative w-full">
+    <section id="contact" className="bg-white py-20 px-4 sm:px-8 md:px-16 lg:px-[159px] relative w-full">
       <div className="max-w-[962px] mx-auto">
         <motion.div 
           className="space-y-6 sm:space-y-8"
