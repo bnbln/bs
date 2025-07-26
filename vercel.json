@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "public/book-webp/*.webp": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
     {
       "source": "/book-webp/(.*)",
