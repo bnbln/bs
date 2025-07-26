@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import profileImage from '../assets/portrait.png'
 
 const Contact = () => {
   return (
@@ -25,7 +26,7 @@ const Contact = () => {
               {/* Profile Image */}
               <motion.div 
                 className="w-[40px] h-[40px] md:w-[70px] md:h-[70px] rounded-full bg-cover bg-center shrink-0"
-                style={{ backgroundImage: `url('http://localhost:3845/assets/505c6f01a7784c1cbdc60e415b7a183c24072590.png')` }}
+                style={{ backgroundImage: `url(${profileImage})` }}
                 whileHover={{ scale: 1.1 }}
                 transition={{ duration: 0.3 }}
               />

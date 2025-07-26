@@ -50,7 +50,7 @@ const Navigation = () => {
         viewport={{ once: true }}
       >
         <motion.div 
-          className="text-white font-space-grotesk font-medium text-[14.375px] leading-[16.5px]"
+          className="text-white font-space-grotesk font-medium text-[12px] md:text-[14.375px] leading-[14px] md:leading-[16.5px]"
           initial={{ x: -100, opacity: 0, scale: 1 }}
           animate={{ x: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -59,7 +59,7 @@ const Navigation = () => {
         </motion.div>
         
         <motion.div 
-          className="flex items-center md:gap-10 gap-5 text-white font-space-grotesk font-medium text-[14.375px] leading-[16.5px]"
+          className="flex items-center md:gap-10 gap-5 text-white font-space-grotesk font-medium text-[12px] md:text-[14.375px] leading-[14px] md:leading-[16.5px]"
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -155,7 +155,7 @@ const Navigation = () => {
               <div className="flex flex-col items-start justify-start h-full pt-32 px-10">
                 <motion.a
                   href="#about"
-                  className="text-black font-space-grotesk font-medium text-[18px] leading-[24px] mb-8 cursor-pointer"
+                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer"
                   whileHover={{ scale: 1.05, x: 10 }}
                   transition={{ duration: 0.2 }}
                   onClick={closeMenu}
@@ -164,7 +164,7 @@ const Navigation = () => {
                 </motion.a>
                 <motion.a
                   href="#work"
-                  className="text-black font-space-grotesk font-medium text-[18px] leading-[24px] mb-8 cursor-pointer"
+                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer"
                   whileHover={{ scale: 1.05, x: 10 }}
                   transition={{ duration: 0.2 }}
                   onClick={closeMenu}
@@ -173,7 +173,7 @@ const Navigation = () => {
                 </motion.a>
                 <motion.a
                   href="#contact"
-                  className="text-black font-space-grotesk font-medium text-[18px] leading-[24px] mb-8 cursor-pointer"
+                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer"
                   whileHover={{ scale: 1.05, x: 10 }}
                   transition={{ duration: 0.2 }}
                   onClick={closeMenu}

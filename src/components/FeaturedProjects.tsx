@@ -1,52 +1,18 @@
 import React, { useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 
-const projects = [
-  {
-    id: 1,
-    category: 'Award',
-    title: 'Multiple Projects won an Eyes and Ears Award 2024',
-    image: 'http://localhost:3845/assets/3864730613b5205d8303b634d25062f94d27a32e.png',
-    bgColor: 'bg-blue'
-  },
-  {
-    id: 2,
-    category: 'Artificial Intelligence',
-    title: 'Generating advanced QR-Codes with Stable Diffusion',
-    image: 'http://localhost:3845/assets/e58b10af2d7d61df1066f4a8cce9073e7796215c.png',
-    bgColor: 'bg-blue'
-  },
-  {
-    id: 3,
-    category: 'Blender',
-    title: 'Book 3D-Modeling & Animation for TV Spot',
-    image: 'http://localhost:3845/assets/a36e3380c829ef228fee4e069260682e709452d0.png',
-    bgColor: 'bg-blue'
-  },
-  {
-    id: 4,
-    category: 'Trailer Campaign',
-    title: 'Trailer Design for EU election 2024',
-    image: 'http://localhost:3845/assets/8d8d87a8f2e35f7af364647378af70da40c4c7ad.png',
-    bgColor: 'bg-blue'
-  },
-  {
-    id: 5,
-    category: 'Clients',
-    title: 'Relaunching a Berlin Lawyers Corporate Design and Website',
-    image: 'http://localhost:3845/assets/d242d74e2550db04549b88b5d5666cb3a0b7ab6e.png',
-    bgColor: 'bg-azure'
-  },
-  {
-    id: 6,
-    category: 'Clients',
-    title: 'Automating Video Workflows in Trailer Production for TV Channel',
-    image: 'http://localhost:3845/assets/6449251a7ee4e321b136b307c80bb87669c81841.png',
-    bgColor: 'bg-orange'
-  }
-]
+interface FeaturedProject {
+  id: number
+  category: string
+  title: string
+  image: string
+  bgColor: string
+}
 
-const FeaturedProjects = () => {
+
+
+const FeaturedProjects = ({ data }: { data: FeaturedProject[] }) => {
+  
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const scrollLeft = () => {
@@ -88,7 +54,7 @@ const FeaturedProjects = () => {
       const currentIndex = Math.round(currentScroll / totalCardWidth)
       
       // Calculate target scroll position for the next card
-      const targetIndex = Math.min(projects.length - 1, currentIndex + 1)
+      const targetIndex = Math.min(data.length - 1, currentIndex + 1)
       const targetScroll = targetIndex * totalCardWidth
       
       // Ensure we don't scroll beyond the maximum possible scroll position
@@ -113,7 +79,7 @@ const FeaturedProjects = () => {
       const nearestIndex = Math.round(currentScroll / totalCardWidth)
       
       // Ensure index is within bounds
-      const clampedIndex = Math.max(0, Math.min(projects.length - 1, nearestIndex))
+      const clampedIndex = Math.max(0, Math.min(data.length - 1, nearestIndex))
       const nearestScroll = clampedIndex * totalCardWidth
       
       // Only snap if we're close enough to a card position (within 60px for more responsive snapping)
@@ -183,7 +149,7 @@ const FeaturedProjects = () => {
         viewport={{ once: true }}
       >
         <h2 className="text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] whitespace-pre">
-          Featured Projects
+          The Latest
         </h2>
         
         {/* Navigation Buttons */}
@@ -218,7 +184,7 @@ const FeaturedProjects = () => {
         className="absolute left-0 top-[162px] h-[472px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide"
       >
         <div className="flex gap-5 pl-10">
-          {projects.map((project, index) => (
+          {data.map((project, index) => (
             <motion.div
               key={project.id}
               className={`project-card ${project.bgColor} w-[353.66px] flex-shrink-0`}

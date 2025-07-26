@@ -1,6 +1,10 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import ScrollVelocity from './ScrollVelocity'
+import heroImage from '../assets/heroimage.jpg'
+import locationIcon from '../assets/locationBackground.svg'
+import worldIcon from '../assets/World Icon.svg'
+import arrowIcon from '../assets/arrow.svg'
 
 const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { title?: string, location?: string }) => {
   return (
@@ -9,13 +13,13 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('http://localhost:3845/assets/9eba56be9d1abe2dbd87b601a584f492267376dd.png')`
+          backgroundImage: `url(${heroImage})`
         }}
       />
       
       {/* Title - ScrollVelocity text */}
       <motion.div 
-        className="absolute bottom-[122px] md:bottom-[122px] sm:bottom-[380px] bottom-[200px] left-[-260px] z-10" 
+        className="absolute md:bottom-[122px] sm:bottom-[380px] bottom-[200px] left-[-260px] z-10" 
         style={{ height: '150px' }}
         initial={{ x: 400, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -41,7 +45,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
 
       {/* Info Section - Updated layout based on Figma design */}
       <motion.div 
-        className="absolute  md:bottom-[308.794px] bottom-[0px] left-0 right-0 z-10 px-0 md:pr-10"
+        className="absolute  md:bottom-[308.794px] bottom-[0px] left-[-1px] right-0 z-10 px-0 md:pr-10"
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.5 }}
@@ -53,7 +57,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             {/* Location Icon */}
             <div className="absolute left-0 top-0 h-[95.206px] w-[278.229px]">
               <img 
-                src="http://localhost:3845/assets/e5549d6473f88ad3da385ffa2274c05712b5f2c5.svg"
+                src={locationIcon}
                 alt="Location"
                 className="block max-w-none size-full"
                 onError={(e) => {
@@ -71,9 +75,9 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             </div>
 
             {/* World Icon */}
-            <div className="absolute left-[215px] top-[31px] h-[34px] w-[34px]">
+            <div className="absolute left-[213px] top-[31px] h-[34px] w-[34px]">
               <img 
-                src="http://localhost:3845/assets/7dd0aa4f5b424a023213fc69b91e2e78db15de2b.svg"
+                src={worldIcon}
                 alt="World Icon"
                 className="block max-w-none size-full"
                 onError={(e) => {
@@ -90,7 +94,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             <div className="relative h-[15.077px] w-[15.077px] shrink-0">
               <div className="absolute bottom-[-6.251%] left-[-4.42%] right-[-6.248%] top-[-4.42%]">
                 <img 
-                  src="http://localhost:3845/assets/957fd673e93164d1246e3c22a79bf57e14d31b61.svg"
+                  src={arrowIcon}
                   alt="Arrow"
                   className="block max-w-none size-full"
                   onError={(e) => {
@@ -125,7 +129,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             <div className="relative h-[15.077px] w-[15.077px] shrink-0">
               <div className="absolute bottom-[-6.251%] left-[-4.42%] right-[-6.248%] top-[-4.42%]">
                 <img 
-                  src="http://localhost:3845/assets/957fd673e93164d1246e3c22a79bf57e14d31b61.svg"
+                  src={arrowIcon}
                   alt="Arrow"
                   className="block max-w-none size-full"
                   onError={(e) => {
@@ -154,7 +158,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
           {/* World Icon - Bottom Right */}
           <div className="h-[34px] w-[34px]">
             <img 
-              src="http://localhost:3845/assets/7dd0aa4f5b424a023213fc69b91e2e78db15de2b.svg"
+              src={worldIcon}
               alt="World Icon"
               className="block max-w-none size-full"
               onError={(e) => {
