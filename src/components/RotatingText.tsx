@@ -250,6 +250,7 @@ const RotatingText = forwardRef<RotatingTextRef, RotatingTextProps>(
                         ),
                       }}
                       className={cn("inline-block", elementLevelClassName)}
+                      tabIndex={-1}
                     >
                       {char}
                     </motion.span>

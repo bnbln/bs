@@ -5,6 +5,10 @@ const nextConfig = {
     unoptimized: true
   },
   trailingSlash: true,
+  i18n: {
+    locales: ['en'],
+    defaultLocale: 'en',
+  },
   
   // Cache headers for better asset caching
   async headers() {
