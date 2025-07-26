@@ -1,5 +1,7 @@
 import type { AppProps } from 'next/app'
 import { useState, useEffect } from 'react'
+import { DefaultSeo } from 'next-seo'
+import { defaultSEO } from '../config/seo'
 import '../index.css'
 import LoadingScreen from '../components/LoadingScreen'
 import { AssetPreloader } from '../utils/assetPreloader'
@@ -49,6 +51,7 @@ export default function App({ Component, pageProps }: AppProps) {
   // Skip loading screen entirely
   return (
     <>
+      <DefaultSeo {...defaultSEO} />
       <Component {...pageProps} />
       <Analytics />
       <SpeedInsights />

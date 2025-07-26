@@ -1,14 +1,15 @@
 import React from 'react'
-import Head from 'next/head'
+import { NextSeo } from 'next-seo'
 import Link from 'next/link'
 
 const Impressum = () => {
   return (
     <>
-      <Head>
-        <title>Impressum - Portfolio</title>
-        <meta name="description" content="Impressum und rechtliche Informationen" />
-      </Head>
+      <NextSeo
+        title="Impressum"
+        description="Impressum und rechtliche Informationen"
+        noindex={true}
+      />
       
       <div className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 md:px-16 py-16">
@@ -30,26 +31,25 @@ const Impressum = () => {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-black mb-4">Angaben gemäß § 5 TMG</h2>
               <p className="text-gray-700 mb-2">
-                [Ihr Name]<br />
-                [Ihre Straße und Hausnummer]<br />
-                [PLZ und Ort]
+                Benedikt Schnupp<br />
+                Danziger Straße 126a<br />
+                10407 Berlin
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-black mb-4">Kontakt</h2>
               <p className="text-gray-700 mb-2">
-                Telefon: [Ihre Telefonnummer]<br />
-                E-Mail: [Ihre E-Mail-Adresse]
+                E-Mail: mail@benediktschnupp.com
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-black mb-4">Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h2>
               <p className="text-gray-700 mb-2">
-                [Ihr Name]<br />
-                [Ihre Straße und Hausnummer]<br />
-                [PLZ und Ort]
+                Benedikt Schnupp<br />
+                Danziger Straße 126a<br />
+                10407 Berlin
               </p>
             </section>
 

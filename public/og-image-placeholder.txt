@@ -1,0 +1,1 @@
+This is a placeholder for the Open Graph image. Please create a 1200x630px image named 'og-image.jpg' and place it in the public folder.

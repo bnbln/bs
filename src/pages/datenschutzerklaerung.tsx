@@ -1,14 +1,15 @@
 import React from 'react'
-import Head from 'next/head'
+import { NextSeo } from 'next-seo'
 import Link from 'next/link'
 
 const Datenschutzerklaerung = () => {
   return (
     <>
-      <Head>
-        <title>Datenschutzerklärung - Portfolio</title>
-        <meta name="description" content="Datenschutzerklärung und Informationen zum Datenschutz" />
-      </Head>
+      <NextSeo
+        title="Datenschutzerklärung"
+        description="Datenschutzerklärung und Informationen zum Datenschutz"
+        noindex={true}
+      />
       
       <div className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 md:px-16 py-16">

@@ -1,5 +1,7 @@
 import { GetStaticPaths, GetStaticProps } from 'next'
+import { NextSeo } from 'next-seo'
 import { getStaticProjectPaths, getProjectWithHtml, Project } from '../../lib/markdown'
+import StructuredData from '../../components/StructuredData'
 import Article from '../../components/Article'
 
 interface ProjectPageProps {
@@ -7,7 +9,49 @@ interface ProjectPageProps {
 }
 
 export default function ProjectPage({ project }: ProjectPageProps) {
-  return <Article project={project} />
+  return (
+    <>
+      <NextSeo
+        title={project.title}
+        description={project.excerpts}
+        openGraph={{
+          title: project.title,
+          description: project.excerpts,
+          images: [
+            {
+              url: `https://benediktschnupp.com/${project.image}`,
+              width: 1200,
+              height: 630,
+              alt: project.title,
+            },
+          ],
+          type: 'article',
+          article: {
+            publishedTime: project.published,
+            section: project.category,
+          },
+        }}
+      />
+      <StructuredData
+        type="article"
+        data={{
+          headline: project.title,
+          description: project.excerpts,
+          image: `https://benediktschnupp.com/${project.image}`,
+          datePublished: project.published,
+          author: {
+            '@type': 'Person',
+            name: 'Benedikt Schnupp',
+          },
+          publisher: {
+            '@type': 'Person',
+            name: 'Benedikt Schnupp',
+          },
+        }}
+      />
+      <Article project={project} />
+    </>
+  )
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
