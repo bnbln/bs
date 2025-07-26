@@ -25,7 +25,17 @@ export function resolveAssetPath(assetPath: string): string {
  * @param project - Project object from markdown
  * @returns Project with resolved asset paths
  */
-export function resolveProjectAssets<T extends { image?: string; video?: string; animationSequence?: { basePath: string } }>(project: T): T {
+export function resolveProjectAssets<T extends { 
+  image?: string; 
+  video?: string; 
+  animationSequence?: { 
+    basePath?: string;
+    videoPath?: string;
+    startFrame?: number;
+    endFrame?: number;
+    frameCount?: number;
+  } 
+}>(project: T): T {
   const resolved = { ...project }
   
   // Resolve main image path
@@ -33,17 +43,26 @@ export function resolveProjectAssets<T extends { image?: string; video?: string;
     resolved.image = resolveAssetPath(resolved.image)
   }
   
-  // Resolve video path
+  // Resolve video path (existing background video)
   if (resolved.video) {
     resolved.video = resolveAssetPath(resolved.video)
   }
   
-  // Resolve animation sequence base path
-  if (resolved.animationSequence?.basePath) {
-    resolved.animationSequence = {
-      ...resolved.animationSequence,
-      basePath: resolveAssetPath(resolved.animationSequence.basePath)
+  // Resolve animation sequence paths
+  if (resolved.animationSequence) {
+    const animation = { ...resolved.animationSequence }
+    
+    // Resolve legacy image sequence base path
+    if (animation.basePath) {
+      animation.basePath = resolveAssetPath(animation.basePath)
     }
+    
+    // Resolve new video sequence path
+    if (animation.videoPath) {
+      animation.videoPath = resolveAssetPath(animation.videoPath)
+    }
+    
+    resolved.animationSequence = animation
   }
   
   return resolved

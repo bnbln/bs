@@ -17,12 +17,16 @@ export interface Project {
   description?: string
   bgColor?: string
   image: string
-  video?: string
+  video?: string // Existing field for background videos
   hasAnimation: boolean
   animationSequence?: {
-    basePath: string
-    startFrame: number
-    endFrame: number
+    // Legacy image sequence support
+    basePath?: string
+    startFrame?: number
+    endFrame?: number
+    // New video sequence support
+    videoPath?: string
+    frameCount?: number
   }
   featured: boolean
   content?: string

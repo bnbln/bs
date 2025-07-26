@@ -8,9 +8,8 @@ published: "2024-03-15"
 image: "assets/book.avif"
 hasAnimation: true
 animationSequence:
-  basePath: "book-webp/book_"
-  startFrame: 0
-  endFrame: 500
+  videoPath: "assets/book.mp4"
+  frameCount: 501
 featured: false
 ---
 
