@@ -3,10 +3,19 @@ import { motion } from 'framer-motion'
 
 interface FeaturedProject {
   id: number
-  category: string
   title: string
+  slug: string
+  category?: string
+  excerpts?: string
+  published?: string
+  description?: string
+  color?: string
   image: string
-  bgColor: string
+  video?: string
+  sequence?: string
+  sequenceFrames?: number[]
+  content?: unknown[]
+  bgColor?: string
 }
 
 

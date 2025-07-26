@@ -9,10 +9,17 @@ interface Project {
   id: number
   title: string
   slug: string
+  category?: string
+  excerpts?: string
+  published?: string
+  description?: string
+  color?: string
   image: string
   video?: string
-  sequence?: boolean
-  sequenceFrames?: [number, number]
+  sequence?: string
+  sequenceFrames?: number[]
+  content?: unknown[]
+  bgColor?: string
 }
 
 interface ProjectCardProps {
@@ -140,7 +147,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         // Load frames from sequenceFrames range
         for (let i = startFrame; i <= endFrame; i++) {
           const paddedNumber = i.toString().padStart(4, '0');
-          const imageUrl = `/book/book_${paddedNumber}.jpg`;
+          const imageUrl = project.sequence + `${paddedNumber}.jpg`;
           images.push(imageUrl);
         }
         
@@ -161,7 +168,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       
       loadImages();
     }
-  }, [project.sequence]);
+  }, [project.sequence, project.sequenceFrames]);
 
   // High-performance frame update using requestAnimationFrame
   const updateFrame = useCallback((scrollProgress: number) => {
