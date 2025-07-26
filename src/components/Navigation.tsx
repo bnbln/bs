@@ -150,7 +150,7 @@ const Navigation = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div className="flex flex-col items-start justify-start h-full pt-32 px-10">
                 <motion.a

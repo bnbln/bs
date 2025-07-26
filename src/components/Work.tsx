@@ -13,7 +13,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   const router = useRouter();
   const [currentFrame, setCurrentFrame] = useState(0);
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isFastScrolling, setIsFastScrolling] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -119,60 +118,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
     router.push(`/project/${project.slug}`);
   }, [router, project.slug]);
 
-  // Load images when component mounts
+  // Generate image sequence URLs when component mounts (no loading needed since preloaded)
   useEffect(() => {
     if (project.hasAnimation && project.animationSequence) {
-      setIsLoading(true);
-      const loadImages = async () => {
-        const images: string[] = [];
-        const { startFrame, endFrame, basePath } = project.animationSequence!;
-        
-        // Load frames from animation sequence range
-        for (let i = startFrame; i <= endFrame; i++) {
-          const paddedNumber = i.toString().padStart(4, '0');
-          const imageUrl = basePath + `${paddedNumber}.webp`;
-          images.push(imageUrl);
-        }
-        
-        // Preload images in batches to avoid overwhelming the server
-        const batchSize = 10; // Load 10 images at a time
-        const loadedImages: string[] = [];
-        
-        for (let i = 0; i < images.length; i += batchSize) {
-          const batch = images.slice(i, i + batchSize);
-          
-          const batchPromises = batch.map((url) => {
-            return new Promise<{ url: string; success: boolean }>((resolve) => {
-              const img = new Image();
-              img.onload = () => resolve({ url, success: true });
-              img.onerror = () => resolve({ url, success: false });
-              img.src = url;
-            });
-          });
-          
-          const batchResults = await Promise.all(batchPromises);
-          
-          // Add successfully loaded images
-          batchResults.forEach(result => {
-            if (result.success) {
-              loadedImages.push(result.url);
-            }
-          });
-          
-          // Small delay between batches to be nice to the server
-          if (i + batchSize < images.length) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        }
-        
-        setLoadedImages(loadedImages);
-        setIsLoading(false);
-        
-        // Log loading statistics
-        console.log(`Loaded ${loadedImages.length}/${images.length} images successfully`);
-      };
+      const images: string[] = [];
+      const { startFrame, endFrame, basePath } = project.animationSequence;
       
-      loadImages();
+      // Generate all frame URLs
+      for (let i = startFrame; i <= endFrame; i++) {
+        const paddedNumber = i.toString().padStart(4, '0');
+        const imageUrl = basePath + `${paddedNumber}.webp`;
+        images.push(imageUrl);
+      }
+      
+      setLoadedImages(images);
     }
   }, [project.hasAnimation, project.animationSequence]);
 
@@ -250,7 +209,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       onClick={handleProjectClick}
     >
       {/* Background Image or Sequence */}
-      {project.hasAnimation && project.animationSequence && loadedImages.length > 0 && !isLoading ? (
+      {project.hasAnimation && project.animationSequence && loadedImages.length > 0 ? (
         // Image sequence animation with high-performance rendering
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat">
           <img
@@ -270,21 +229,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           />
         </div>
       ) : (
-        // Static background image or loading state
+        // Static background image
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: project.hasAnimation && project.animationSequence && isLoading 
-              ? 'none' 
-              : `url('${project.image}')` 
+            backgroundImage: `url('${project.image}')` 
           }}
-        >
-          {project.hasAnimation && project.animationSequence && isLoading && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500">Loading animation...</div>
-            </div>
-          )}
-        </div>
+        />
       )}
 
       {/* Video Overlay - Only show if project has a video */}
@@ -372,7 +323,7 @@ const Work: React.FC<WorkProps> = ({ data }) => {
   return (
     <section className="bg-white w-full relative">
       {/* Section Title */}
-      <motion.h2 
+      <motion.h2
         className="bg-white max-w-7xl mx-auto px-4 sm:px-8 md:px-16 relative w-full text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] z-20"
         initial={{ y: 50, opacity: 0 }}
         whileInView={{ y: 0, opacity: 1 }}
@@ -381,7 +332,7 @@ const Work: React.FC<WorkProps> = ({ data }) => {
       >
         Featured Design
       </motion.h2>
-
+      
       {/* Projects Container */}
       <div className="relative pt-8">
         <div className="w-full">
