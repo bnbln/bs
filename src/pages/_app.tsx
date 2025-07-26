@@ -6,6 +6,7 @@ import { AssetPreloader } from '../utils/assetPreloader'
 import { backgroundLoader } from '../utils/backgroundLoader'
 import { AssetCache } from '../utils/assetCache'
 import { LOADING_CONFIG } from '../config/loading'
+import { Analytics } from "@vercel/analytics/next"
 
 // Global state to track if assets are loaded in memory
 let globalAssetsLoaded = false;
@@ -45,5 +46,10 @@ export default function App({ Component, pageProps }: AppProps) {
   };
 
   // Skip loading screen entirely
-  return <Component {...pageProps} />
+  return (
+    <>
+      <Component {...pageProps} />
+      <Analytics />
+    </>
+  )
 } 
