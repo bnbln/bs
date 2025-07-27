@@ -46,7 +46,7 @@ const About = () => {
         >
           {/* Email Button - Simple Circle */}
           <motion.a 
-            href="mailto:your.email@example.com"
+            href="mailto:mail@benediktschnupp.com"
             className="bg-[#1C1D20] text-white h-12 w-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#2a2b2e] transition-colors duration-200"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
@@ -59,7 +59,7 @@ const About = () => {
 
           {/* LinkedIn Button - Simple Circle */}
           <motion.a 
-            href="https://linkedin.com/in/yourprofile"
+            href="https://linkedin.com/in/benedikt-schnupp-928112116"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-[#1C1D20] text-white h-12 w-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#2a2b2e] transition-colors duration-200"
@@ -73,8 +73,8 @@ const About = () => {
           </motion.a>
 
           {/* GitHub Button - Simple Circle */}
-          <motion.a 
-            href="https://github.com/yourusername"
+          {/* <motion.a 
+            href="https://github.com/bnbln"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-[#1C1D20] text-white h-12 w-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#2a2b2e] transition-colors duration-200"
@@ -85,7 +85,7 @@ const About = () => {
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 0C4.477 0 0 4.477 0 10C0 14.42 2.865 18.17 6.839 19.49C7.339 19.58 7.5 19.27 7.5 19C7.5 18.77 7.5 18.14 7.5 17.31C5 17.88 4.35 16.23 4.15 15.5C4.05 15.18 3.6 14.5 3.1 14.23C2.75 14.05 2.4 13.66 3.1 13.65C3.8 13.64 4.35 14.23 4.55 14.5C5.5 16.1 6.9 15.7 7.5 15.4C7.6 14.8 7.9 14.4 8.2 14.2C6.2 14 4.1 13.1 4.1 9.3C4.1 8.2 4.5 7.3 5.1 6.6C5 6.4 4.6 5.4 5.2 4C5.2 4 6 3.7 7.5 5.2C8.3 5 9.2 4.9 10 4.9C10.8 4.9 11.7 5 12.5 5.2C14 3.7 14.8 4 14.8 4C15.4 5.4 15 6.4 14.9 6.6C15.5 7.3 15.9 8.2 15.9 9.3C15.9 13.1 13.8 14 11.8 14.2C12.2 14.5 12.5 15 12.5 15.7C12.5 16.5 12.5 17.3 12.5 18C12.5 18.27 12.66 18.58 13.16 18.49C17.135 18.17 20 14.42 20 10C20 4.477 15.523 0 10 0Z" fill="currentColor"/>
             </svg>
-          </motion.a>
+          </motion.a> */}
         </motion.div>
       </div>
     </section>
