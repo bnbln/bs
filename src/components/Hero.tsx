@@ -1,19 +1,18 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import ScrollVelocity from './ScrollVelocity'
-const heroImage = '/assets/heroimage.webp'
 const locationIcon = '/assets/locationBackground.svg'
 const worldIcon = '/assets/World Icon.svg'
 const arrowIcon = '/assets/arrow.svg'
 
 const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { title?: string, location?: string }) => {
   return (
-    <section className="relative h-[100vh] w-full overflow-hidden">
+    <section className="relative h-[90vh] md:h-[100vh] w-full overflow-hidden">
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('/assets/heroimage.webp'), url('/assets/heroimage.jpg')`
+          backgroundImage: `url('/assets/heroimage.webp')`
         }}
       />
       

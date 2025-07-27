@@ -1,10 +1,9 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-const profileImage = '/assets/portrait.webp'
 
 const Contact = () => {
   return (
-    <section id="contact" className="bg-white py-20 px-4 sm:px-8 md:px-16 lg:px-[159px] relative w-full">
+    <section id="contact" className="bg-white py-20 px-4 sm:px-8 md:px-16 lg:px-[159px] pb-40 relative w-full">
       <div className="max-w-[962px] mx-auto">
         <motion.div 
           className="space-y-6 sm:space-y-8"
@@ -26,18 +25,18 @@ const Contact = () => {
               {/* Profile Image */}
               <motion.div 
                 className="w-[40px] h-[40px] md:w-[70px] md:h-[70px] rounded-full bg-cover bg-center shrink-0"
-                style={{ backgroundImage: `url('/assets/portrait.webp'), url('/assets/portrait.png')` }}
+                style={{ backgroundImage: `url('/assets/portrait.webp')` }}
                 whileHover={{ scale: 1.1 }}
                 transition={{ duration: 0.3 }}
               />
               {/* "Let's work" text */}
-              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-black font-space-grotesk font-bold leading-tight sm:leading-[1.1] md:leading-[1.15] lg:leading-[81.2px]">
+              <div className="text-5xl md:text-5xl lg:text-6xl xl:text-7xl text-black font-space-grotesk font-bold leading-tight sm:leading-[1.1] md:leading-[1.15] lg:leading-[81.2px]">
                 Let's work
               </div>
             </div>
             
             {/* "together" text */}
-            <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-black font-space-grotesk font-bold leading-tight sm:leading-[1.1] md:leading-[1.15] lg:leading-[81.2px]">
+            <div className="text-5xl md:text-5xl lg:text-6xl xl:text-7xl text-black font-space-grotesk font-bold leading-tight sm:leading-[1.1] md:leading-[1.15] lg:leading-[81.2px]">
               together
             </div>
           </motion.div>

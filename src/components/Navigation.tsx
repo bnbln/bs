@@ -25,7 +25,7 @@ const Navigation = () => {
 
   // Calculate the y position based on scroll
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0
-  const threshold = viewportHeight * 0.35
+  const threshold = viewportHeight * 0.35 - 50
   const navY = scrollY > threshold ? -(scrollY - threshold) : 0
   
   // Add offset to hamburger menu appearance to prevent overlapping
@@ -50,7 +50,7 @@ const Navigation = () => {
         viewport={{ once: true }}
       >
         <motion.div 
-          className="text-white font-space-grotesk font-medium text-[12px] md:text-[14.375px] leading-[14px] md:leading-[16.5px]"
+          className="text-white font-space-grotesk font-medium text-[14.375px] leading-[14px] md:leading-[16.5px]"
           initial={{ x: -100, opacity: 0, scale: 1 }}
           animate={{ x: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -59,7 +59,7 @@ const Navigation = () => {
         </motion.div>
         
         <motion.div 
-          className="flex items-center md:gap-10 gap-5 text-white font-space-grotesk font-medium text-[12px] md:text-[14.375px] leading-[14px] md:leading-[16.5px]"
+          className="flex items-center sm:gap-10 gap-5 text-white font-space-grotesk font-medium text-[12px] md:text-[14.375px] leading-[14px] md:leading-[16.5px]"
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
