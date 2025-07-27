@@ -1,12 +1,13 @@
 ---
 id: 4
 title: "Generating advanced QR-Codes with Stable Diffusion"
+subtitle: "AI-Powered Visual Innovation in Digital Design"
 slug: "generating-advanced-qr-codes-with-stable-diffusion"
 category: "Artificial Intelligence"
 excerpts: "Innovative approach to creating visually stunning QR codes using AI technology"
 published: "2024-02-20"
 image: "assets/qr.webp"
-bgColor: "bg-blue"
+pageVideo: "assets/qr.webp"
 hasAnimation: false
 featured: true
 ---

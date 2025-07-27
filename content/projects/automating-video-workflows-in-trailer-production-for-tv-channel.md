@@ -1,11 +1,13 @@
 ---
 id: 6
 title: "Automating Video Workflows in Trailer Production for TV Channel"
+subtitle: "Intelligent Production Optimization & Workflow Enhancement"
 slug: "automating-video-workflows-in-trailer-production-for-tv-channel"
 category: "Automation"
 excerpts: "Streamlining trailer production through intelligent automation and workflow optimization"
 published: "2023-12-05"
 image: "assets/book.avif"
+pageVideo: "assets/book.avif"
 bgColor: "bg-orange"
 hasAnimation: false
 featured: true

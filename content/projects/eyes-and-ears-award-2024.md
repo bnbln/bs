@@ -1,12 +1,13 @@
 ---
 id: 3
 title: "Multiple Projects won an Eyes and Ears Award 2024"
+subtitle: "Recognition for Excellence in Design and Creativity"
 slug: "eyes-and-ears-award-2024"
 category: "Award"
 excerpts: "Recognition for excellence in design and creativity"
 published: "2024-06-01"
 image: "assets/eyes.webp"
-bgColor: "bg-blue"
+bgColor: "#3DB1FF"
 hasAnimation: false
 featured: true
 ---

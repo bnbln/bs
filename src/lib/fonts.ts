@@ -27,6 +27,11 @@ export const spaceGrotesk = localFont({
 export const inter = localFont({
   src: [
     {
+      path: '../../public/fonts/Inter-ExtraLight.ttf',
+      weight: '200',
+      style: 'normal',
+    },
+    {
       path: '../../public/fonts/Inter-Regular.ttf',
       weight: '400',
       style: 'normal',

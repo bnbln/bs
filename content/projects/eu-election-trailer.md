@@ -1,38 +1,43 @@
 ---
 id: 0
-title: "Trailer for EU election campaign"
+title: "Europe in Motion"
+subtitle: "My Trailer for the 2024 EU Election"
 slug: "eu-election-trailer"
 category: "Trailer Campaign"
-excerpts: "Trailer for EU election campaign"
+excerpts: "For the 2024 EU elections, I created a motion design trailer that brings Europe's identity to life. With rotating stars, animated graphics and bold colors, the project was even nominated for a 2024 Eyes & Ears Award."
 published: "2024-05-01"
 description: "Trailer for EU election campaign"
-bgColor: "bg-blue"
+bgColor: "#E6A105"
 image: "assets/EU_wahl.webp"
 video: "assets/Eu Wahl Loop.mp4"
+pageVideo: "assets/TR000X5A.mp4"
 hasAnimation: false
 featured: false
 ---
 
-# Trailer for EU election campaign
+For the 2024 EU election campaign, I created a trailer that frames Europe as a vibrant, forward-looking idea. The color palette is rooted in the EU flag: a deep blue with a turquoise twist and that unmistakable golden yellow.
 
-This project involved creating a compelling trailer for the EU election campaign, combining dynamic visuals with engaging storytelling to motivate voter participation.
+![assets/flag.png]
 
-## Project Overview
+One standout detail: the twelve stars. They rotate in opposition to the overall scene while staying perfectly horizontal within the viewport. It's a subtle effect powered by After Effects expressions – but visually, it makes all the difference.
 
-The trailer was designed to capture the essence of democratic participation and the importance of European unity. Through careful use of motion graphics and compelling narrative structure, we created a piece that resonates with diverse audiences across Europe.
+```javascript
+-thisComp.layer("EU FLAG ROTATION").transform.rotation
+```
 
-## Technical Details
+![assets/EU_wahl.webp|assets/EU_wahl.webp]
 
-- **Duration**: Variable frame sequence animation
-- **Format**: MP4 video with frame sequence backup
-- **Animation Frames**: 500 frames total
-- **Color Palette**: Blue theme reflecting EU branding
+## The trailer also includes:
 
-## Key Features
+- the packshot
+- an animated bar chart showing political stats
+- visuals of EU buildings in Brussels  
+- a ticker of European cities, countries and flags
+- stylish split screens for pace and variety
+- a cinematic color grade to tie it all together
 
-- Dynamic frame-by-frame animation
-- Optimized for multiple platforms
-- Accessible design principles
-- Multi-language considerations
+[video](assets/Eu Wahl Loop.mp4|assets/flag.png)
 
-The campaign successfully reached millions of viewers across European digital platforms, contributing to increased voter awareness and engagement. 
+The result? A motion-driven trailer full of structure, rhythm and European energy – and yes, it got nominated for the **2024 Eyes & Ears Award**.
+
+![assets/EU_wahl.webp]

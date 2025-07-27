@@ -170,6 +170,15 @@ export class AssetPreloader {
         });
       }
       
+      // Page Videos
+      if (project.pageVideo) {
+        assets.push({
+          url: project.pageVideo,
+          type: 'video',
+          projectId: project.id
+        });
+      }
+      
       // Animation sequences - load every Nth frame for faster loading
       if (project.hasAnimation && project.animationSequence) {
         // Check if this project uses video scrubbing (has videoPath)

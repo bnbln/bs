@@ -1,42 +1,31 @@
 ---
 id: 1
-title: "Show Design for History Documentary Series"
+title: "Zeitreise"
+subtitle: "Show Design for a German History Documentation Series"
 slug: "history-documentary-design"
 category: "Show Design"
-excerpts: "Show Design for History Documentary Series"
+excerpts: "A fresh take on history: I created the full visual branding for a new TV show – blending retro vibes, bold typography, and a color palette inspired by aged film reels."
 published: "2024-04-15"
 image: "assets/Zeitreise.webp"
+pageVideo: "assets/Zeitreise_Opener.mp4"
+bgColor: "#CD412D"
 hasAnimation: false
 featured: false
 ---
 
 # Show Design for History Documentary Series
 
-A comprehensive design system created for a major history documentary series, establishing visual identity and motion graphics standards that enhance storytelling while maintaining historical authenticity.
+Designing for a history format that feels fast, fresh and not like a museum tour? Yes, please. When the production company asked me to take on the show’s visual identity, I knew this would be something fun to dig into.
 
-## Project Scope
+![assets/Zeitreise Logo.avif|assets/Zeitreise_1.avif]
+![assets/Zeitreise_2.avif|assets/Zeitreise_3.avif]
 
-This project involved developing the complete visual language for a multi-episode documentary series covering significant historical events. The design needed to be both informative and engaging, helping viewers connect with historical narratives.
+The first idea came from the reference book and "Der Bader-Meinhof-Komplex", paired with those gritty 90s Spiegel TV graphics. Rough textures, Helvetica, punchy cuts – that raw, documentary feel was the core vibe I wanted to channel.
 
-## Design Philosophy
+The color palette leans into black and white images and warm rust tones – like old film footage that’s been sitting on a shelf a little too long. There’s nostalgia, but also a sharp digital clarity that keeps it grounded in the now.
 
-- **Historical Accuracy**: Every visual element was researched for period authenticity
-- **Modern Accessibility**: Contemporary design principles for today's audiences
-- **Emotional Connection**: Visual storytelling that enhances historical narratives
-- **Consistency**: Unified design system across all episodes
+![assets/Zeitreise_4.avif|assets/Zeitreise_5.avif]
 
-## Visual Elements
+For the typeface, I chose **Berthold Block** – bold, boxy, full of character. It screams “headline” in the best way. And whether it’s in the opener, lower thirds, or on the site, it holds its ground.
 
-- Typography systems reflecting historical periods
-- Color palettes inspired by archival materials
-- Motion graphics that enhance rather than distract
-- Information hierarchy for complex historical data
-
-## Technical Implementation
-
-- Motion graphics templates for consistent production
-- Asset libraries for efficient workflow
-- Multi-format delivery for various broadcast standards
-- Accessibility considerations for diverse audiences
-
-The series received critical acclaim for its visual presentation, successfully making complex historical topics accessible to contemporary audiences while maintaining scholarly rigor. 
+![assets/Zeitreise_6.avif]

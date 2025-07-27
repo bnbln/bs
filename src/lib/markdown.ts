@@ -10,6 +10,7 @@ const projectsDirectory = path.join(process.cwd(), 'content/projects')
 export interface Project {
   id: number
   title: string
+  subtitle?: string
   slug: string
   category: string
   excerpts: string
@@ -18,6 +19,7 @@ export interface Project {
   bgColor?: string
   image: string
   video?: string // Existing field for background videos
+  pageVideo?: string // New field for page-specific videos
   hasAnimation: boolean
   animationSequence?: {
     // Legacy image sequence support

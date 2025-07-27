@@ -25,6 +25,11 @@
   font-family: var(--font-inter), sans-serif;
 }
 
+/* Ensure font-extralight works with Inter */
+.font-inter.font-extralight {
+  font-weight: 200;
+}
+
 /* Hero text styles - Correct font size from Figma */
 .hero-text {
   font-size: 136.87px;

@@ -28,6 +28,7 @@ export function resolveAssetPath(assetPath: string): string {
 export function resolveProjectAssets<T extends { 
   image?: string; 
   video?: string; 
+  pageVideo?: string;
   animationSequence?: { 
     basePath?: string;
     videoPath?: string;
@@ -46,6 +47,11 @@ export function resolveProjectAssets<T extends {
   // Resolve video path (existing background video)
   if (resolved.video) {
     resolved.video = resolveAssetPath(resolved.video)
+  }
+  
+  // Resolve page video path
+  if (resolved.pageVideo) {
+    resolved.pageVideo = resolveAssetPath(resolved.pageVideo)
   }
   
   // Resolve animation sequence paths

@@ -710,40 +710,24 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           </div>
         </div>
       )}
-      
-      {/* Cursor-following title (desktop only) */}
-      {isHovered && !isFastScrolling && (
-        <div
-          className="fixed pointer-events-none z-50 hidden md:block"
-          style={{
-            left: mousePosition.x + 20,
-            top: mousePosition.y - 20,
-            transform: 'translateZ(0)', // Force hardware acceleration
-            willChange: 'transform', // Optimize for animations
-          }}
-        >
-          <motion.div
-            className="bg-black/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-xl border border-white/10"
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
-            transition={{ 
-              duration: 0.15,
-              ease: "easeOut"
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium whitespace-nowrap">{project.title}</span>
-              <img 
-                src={arrowSvg} 
-                alt="Arrow" 
-                className="w-4 h-4 flex-shrink-0" 
-                style={{ filter: 'brightness(0) invert(1)' }} // Ensure white arrow
-              />
-            </div>
-          </motion.div>
+
+      {/* Desktop title in top-left corner (desktop only) */}
+      <motion.div
+        className="absolute top-4 left-4 hidden md:block pointer-events-none z-10"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ 
+          opacity: isHovered && !isFastScrolling ? 1 : 0,
+          y: isHovered && !isFastScrolling ? 0 : -10
+        }}
+        transition={{ 
+          duration: 0.2,
+          ease: "easeOut"
+        }}
+      >
+        <div className="bg-black/90 backdrop-blur-sm text-white px-3 py-2 rounded-lg shadow-xl border border-white/10">
+          <span className="text-sm font-medium whitespace-nowrap">{project.title}</span>
         </div>
-      )}
+      </motion.div>
 
       {/* Mobile arrow button (mobile only) */}
       <motion.button
@@ -767,7 +751,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           src={arrowSvg}
           alt="View project"
           className="w-4 h-4" 
-          style={{ filter: 'brightness(0) invert(1)' }} // Ensure white arrow
+          style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
         />
       </motion.button>
     </motion.div>
@@ -779,8 +763,116 @@ interface WorkProps {
 }
 
 const Work: React.FC<WorkProps> = ({ data }) => {
+  const [isHoveringWorkSection, setIsHoveringWorkSection] = useState(false);
+  const [globalMousePosition, setGlobalMousePosition] = useState({ x: 0, y: 0 });
+
+  // Global mouse tracking for cursor replacement - optimized for performance
+  useEffect(() => {
+    let animationId: number;
+    
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Cancel any pending animation frame to prevent lag
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      
+      // Use requestAnimationFrame for smooth updates
+      animationId = requestAnimationFrame(() => {
+        setGlobalMousePosition({ x: e.clientX, y: e.clientY });
+      });
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, []);
+
+  // Hide cursor globally when hovering work section (only on cursor-based devices)
+  useEffect(() => {
+    // Check if device supports cursor (not touch-only)
+    const hasCursor = window.matchMedia('(pointer: fine)').matches;
+    
+    // Use requestAnimationFrame for smoother transitions
+    const updateCursor = () => {
+      if (isHoveringWorkSection && hasCursor) {
+        // Add a style tag to hide cursor globally
+        const style = document.createElement('style');
+        style.id = 'hide-cursor-style';
+        style.textContent = `
+          * {
+            cursor: none !important;
+          }
+          body {
+            cursor: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+      } else {
+        // Remove the style when not hovering
+        const existingStyle = document.getElementById('hide-cursor-style');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+      }
+    };
+    
+    // Immediate update for better responsiveness
+    updateCursor();
+    
+    return () => {
+      // Cleanup on unmount
+      const existingStyle = document.getElementById('hide-cursor-style');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, [isHoveringWorkSection]);
+
   return (
-    <section className="bg-white w-full relative">
+    <section 
+      className={`bg-white w-full relative ${isHoveringWorkSection ? 'cursor-none' : ''}`}
+      onMouseEnter={() => setIsHoveringWorkSection(true)}
+      onMouseLeave={() => setIsHoveringWorkSection(false)}
+      style={{ 
+        cursor: isHoveringWorkSection ? 'none' : 'auto',
+      }}
+    >
+      {/* Global cursor replacement for cursor-based devices */}
+      <div
+        className={`fixed pointer-events-none z-[9999] transition-opacity duration-75 ${
+          isHoveringWorkSection ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          left: globalMousePosition.x - 12, // Center the 24px icon
+          top: globalMousePosition.y - 12,
+          transform: 'translateZ(0)',
+          willChange: 'transform',
+          // Force hardware acceleration
+          backfaceVisibility: 'hidden',
+          perspective: '1000px',
+        }}
+      >
+        <div className="bg-black/80 text-white p-3 rounded-full shadow-lg">
+          <img
+            src={arrowSvg}
+            alt="Cursor"
+            className="w-4 h-4"
+            style={{ 
+              filter: 'brightness(0) invert(1)', 
+              transform: 'rotate(-180deg)',
+              // Optimize image rendering
+              imageRendering: 'auto',
+              willChange: 'auto',
+            }}
+          />
+        </div>
+      </div>
+
       {/* Section Title */}
       <motion.h2
         className="bg-white max-w-7xl mx-auto px-4 sm:px-8 md:px-16 relative w-full text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] z-20"
