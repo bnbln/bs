@@ -68,6 +68,7 @@ const Contact = () => {
             className="bg-[#0c1fe7] px-10 py-5 rounded-[75px] text-white font-space-grotesk font-bold text-lg leading-none whitespace-pre"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
+            onClick={() => window.location.href = 'mailto:mail@benediktschnupp.com'}
           >
             mail@benediktschnupp.com
           </motion.button>
