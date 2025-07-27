@@ -9,11 +9,7 @@ description: "Trailer for EU election campaign"
 bgColor: "bg-blue"
 image: "assets/EU_wahl.jpg"
 video: "assets/Eu Wahl Loop.mp4"
-hasAnimation: true
-animationSequence:
-  basePath: "book-webp/book_"
-  startFrame: 0
-  endFrame: 500
+hasAnimation: false
 featured: false
 ---
 

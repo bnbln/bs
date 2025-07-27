@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Local fonts loaded via Next.js font optimization */
+@import './styles/fonts.css';
 
 @tailwind base;
 @tailwind components;
@@ -16,13 +16,13 @@
   color: white;
 }
 
-/* Custom font classes */
+/* Custom font classes using CSS custom properties */
 .font-space-grotesk {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-space-grotesk), sans-serif;
 }
 
 .font-inter {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-inter), sans-serif;
 }
 
 /* Hero text styles - Correct font size from Figma */
@@ -53,7 +53,7 @@
   }
   
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-inter), sans-serif;
     margin: 0;
     padding: 0;
   }
@@ -66,7 +66,7 @@
     font-size: 76.87px;
     line-height: 81.2px;
     font-weight: 700;
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--font-space-grotesk), sans-serif;
   }
   
   .project-card {

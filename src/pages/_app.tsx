@@ -10,6 +10,7 @@ import { AssetCache } from '../utils/assetCache'
 import { LOADING_CONFIG } from '../config/loading'
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { spaceGrotesk, inter } from '../lib/fonts'
 
 // Global state to track if assets are loaded in memory
 let globalAssetsLoaded = false;
@@ -50,11 +51,11 @@ export default function App({ Component, pageProps }: AppProps) {
 
   // Skip loading screen entirely
   return (
-    <>
+    <main className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <DefaultSeo {...defaultSEO} />
       <Component {...pageProps} />
       <Analytics />
       <SpeedInsights />
-    </>
+    </main>
   )
 } 

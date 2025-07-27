@@ -172,18 +172,33 @@ export class AssetPreloader {
       
       // Animation sequences - load every Nth frame for faster loading
       if (project.hasAnimation && project.animationSequence) {
-        const { startFrame, endFrame, basePath } = project.animationSequence;
-        const frameRange = getInitialFrameRange(startFrame, endFrame);
+        // Check if this project uses video scrubbing (has videoPath)
+        const useVideoScrubbing = project.animationSequence.videoPath !== undefined;
         
-        frameRange.forEach(frameNumber => {
-          const paddedNumber = frameNumber.toString().padStart(4, '0');
-          const imageUrl = basePath + `${paddedNumber}.webp`;
+        if (useVideoScrubbing) {
+          // For video scrubbing projects, only load the video file
           assets.push({
-            url: imageUrl,
-            type: 'animation-frame',
+            url: project.animationSequence.videoPath,
+            type: 'video',
             projectId: project.id
           });
-        });
+        } else {
+          // For legacy image sequence projects, load the webp frames
+          const { startFrame, endFrame, basePath } = project.animationSequence;
+          if (startFrame !== undefined && endFrame !== undefined && basePath) {
+            const frameRange = getInitialFrameRange(startFrame, endFrame);
+            
+            frameRange.forEach(frameNumber => {
+              const paddedNumber = frameNumber.toString().padStart(4, '0');
+              const imageUrl = basePath + `${paddedNumber}.webp`;
+              assets.push({
+                url: imageUrl,
+                type: 'animation-frame',
+                projectId: project.id
+              });
+            });
+          }
+        }
       }
     });
     

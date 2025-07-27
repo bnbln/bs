@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'space-grotesk': ['Space Grotesk', 'sans-serif'],
-        'inter': ['Inter', 'sans-serif'],
+        'space-grotesk': ['var(--font-space-grotesk)', 'sans-serif'],
+        'inter': ['var(--font-inter)', 'sans-serif'],
         'helvetica': ['Helvetica', 'sans-serif'],
         'vollkorn': ['Vollkorn', 'sans-serif'],
       },

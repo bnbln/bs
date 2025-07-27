@@ -20,7 +20,22 @@ export class BackgroundLoader {
       return;
     }
 
+    // Check if this project uses video scrubbing (has videoPath)
+    const useVideoScrubbing = project.animationSequence.videoPath !== undefined;
+    
+    if (useVideoScrubbing) {
+      // For video scrubbing projects, no additional frames to load
+      // The video file is already loaded in the initial preload
+      console.log(`Project ${project.id} uses video scrubbing - no additional frames needed`);
+      return;
+    }
+
+    // For legacy image sequence projects, load remaining webp frames
     const { startFrame, endFrame, basePath } = project.animationSequence;
+    if (!startFrame || !endFrame || !basePath) {
+      return;
+    }
+
     const remainingAssets: Asset[] = [];
 
     // Load frames that weren't loaded in the initial preload

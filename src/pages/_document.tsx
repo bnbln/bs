@@ -5,8 +5,7 @@ export default class MyDocument extends Document {
     return (
       <Html {...({ lang: 'en' } as any)}>
         <Head>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          {/* Local fonts - no external font loading needed */}
         </Head>
         <body>
           <Main />
