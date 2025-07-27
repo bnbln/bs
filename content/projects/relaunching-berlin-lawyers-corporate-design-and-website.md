@@ -5,7 +5,7 @@ slug: "relaunching-berlin-lawyers-corporate-design-and-website"
 category: "UX&UI, Development"
 excerpts: "Complete rebrand and digital transformation for a prestigious Berlin law firm"
 published: "2024-01-10"
-image: "assets/rk.png"
+image: "assets/rk.webp"
 bgColor: "bg-azure"
 hasAnimation: false
 featured: true

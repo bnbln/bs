@@ -5,7 +5,7 @@ slug: "eyes-and-ears-award-2024"
 category: "Award"
 excerpts: "Recognition for excellence in design and creativity"
 published: "2024-06-01"
-image: "assets/eyes.png"
+image: "assets/eyes.webp"
 bgColor: "bg-blue"
 hasAnimation: false
 featured: true

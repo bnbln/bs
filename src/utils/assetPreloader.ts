@@ -204,7 +204,7 @@ export class AssetPreloader {
     
     // Add static assets
     const staticAssets = [
-      '/assets/heroimage.jpg',
+      '/assets/heroimage.webp',
       '/assets/locationBackground.svg',
       '/assets/World Icon.svg',
       '/assets/arrow.svg'

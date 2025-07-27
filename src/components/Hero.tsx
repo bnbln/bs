@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import ScrollVelocity from './ScrollVelocity'
-const heroImage = '/assets/heroimage.jpg'
+const heroImage = '/assets/heroimage.webp'
 const locationIcon = '/assets/locationBackground.svg'
 const worldIcon = '/assets/World Icon.svg'
 const arrowIcon = '/assets/arrow.svg'
@@ -13,7 +13,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${heroImage})`
+          backgroundImage: `url('/assets/heroimage.webp'), url('/assets/heroimage.jpg')`
         }}
       />
       

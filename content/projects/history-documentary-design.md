@@ -5,7 +5,7 @@ slug: "history-documentary-design"
 category: "Show Design"
 excerpts: "Show Design for History Documentary Series"
 published: "2024-04-15"
-image: "assets/Zeitreise.jpg"
+image: "assets/Zeitreise.webp"
 hasAnimation: false
 featured: false
 ---

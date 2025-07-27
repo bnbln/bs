@@ -5,7 +5,7 @@ slug: "generating-advanced-qr-codes-with-stable-diffusion"
 category: "Artificial Intelligence"
 excerpts: "Innovative approach to creating visually stunning QR codes using AI technology"
 published: "2024-02-20"
-image: "assets/qr.png"
+image: "assets/qr.webp"
 bgColor: "bg-blue"
 hasAnimation: false
 featured: true

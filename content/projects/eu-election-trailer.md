@@ -7,7 +7,7 @@ excerpts: "Trailer for EU election campaign"
 published: "2024-05-01"
 description: "Trailer for EU election campaign"
 bgColor: "bg-blue"
-image: "assets/EU_wahl.jpg"
+image: "assets/EU_wahl.webp"
 video: "assets/Eu Wahl Loop.mp4"
 hasAnimation: false
 featured: false
