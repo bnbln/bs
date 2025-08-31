@@ -7,15 +7,12 @@ category: "Book"
 excerpts: "3D modeling and animation of a book for television commercial"
 published: "2024-03-15"
 image: "assets/book.avif"
-pageVideo: "assets/book.mp4"
 hasAnimation: true
 animationSequence:
   videoPath: "assets/book.mp4"
   frameCount: 501
 featured: false
 ---
-
-# Book 3D-Modeling & Animation for TV Spot
 
 A sophisticated 3D animation project featuring detailed book modeling and fluid page-turning animations for a high-profile television commercial campaign.
 
@@ -54,3 +51,6 @@ This project demanded photorealistic 3D modeling of a book with complex page-tur
 - **Delivery**: Web-optimized animation for multiple platforms
 
 The final animation successfully captured the aspirational quality of reading while showcasing the product in an engaging, memorable way. The commercial achieved significant viewer engagement and brand recognition. 
+
+# The Render
+[video](assets/book.mp4|assets/book.avif)

@@ -22,7 +22,6 @@ export default function Home({ data }: HomeProps) {
   return (
     <>
       <NextSeo
-        title="Home"
         description="Creative Motion Designer & Front-End Developer with 7+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany."
         openGraph={{
           title: 'Benedikt Schnupp - Motion Designer & Developer',

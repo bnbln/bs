@@ -103,4 +103,379 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Safari and Chrome */
   }
-} 
+
+  /* Unified content container */
+  .content-container { @apply mx-auto max-w-[72ch] px-4 md:px-6; }
+
+  /* Article prose typography */
+  .prose-article { @apply content-container text-[15px] md:text-[16px] xl:text-[17px] font-inter font-normal leading-[1.55] text-[rgba(255,255,255,0.88)]; }
+  .prose-article p { @apply m-0; }
+  .prose-article p + p { margin-top: 1.5em; }
+  .prose-article strong { @apply font-semibold text-white; }
+  .prose-article a { @apply underline decoration-[rgba(255,255,255,0.3)] underline-offset-[3px] transition-colors; }
+  .prose-article a:hover { @apply text-white decoration-white; }
+  .prose-article ul { @apply list-none pl-0 m-0 space-y-3; }
+  .prose-article li { @apply relative pl-5; }
+  .prose-article li::before { content: '\2022'; position: absolute; left: 0; top: 0.15em; font-size: 0.75em; line-height: 1; color: var(--accent-color,#3DB1FF); }
+  .prose-article h1 { font-size: clamp(2.4rem,6vw,3.75rem); @apply font-space-grotesk font-bold leading-tight text-white mt-0 mb-5; }
+  .prose-article h2 { font-size: clamp(1.8rem,4.2vw,2.5rem); @apply font-space-grotesk font-bold leading-snug text-white mt-32 mb-8; }
+  .prose-article h3 { font-size: clamp(1.25rem,2.6vw,1.5rem); @apply font-space-grotesk font-semibold tracking-[0.5px] uppercase leading-snug text-white mt-20 mb-6; }
+  .prose-article h2 + h3 { @apply mt-6; }
+  .prose-article code { @apply font-mono text-[13px] md:text-[14px] leading-[1.5] bg-white/5 rounded px-1 py-0.5; }
+  .prose-article pre { @apply m-0; }
+  .prose-article figure { @apply my-16 last:mb-0; }
+  .prose-article .block-spacing { @apply mb-24 last:mb-0; }
+  .prose-article p + ul { margin-top: 2rem; }
+  .prose-article ul + p { margin-top: 2rem; }
+
+  .prose-article h1, .prose-article h2 { /* accent override entfernt */ }
+
+  /* Tags */
+  .tag { @apply inline-flex items-center rounded-full px-2 py-1 leading-none font-inter font-semibold lowercase text-black text-[10px] sm:text-[11px] md:text-[12px]; background-color: rgba(255,255,255,1); }
+
+  /* Code block wrapper alignment */
+  .code-palette-container { @apply mx-auto max-w-[72ch] px-4 md:px-6; }
+  @media (min-width:1024px){ .code-palette-container { max-width:1100px; } }
+  .code-block-wrapper, .palette-wrapper { @apply code-palette-container mt-28; }
+
+  /* Palette wrapper reuse */
+  .palette-wrapper { @apply block-spacing; }
+
+  /* Full-bleed Medienreihen (Bilder/Galerien) mit konsistentem Innenabstand = Gap */
+  .media-row { position:relative; left:50%; transform:translateX(-50%); width:100vw; max-width:100vw; margin:0; }
+  .media-row-inner { @apply page-x box-border w-full; }
+  .single-image-block { @apply media-row; }
+  .single-image-inner { @apply page-x box-border w-full; }
+
+  .media-block { position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw; width:100vw; }
+
+  /* Galerie-Gaps angleichen (Gap == Page Padding Werte) */
+  .gallery-grid { @apply grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4 sm:gap-5 md:gap-6 lg:gap-8; }
+
+  /* Cleanup alte Klassen die nicht mehr verwendet werden */
+  .gallery-wrapper { /* deprecated */ }
+  .single-image-wrapper { /* deprecated */ }
+  .media-block-inner { /* not used for now */ }
+
+  /* Einheitliche horizontale Page-Padding Skala => spiegelt Gallery-Gaps */
+  .page-x { @apply px-4 sm:px-5 md:px-6 lg:px-8; }
+
+  /* Utility für extragroße vertikale Stapel – optional nutzbar */
+  .stack-lg > * + * { margin-top: clamp(2.5rem,5vw,2rem); }
+
+  /* Vertikal-Rhythmus Tokens */
+  :root { --space-p:1.5em; --space-block-sm:2.75rem; --space-block-md:4rem; --space-block-lg:6rem; }
+  @media (min-width:640px){ :root { --space-block-sm:3.25rem; --space-block-md:4.5rem; --space-block-lg:6.5rem; }}
+  @media (min-width:1024px){ :root { --space-block-sm:3.75rem; --space-block-md:5rem; --space-block-lg:7rem; }}
+
+  /* Paragraph spacing */
+  .prose-article p + p { margin-top:1.6em; }
+
+  /* Base heading spacing (large by default) */
+  .prose-article h2 { margin-top:var(--space-block-lg); margin-bottom:1.75rem; }
+  .prose-article h3 { margin-top:var(--space-block-md); margin-bottom:1.25rem; }
+
+  /* Context-aware: add EXTRA space when directly following dense blocks */
+  .prose-article p + h2 { margin-top:calc(var(--space-block-lg) + 0.75rem); }
+  .prose-article p + h3 { margin-top:calc(var(--space-block-md) + 0.5rem); }
+  .prose-article ul + h2, .prose-article figure + h2, .prose-article .code-block-wrapper + h2, .prose-article .palette-wrapper + h2 { margin-top:calc(var(--space-block-lg) + 1rem); }
+  .prose-article ul + h3, .prose-article figure + h3, .prose-article .code-block-wrapper + h3, .prose-article .palette-wrapper + h3 { margin-top:calc(var(--space-block-md) + 0.75rem); }
+
+  /* Space after lists / figures before paragraph */
+  .prose-article ul + p, .prose-article figure + p { margin-top:var(--space-block-sm); }
+
+  /* Block spacing utility override (more generous) */
+  .prose-article .block-spacing { margin-bottom:var(--space-block-lg); }
+  .prose-article .block-spacing:last-child { margin-bottom:0; }
+
+  /* Code/Palette Abstand angleichen */
+  .code-block-wrapper, .palette-wrapper { margin-top:var(--space-block-lg); margin-bottom:var(--space-block-lg); }
+
+  /* Figures (media rows) */
+  .prose-article figure { margin-top:var(--space-block-md); margin-bottom:var(--space-block-md); }
+  .prose-article figure + figure { margin-top:var(--space-block-sm); }
+
+  /* Fine tune smallest screens: reduce slight crowding risk */
+  @media (max-width:479px){
+    .prose-article h2 { margin-top:calc(var(--space-block-lg) - 1rem); }
+    .prose-article h3 { margin-top:calc(var(--space-block-md) - 0.75rem); }
+  }
+
+  /* Scroll offset for anchored headings */
+  .prose-article h1, .prose-article h2, .prose-article h3 { scroll-margin-top:6.5rem; }
+
+  /* === Vertical Rhythm Refresh === */
+  :root { --vr-1:1.5rem; --vr-2:2.75rem; --vr-3:4.25rem; --vr-4:6.25rem; --vr-5:8rem; }
+  @media (min-width:640px){ :root { --vr-2:3.25rem; --vr-3:4.75rem; --vr-4:6.75rem; --vr-5:8.5rem; }}
+  @media (min-width:1024px){ :root { --vr-2:3.5rem; --vr-3:5rem; --vr-4:7rem; --vr-5:9rem; }}
+
+  /* Paragraph spacing */
+  .prose-article p + p { margin-top:1.65em; }
+
+  /* Headings base */
+  .prose-article h2 { margin-top:var(--vr-4); margin-bottom:2rem; }
+  .prose-article h3 { margin-top:var(--vr-3); margin-bottom:1.4rem; }
+  .prose-article h1 { margin-top:var(--vr-5); margin-bottom:2.25rem; }
+  /* Context boosts */
+  .prose-article p + h2 { margin-top:calc(var(--vr-4) + 1rem); }
+  .prose-article p + h3 { margin-top:calc(var(--vr-3) + 0.75rem); }
+  .prose-article p + h1 { margin-top:calc(var(--vr-5) + 1rem); }
+  .prose-article figure + h2, .prose-article ul + h2, .prose-article .code-block-wrapper + h2, .prose-article .palette-wrapper + h2 { margin-top:calc(var(--vr-4) + 1.25rem); }
+  .prose-article figure + h3, .prose-article ul + h3, .prose-article .code-block-wrapper + h3, .prose-article .palette-wrapper + h3 { margin-top:calc(var(--vr-3) + 1rem); }
+  .prose-article figure + h1, .prose-article ul + h1, .prose-article .code-block-wrapper + h1, .prose-article .palette-wrapper + h1 { margin-top:calc(var(--vr-5) + 1.5rem); }
+
+  /* Lists & transitions */
+  .prose-article ul { @apply space-y-3; margin-top:var(--vr-2); margin-bottom:var(--vr-2); }
+  .prose-article p + ul { margin-top:var(--vr-3); }
+  .prose-article ul + p { margin-top:var(--vr-3); }
+
+  /* Figures */
+  .prose-article figure { margin-top:var(--vr-3); margin-bottom:var(--vr-3); }
+  .prose-article figure + figure { margin-top:var(--vr-2); }
+
+  /* Generic block spacing utility (only for legacy injected wrappers) */
+  .prose-article .block-spacing { margin-bottom:var(--vr-4); }
+  .prose-article .block-spacing:last-child { margin-bottom:0; }
+
+  /* Code / Palette wrappers – more breathing */
+  .code-block-wrapper, .palette-wrapper { margin-top:var(--vr-4); margin-bottom:var(--vr-5); }
+
+  /* Tighten extraneous inner padding only if needed (optional hook classes) */
+  .code-block-wrapper > section.py-12 { padding-top:3rem; padding-bottom:3rem; }
+
+  /* Small screen moderation */
+  @media (max-width:479px){
+    .prose-article h1 { margin-top:var(--vr-4); }
+    .prose-article h2 { margin-top:calc(var(--vr-4) - 1rem); }
+    .prose-article h3 { margin-top:calc(var(--vr-3) - 0.75rem); }
+    .code-block-wrapper, .palette-wrapper { margin-top:var(--vr-3); margin-bottom:var(--vr-4); }
+  }
+
+  /* FINAL VERTICAL RHYTHM CONSOLIDATION */
+  :root { --vr-1:1.25rem; --vr-2:2.25rem; --vr-3:3.5rem; --vr-4:5.25rem; --vr-5:7rem; }
+  @media (min-width:640px){ :root { --vr-2:2.5rem; --vr-3:3.75rem; --vr-4:5.5rem; --vr-5:7.5rem; }}
+  @media (min-width:1024px){ :root { --vr-2:2.75rem; --vr-3:4rem; --vr-4:5.75rem; --vr-5:8rem; }}
+
+  /* Reset margins to unify */
+  .prose-article h1, .prose-article h2, .prose-article h3, .prose-article p, .prose-article ul, .prose-article figure { margin-left:0; margin-right:0; }
+  .prose-article h1, .prose-article h2, .prose-article h3 { margin-top:0; margin-bottom:0; }
+  .prose-article p { margin-top:0; margin-bottom:0; }
+  .prose-article ul { margin-top:0; margin-bottom:0; }
+  .prose-article figure { margin-top:0; margin-bottom:0; }
+
+  /* Base stack: every sibling gets space */
+  .prose-article > * + * { margin-top: var(--vr-3); }
+
+  /* Paragraph internal spacing */
+  .prose-article p + p { margin-top:1.75em; }
+
+  /* Headings: stronger top separation */
+  .prose-article h1 { margin-top: var(--vr-5); margin-bottom: var(--vr-2); }
+  .prose-article h2 { margin-top: var(--vr-4); margin-bottom: 1.9rem; }
+  .prose-article h3 { margin-top: var(--vr-3); margin-bottom: 1.2rem; }
+
+  /* Context boosts */
+  .prose-article p + h2 { margin-top: calc(var(--vr-4) + 0.75rem); }
+  .prose-article p + h3 { margin-top: calc(var(--vr-3) + 0.5rem); }
+  .prose-article figure + h2, .prose-article ul + h2, .prose-article .code-block-wrapper + h2, .prose-article .palette-wrapper + h2 { margin-top: calc(var(--vr-4) + 1rem); }
+  .prose-article figure + h3, .prose-article ul + h3, .prose-article .code-block-wrapper + h3, .prose-article .palette-wrapper + h3 { margin-top: calc(var(--vr-3) + 0.75rem); }
+
+  /* Lists */
+  .prose-article p + ul { margin-top: var(--vr-3); }
+  .prose-article ul + p { margin-top: var(--vr-3); }
+
+  /* Figures */
+  .prose-article figure { margin-top: var(--vr-3); margin-bottom: var(--vr-3); }
+  .prose-article figure + figure { margin-top: var(--vr-2); }
+
+  /* Code / Palette spacing (outside base) */
+  .code-block-wrapper, .palette-wrapper { margin-top: var(--vr-4); margin-bottom: var(--vr-5); }
+
+  /* Tighten consecutive code/palette */
+  .code-block-wrapper + .palette-wrapper, .palette-wrapper + .code-block-wrapper { margin-top: var(--vr-3); }
+
+  /* Mobile moderation */
+  @media (max-width:479px){
+    :root { --vr-2:2rem; --vr-3:3rem; --vr-4:4.25rem; --vr-5:5.5rem; }
+    .prose-article h1 { margin-top: var(--vr-4); }
+  }
+
+  /* CONSOLIDATED TYPO (no spacing here) */
+  .prose-article h1 { font-size: clamp(2.4rem,6vw,3.75rem); @apply font-space-grotesk font-bold leading-tight text-white; margin:0; }
+  .prose-article h2 { font-size: clamp(1.9rem,4.2vw,2.65rem); @apply font-space-grotesk font-bold leading-snug text-white; margin:0; }
+  .prose-article h3 { font-size: clamp(1.1rem,2.2vw,1.35rem); @apply font-space-grotesk font-semibold tracking-[0.5px] uppercase leading-snug text-white; margin:0; }
+
+  /* RESET existing margins to avoid legacy collisions */
+  .prose-article h1, .prose-article h2, .prose-article h3, .prose-article p, .prose-article ul, .prose-article figure { margin-top:0; margin-bottom:0; }
+
+  /* FINAL VERTICAL RHYTHM TOKENS */
+  :root { --vr-1:1.4rem; --vr-2:2.4rem; --vr-3:3.75rem; --vr-4:5.5rem; --vr-5:7.25rem; }
+  @media (min-width:640px){ :root { --vr-2:2.65rem; --vr-3:4rem; --vr-4:5.9rem; --vr-5:7.75rem; }}
+  @media (min-width:1024px){ :root { --vr-2:2.9rem; --vr-3:4.25rem; --vr-4:6.15rem; --vr-5:8.25rem; }}
+
+  /* BASE STACK: add space between direct siblings */
+  .prose-article > * + * { margin-top: var(--vr-3); }
+
+  /* PARAGRAPHS */
+  .prose-article p + p { margin-top:1.8em; }
+
+  /* HEADINGS (top separation + bottom buffer) */
+  .prose-article h1 { margin-top:var(--vr-5); margin-bottom:var(--vr-2); }
+  .prose-article h2 { margin-top:var(--vr-4); margin-bottom:1.9rem; }
+  .prose-article h3 { margin-top:var(--vr-3); margin-bottom:1.15rem; }
+  .prose-article p + h1 { margin-top:calc(var(--vr-5) + 0.75rem); }
+  .prose-article p + h2 { margin-top:calc(var(--vr-4) + 0.6rem); }
+  .prose-article p + h3 { margin-top:calc(var(--vr-3) + 0.5rem); }
+  .prose-article figure + h2, .prose-article ul + h2, .prose-article .code-block-wrapper + h2, .prose-article .palette-wrapper + h2 { margin-top:calc(var(--vr-4) + 1rem); }
+  .prose-article figure + h3, .prose-article ul + h3, .prose-article .code-block-wrapper + h3, .prose-article .palette-wrapper + h3 { margin-top:calc(var(--vr-3) + 0.85rem); }
+
+  /* LISTS */
+  .prose-article p + ul { margin-top:var(--vr-3); }
+  .prose-article ul + p { margin-top:var(--vr-3); }
+  .prose-article ul { margin-top:var(--vr-2); margin-bottom:var(--vr-2); }
+
+  /* FIGURES / MEDIA */
+  .prose-article figure { margin-top:var(--vr-3); margin-bottom:var(--vr-3); }
+  .prose-article figure + figure { margin-top:var(--vr-2); }
+
+  /* CODE / PALETTE */
+  .code-block-wrapper, .palette-wrapper { margin-top:var(--vr-4); margin-bottom:var(--vr-5); }
+  .code-block-wrapper + .palette-wrapper, .palette-wrapper + .code-block-wrapper { margin-top:var(--vr-3); }
+
+  /* MOBILE MODERATION */
+  @media (max-width:479px){
+    :root { --vr-2:2rem; --vr-3:3.1rem; --vr-4:4.5rem; --vr-5:5.8rem; }
+    .prose-article h1 { margin-top:var(--vr-4); }
+  }
+
+  /* Breakout Utilities für breite Frames (Code / Palette) */
+  .breakout-shell { position:relative; left:50%; transform:translateX(-50%); width:100vw; }
+  .breakout-inner { max-width:1200px; margin:0 auto; padding-left:1rem; padding-right:1rem; }
+  @media (min-width:640px){ .breakout-inner { padding-left:1.25rem; padding-right:1.25rem; } }
+  @media (min-width:768px){ .breakout-inner { padding-left:1.5rem; padding-right:1.5rem; } }
+  @media (min-width:1024px){ .breakout-inner { padding-left:2rem; padding-right:2rem; max-width:1250px; } }
+
+  /* Override frühere enge Breitenbindung für Code/Palette Wrapper */
+  .code-block-wrapper, .palette-wrapper { max-width:none; }
+  /* Vertikale Abstände dezenter machen */
+  .code-block-wrapper > section, .palette-wrapper > section { padding-top:2.5rem; padding-bottom:2.5rem; }
+  @media (min-width:1024px){ .code-block-wrapper > section, .palette-wrapper > section { padding-top:3rem; padding-bottom:3rem; } }
+
+  /* Code / Palette Breakout (Desktop breiter als Fließtext) */
+  .code-block-wrapper, .palette-wrapper { /* nicht mehr global max-width:none */ }
+  .code-heading, .palette-heading { @apply content-container; }
+  .code-breakout, .palette-breakout { @apply w-full; }
+  @media (min-width:1024px){
+    .code-breakout, .palette-breakout {
+      position:relative; left:50%; transform:translateX(-50%); width:100vw; /* volle Breite */
+    }
+    .code-inner, .palette-inner { max-width:1100px; margin:0 auto; padding-left:2rem; padding-right:2rem; }
+  }
+  @media (max-width:1023.98px){
+    .code-inner, .palette-inner { @apply content-container px-4 md:px-6; }
+  }
+  .code-frame { /* Rahmen des Codeblocks */ }
+
+  /* === Code / Palette FINAL Layout Override === */
+  .prose-article .code-block-wrapper, .prose-article .palette-wrapper { margin-top: var(--vr-3); margin-bottom: var(--vr-3); }
+  .code-block-wrapper section, .palette-wrapper section { padding-top:0; padding-bottom:0; }
+  .code-breakout, .palette-breakout { width:100%; }
+  @media (min-width:1024px){
+    .code-breakout, .palette-breakout { position:relative; left:50%; transform:translateX(-50%); width:min(1100px,100vw - 6rem); }
+  }
+  .code-frame, .palette-frame { width:100%; }
+  /* Ende Override */
+
+  /* === FINAL OVERRIDES FOR CODE & PALETTE WIDTH / ALIGNMENT === */
+  .code-block { /* wrapper section */ }
+  .palette-block { /* wrapper section */ }
+  .code-block-head, .palette-block-head { @apply max-w-[72ch];}
+  .code-block-frame-wrapper, .palette-block-frame-wrapper { @apply mx-auto w-full px-4 md:px-6; max-width:72ch; }
+  @media (min-width:1024px){
+    .code-block-frame-wrapper, .palette-block-frame-wrapper { max-width:1100px; }
+  }
+  /* Remove inner section vertical padding already handled by global rhythm */
+  .code-block-head + .code-block-frame-wrapper { margin-top:1.25rem; }
+  .palette-block-head + .palette-block-frame-wrapper { margin-top:1.25rem; }
+  /* Tighten default section padding present earlier */
+  .code-block > section, .palette-block > section { padding-top:0 !important; padding-bottom:0 !important; }
+
+  /* === FINAL CLEANUP OVERRIDE (single source of truth) === */
+  :root { --stack-1:1.25rem; --stack-2:2rem; --stack-3:3.25rem; --stack-4:4.75rem; --stack-5:6.25rem; }
+  @media (min-width:640px){ :root { --stack-2:2.2rem; --stack-3:3.5rem; --stack-4:5rem; --stack-5:6.75rem; } }
+  @media (min-width:1024px){ :root { --stack-2:2.4rem; --stack-3:3.75rem; --stack-4:5.25rem; --stack-5:7.25rem; } }
+
+  /* Reset conflicting earlier systems */
+  .prose-article h1, .prose-article h2, .prose-article h3, .prose-article p, .prose-article ul, .prose-article figure { margin:0; }
+  .prose-article > * + * { margin-top: var(--stack-3); }
+  .prose-article p + p { margin-top:1.65em; }
+
+  /* Headings spacing */
+  .prose-article h1 { margin-top:var(--stack-5); margin-bottom:var(--stack-2); }
+  .prose-article h2 { margin-top:var(--stack-4); margin-bottom:1.4rem; }
+  .prose-article h3 { margin-top:var(--stack-3); margin-bottom:1rem; }
+  .prose-article p + h1 { margin-top:calc(var(--stack-5) + .5rem); }
+  .prose-article p + h2 { margin-top:calc(var(--stack-4) + .5rem); }
+  .prose-article p + h3 { margin-top:calc(var(--stack-3) + .4rem); }
+
+  /* Lists / Figures */
+  .prose-article ul { margin-top:var(--stack-2); margin-bottom:var(--stack-2); }
+  .prose-article figure { margin-top:var(--stack-3); margin-bottom:var(--stack-3); }
+  .prose-article figure + figure { margin-top:var(--stack-2); }
+
+  /* Code / Palette Wrappers: mobile = Textbreite, Desktop breiter */
+  .code-block-wrapper, .palette-wrapper { margin: var(--stack-4) 0; }
+  .code-block-wrapper > section, .palette-wrapper > section { padding:0 !important; margin:0; }
+  .code-block-wrapper > section > .mb-6, .palette-wrapper > section > .mb-6, .palette-wrapper > section > .mb-8 { margin-bottom:1.1rem !important; }
+
+  /* Ensure width logic */
+  .code-block-wrapper, .palette-wrapper { max-width:none; }
+  .code-block-wrapper section, .palette-wrapper section { @apply mx-auto px-4 md:px-6; max-width:72ch; }
+  @media (min-width:1024px){
+    .code-block-wrapper section, .palette-wrapper section { max-width:1100px; }
+  }
+
+  /* Headings inside code/palette align with text flow */
+  .code-block-wrapper h2, .palette-wrapper h2 { margin-top:0; }
+
+  /* Reduce stacked spacing after media -> heading */
+  .prose-article figure + h2 { margin-top:calc(var(--stack-4) + .25rem); }
+  .prose-article figure + h3 { margin-top:calc(var(--stack-3) + .25rem); }
+
+  /* Mobile moderation */
+  @media (max-width:479px){
+    .code-block-wrapper, .palette-wrapper { margin: var(--stack-3) 0; }
+    .prose-article h1 { margin-top:var(--stack-4); }
+  }
+
+  /* FINAL CODE / PALETTE SECTION LAYOUT */
+  .code-block-section, .palette-block-section { /* vertikaler Abstand kommt aus Artikel-Rhythmus */ }
+  .code-block-head, .palette-block-head { max-width:72ch; margin:0 auto; padding:0; }
+  .code-block-frame, .palette-block-frame { max-width:72ch; margin:1.1rem auto 0; padding:0; }
+  @media (min-width:640px){
+    .code-block-head, .palette-block-head, .code-block-frame, .palette-block-frame { padding:0; }
+  }
+  @media (min-width:1024px){
+    .code-block-frame, .palette-block-frame { max-width:1100px; }
+  }
+
+  /* First heading at very top of article: remove top margin */
+  .prose-article > h1:first-child { margin-top:0 !important; }
+  .prose-article > :first-child:is(h1) { margin-top:0 !important; }
+
+  /* Option C: Globale Entfernung von top margins für alle Headings – Abstand kommt nur noch über generische Sibling-Stacks */
+  .prose-article :is(h1,h2,h3,h4,h5,h6){ margin-top:0 !important; }
+  
+  /* Reintroduce vertical spacing for subsequent headings (any preceding sibling, not only direct) */
+  .prose-article * + h1 { margin-top:clamp(3.5rem,7vw,5rem) !important; }
+  .prose-article * + h2 { margin-top:clamp(3rem,6vw,4rem) !important; }
+  .prose-article * + h3 { margin-top:clamp(2.25rem,4.5vw,3rem) !important; }
+  .prose-article * + h4 { margin-top:clamp(2rem,4vw,2.5rem) !important; }
+  .prose-article * + h5 { margin-top:clamp(1.75rem,3.5vw,2.25rem) !important; }
+  .prose-article * + h6 { margin-top:clamp(1.5rem,3vw,2rem) !important; }
+
+  .final-highlight-section { position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw; width:100vw; max-width:100vw; }
+  .prose-article .final-highlight-section { margin-top:var(--stack-4); margin-bottom:0; }
+  /* Shadow für alle Aspect-Ratio Wrapper ohne problematische Escapes */
+  .final-highlight-section .aspect-video, .final-highlight-section [class*="aspect-"] { box-shadow:0 8px 32px -8px rgba(0,0,0,0.35); }
+}

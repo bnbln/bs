@@ -11,6 +11,17 @@ interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   const router = useRouter();
+  // Detect fine pointer (avoid hover / cursor logic on touch devices)
+  const [hasFinePointer, setHasFinePointer] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const mq = window.matchMedia('(pointer: fine)');
+      const update = () => setHasFinePointer(mq.matches);
+      update();
+      mq.addEventListener('change', update);
+      return () => mq.removeEventListener('change', update);
+    }
+  }, []);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
   const [isHovered, setIsHovered] = useState(false);
@@ -100,6 +111,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
 
   // Optimized mouse move handler with throttling - only update if mouse is inside THIS project
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!hasFinePointer) return; // disable on touch
     // Only update position if mouse is actually inside this specific project
     if (!isMouseInsideThisProject) return;
     
@@ -111,25 +123,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
     animationRef.current = requestAnimationFrame(() => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     });
-  }, [isMouseInsideThisProject]);
+  }, [isMouseInsideThisProject, hasFinePointer]);
 
   // Proper hover handlers that track this specific project
   const handleMouseEnter = useCallback(() => {
+    if (!hasFinePointer) return; // disable on touch
     setIsMouseInsideThisProject(true);
     // Only show hover if not fast scrolling
     if (!isFastScrolling) {
       setIsHovered(true);
     }
-  }, [isFastScrolling]);
+  }, [isFastScrolling, hasFinePointer]);
 
   const handleMouseLeave = useCallback(() => {
+    if (!hasFinePointer) return; // disable on touch
     setIsMouseInsideThisProject(false);
     setIsHovered(false);
     // Clear any pending mouse position updates
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
-  }, []);
+  }, [hasFinePointer]);
 
   // Handle project click
   const handleProjectClick = useCallback(() => {
@@ -587,9 +601,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       whileInView={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8}}
       viewport={{ once: true }}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseMove={hasFinePointer ? handleMouseMove : undefined}
+      onMouseEnter={hasFinePointer ? handleMouseEnter : undefined}
+      onMouseLeave={hasFinePointer ? handleMouseLeave : undefined}
       onClick={handleProjectClick}
     >
       {/* Static Background Image (Fallback) */}
@@ -765,9 +779,20 @@ interface WorkProps {
 const Work: React.FC<WorkProps> = ({ data }) => {
   const [isHoveringWorkSection, setIsHoveringWorkSection] = useState(false);
   const [globalMousePosition, setGlobalMousePosition] = useState({ x: 0, y: 0 });
+  const [hasFinePointer, setHasFinePointer] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const mq = window.matchMedia('(pointer: fine)');
+      const update = () => setHasFinePointer(mq.matches);
+      update();
+      mq.addEventListener('change', update);
+      return () => mq.removeEventListener('change', update);
+    }
+  }, []);
 
   // Global mouse tracking for cursor replacement - optimized for performance
   useEffect(() => {
+    if (!hasFinePointer) return; // skip on touch devices
     let animationId: number;
     
     const handleGlobalMouseMove = (e: MouseEvent) => {
@@ -790,10 +815,11 @@ const Work: React.FC<WorkProps> = ({ data }) => {
         cancelAnimationFrame(animationId);
       }
     };
-  }, []);
+  }, [hasFinePointer]);
 
   // Hide cursor globally when hovering work section (only on cursor-based devices)
   useEffect(() => {
+    if (!hasFinePointer) return; // do not hide cursor on touch devices
     // Check if device supports cursor (not touch-only)
     const hasCursor = window.matchMedia('(pointer: fine)').matches;
     
@@ -831,47 +857,48 @@ const Work: React.FC<WorkProps> = ({ data }) => {
         existingStyle.remove();
       }
     };
-  }, [isHoveringWorkSection]);
+  }, [isHoveringWorkSection, hasFinePointer]);
 
   return (
     <section 
-      className={`bg-white w-full relative ${isHoveringWorkSection ? 'cursor-none' : ''}`}
-      onMouseEnter={() => setIsHoveringWorkSection(true)}
-      onMouseLeave={() => setIsHoveringWorkSection(false)}
+      className={`bg-white w-full relative ${hasFinePointer && isHoveringWorkSection ? 'cursor-none' : ''}`}
+      onMouseEnter={hasFinePointer ? () => setIsHoveringWorkSection(true) : undefined}
+      onMouseLeave={hasFinePointer ? () => setIsHoveringWorkSection(false) : undefined}
       style={{ 
-        cursor: isHoveringWorkSection ? 'none' : 'auto',
+        cursor: hasFinePointer && isHoveringWorkSection ? 'none' : 'auto',
       }}
     >
-      {/* Global cursor replacement for cursor-based devices */}
-      <div
-        className={`fixed pointer-events-none z-[9999] transition-opacity duration-75 ${
-          isHoveringWorkSection ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={{
-          left: globalMousePosition.x - 12, // Center the 24px icon
-          top: globalMousePosition.y - 12,
-          transform: 'translateZ(0)',
-          willChange: 'transform',
-          // Force hardware acceleration
-          backfaceVisibility: 'hidden',
-          perspective: '1000px',
-        }}
-      >
-        <div className="bg-black/80 text-white p-3 rounded-full shadow-lg">
-          <img
-            src={arrowSvg}
-            alt="Cursor"
-            className="w-4 h-4"
-            style={{ 
-              filter: 'brightness(0) invert(1)', 
-              transform: 'rotate(-180deg)',
-              // Optimize image rendering
-              imageRendering: 'auto',
-              willChange: 'auto',
-            }}
-          />
+      {hasFinePointer && (
+        <div
+          className={`fixed pointer-events-none z-[9999] transition-opacity duration-75 ${
+            isHoveringWorkSection ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            left: globalMousePosition.x - 12, // Center the 24px icon
+            top: globalMousePosition.y - 12,
+            transform: 'translateZ(0)',
+            willChange: 'transform',
+            // Force hardware acceleration
+            backfaceVisibility: 'hidden',
+            perspective: '1000px',
+          }}
+        >
+          <div className="bg-black/80 text-white p-3 rounded-full shadow-lg">
+            <img
+              src={arrowSvg}
+              alt="Cursor"
+              className="w-4 h-4"
+              style={{ 
+                filter: 'brightness(0) invert(1)', 
+                transform: 'rotate(-180deg)',
+                // Optimize image rendering
+                imageRendering: 'auto',
+                willChange: 'auto',
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Section Title */}
       <motion.h2
@@ -900,4 +927,4 @@ const Work: React.FC<WorkProps> = ({ data }) => {
   );
 };
 
-export default Work; 
+export default Work;

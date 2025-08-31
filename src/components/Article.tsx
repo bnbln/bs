@@ -75,24 +75,47 @@ const parsePaletteLines = (lines: string[]) => {
 
 // Custom markdown components
 const MarkdownRenderer = ({ content, project, accentColor }: { content: string; project: Project; accentColor: string }) => {
+  // Einzel-Item Animation (Viewport getriggert)
+  const itemBase = { opacity: 0, y: 32 }
+  const itemShow = { opacity: 1, y: 0 }
+
+  // Type Guards
+  const hasClassName = (el: any): el is React.ReactElement<{ className?: string; style?: React.CSSProperties }> => {
+    return React.isValidElement(el) && typeof (el.props as any)?.className === 'string'
+  }
+  const isHeadingElement = (el: any): el is React.ReactElement<{ children?: React.ReactNode }> => {
+    return React.isValidElement(el) && ['h1','h2','h3'].includes(String(el.type))
+  }
+
   const parseMarkdown = (text: string) => {
     const lines = text.split('\n')
     const elements: React.ReactElement[] = []
     let currentSection: string[] = []
     let currentIndex = 0
-    const pagepx = "px-4 sm:px-8 md:px-16 lg:px-[159px] mx-auto"
+    const fullBleed = "relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] transform" // kept for legacy (videos), not for images now
+    const blockSpacing = 'block-spacing'
 
     const flushCurrentSection = () => {
       if (currentSection.length > 0) {
+        // Merge empty lines into paragraph breaks
+        const paragraphs: string[] = []
+        let buffer: string[] = []
+        currentSection.forEach(l => {
+          if (l.trim() === '') {
+            if (buffer.length) {
+              paragraphs.push(buffer.join(' '))
+              buffer = []
+            }
+          } else {
+            buffer.push(l)
+          }
+        })
+        if (buffer.length) paragraphs.push(buffer.join(' '))
         elements.push(
-          <div key={`text-${currentIndex++}`} className={"py-8 " + pagepx}>
-            <div className={"text-[12px] sm:text-sm md:text-base text-[rgba(255,255,255,0.92)] font-inter font-normal leading-[24px] space-y-4" }>
-              {currentSection.map((paragraph, idx) => (
-                <p key={idx} className="leading-[24px]">
-                  {parseInlineElements(paragraph)}
-                </p>
-              ))}
-            </div>
+          <div key={`text-${currentIndex++}`} className={blockSpacing}>
+            {paragraphs.map((p, i) => (
+              <p key={i}>{parseInlineElements(p)}</p>
+            ))}
           </div>
         )
         currentSection = []
@@ -100,17 +123,12 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
     }
 
     const parseInlineElements = (text: string) => {
-      // Handle bold text with golden highlight
       const boldRegex = /\*\*(.*?)\*\*/g
       const parts = text.split(boldRegex)
-      
       return parts.map((part, index) => {
         if (index % 2 === 1) {
-          // This is bold text
           return (
-            <span key={index} className="font-inter font-bold" style={{ color: accentColor }}>
-              {part}
-            </span>
+            <strong key={index} style={{ color: accentColor }}>{part}</strong>
           )
         }
         return part
@@ -122,40 +140,28 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
       const rawLine = lines[i]
       const line = rawLine.trim()
 
-      // Fenced blocks (code or palette)
       if (line.startsWith('```')) {
         flushCurrentSection()
-        const fenceLine = line
-        const fenceInfo = fenceLine.replace(/^```+/, '').trim()
+        const fenceInfo = line.replace(/^```+/, '').trim()
         const [maybeType, ...restAttrParts] = fenceInfo.split(/\s+/)
-        const attrString = restAttrParts.join(' ')
-        const attrs = parseFenceAttributes(attrString)
+        const attrs = parseFenceAttributes(restAttrParts.join(' '))
         const type = maybeType || ''
         i++
         const bodyLines: string[] = []
-        while (i < lines.length && !lines[i].trim().startsWith('```')) {
-          bodyLines.push(lines[i])
-          i++
-        }
+        while (i < lines.length && !lines[i].trim().startsWith('```')) { bodyLines.push(lines[i]); i++ }
         const body = bodyLines.join('\n')
 
         if (type.toLowerCase() === 'palette') {
-          // color palette block
           let colorsData: any = tryParsePaletteJSON(body) || parsePaletteLines(bodyLines)
           elements.push(
-            <div key={`palette-${currentIndex++}`} className={"py-8 " + pagepx}>
-              <ColorPalette
-                title={attrs.title}
-                description={attrs.description}
-                colors={colorsData}
-              />
+            <div key={`palette-${currentIndex++}`}>
+              <ColorPalette title={attrs.title} description={attrs.description} colors={colorsData} />
             </div>
           )
         } else {
-          // standard code block
           const language = type || attrs.lang || 'text'
           elements.push(
-            <div key={`code-${currentIndex++}`} className={"py-8 " + pagepx}>
+            <div key={`code-${currentIndex++}`}>
               <CodeBlock
                 title={attrs.title}
                 description={attrs.description}
@@ -169,186 +175,273 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
           )
         }
       }
-      // Handle headers
       else if (line.startsWith('###')) {
         flushCurrentSection()
-        elements.push(
-          <div key={`h3-${currentIndex++}`} className={"pt-4 pb-2 " + pagepx}>
-            <h3 className="text-[14px] sm:text-lg md:text-xl text-[rgba(255,255,255,0.92)] font-space-grotesk font-bold leading-[24px]">
-              {line.replace('### ', '')}
-            </h3>
-          </div>
-        )
-      } else if (line.startsWith('##')) {
-        flushCurrentSection()
-        elements.push(
-          <div key={`h2-${currentIndex++}`} className={"pt-6 pb-3 " + pagepx}>
-            <h2 className="text-[16px] sm:text-xl md:text-2xl text-[rgba(255,255,255,0.92)] font-space-grotesk font-bold leading-[24px]">
-              {line.replace('## ', '')}
-            </h2>
-          </div>
-        )
-      } else if (line.startsWith('#')) {
-        flushCurrentSection()
-        elements.push(
-          <div key={`h1-${currentIndex++}`} className={"pt-16 pb-8 " + pagepx}>
-            <h1 className="text-[32px] sm:text-4xl md:text-5xl text-[rgba(255,255,255,0.92)] font-space-grotesk font-bold leading-[24px]">
-              {line.replace('# ', '')}
-            </h1>
-          </div>
-        )
+        elements.push(<h3 key={`h3-${currentIndex++}`}>{line.replace('### ', '')}</h3>)
       }
-      // Handle bullet lists
+      else if (line.startsWith('##')) {
+        flushCurrentSection()
+        elements.push(<h2 key={`h2-${currentIndex++}`}>{line.replace('## ', '')}</h2>)
+      }
+      else if (line.startsWith('#')) {
+        flushCurrentSection()
+        elements.push(<h1 key={`h1-${currentIndex++}`}>{line.replace('# ', '')}</h1>)
+      }
       else if (line.startsWith('- ')) {
         flushCurrentSection()
         const listItems: string[] = []
-        while (i < lines.length && lines[i].trim().startsWith('- ')) {
-          listItems.push(lines[i].trim().replace('- ', ''))
-          i++
-        }
-        i-- // Back up one since we'll increment at end of loop
-        
+        while (i < lines.length && lines[i].trim().startsWith('- ')) { listItems.push(lines[i].trim().replace('- ', '')); i++ }
+        i--
         elements.push(
-          <div key={`list-${currentIndex++}`} className={"py-4 " + pagepx}>
-            <ul className="space-y-2">
-              {listItems.map((item, idx) => (
-                <li key={idx} className="flex items-start">
-                  <span className="mr-4 mt-[-2px]" style={{ color: accentColor }}>•</span>
-                  <span className="text-[12px] sm:text-sm md:text-base text-[rgba(255,255,255,0.92)] font-inter font-normal leading-[24px]">
-                    {parseInlineElements(item)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul key={`list-${currentIndex++}`} className={blockSpacing}>
+            {listItems.map((item, idx) => <li key={idx}>{parseInlineElements(item)}</li>)}
+          </ul>
         )
       }
-      // Handle image galleries (special syntax: ![img1|img2])
       else if (line.includes('![') && line.includes('|')) {
         flushCurrentSection()
         const match = line.match(/!\[(.*?)\]/)
         if (match) {
           const images = match[1].split('|')
           elements.push(
-                         <div key={`gallery-${currentIndex++}`} className={"bg-[rgba(34,36,42,0.5)] p-4 md:p-8  min-h-[700px]" + pagepx}>
-               <div className="flex gap-4 md:gap-8">
-                {images.map((img, idx) => {
-                  const assetPath = resolveAssetPath(img.trim())
-                  if (isVideoFile(img.trim())) {
+            <figure key={`gallery-${currentIndex++}`} className={"media-row my-10 last:mb-0"}>
+              <div className="media-row-inner">
+                <div className={(images.length > 1 ? 'gallery-grid' : 'flex justify-center') }>
+                  {images.map((img, idx) => {
+                    const trimmed = img.trim()
+                    const assetPath = resolveAssetPath(trimmed)
+                    if (isVideoFile(trimmed)) {
+                      return (
+                        <div key={idx} className="relative w-full aspect-video overflow-hidden rounded-md bg-black">
+                          <AdaptiveVideoPlayer videoUrl={assetPath} color={accentColor} autoStart={true} />
+                        </div>
+                      )
+                    }
                     return (
-                      <div key={idx} className="flex-1 aspect-[1298/730.125] rounded-[4.5px] overflow-hidden">
-                        <AdaptiveVideoPlayer 
-                          videoUrl={assetPath}
-                          color={accentColor}
-                          autoStart={true}
-                        />
-                      </div>
+                      <img key={idx} src={assetPath} alt="" className="block w-full h-auto rounded-md object-cover" loading="lazy" decoding="async" />
                     )
-                  }
-                  return (
-                    <div key={idx} className="flex-1 aspect-[1298/730.125] bg-center bg-cover bg-no-repeat rounded-[4.5px]" 
-                         style={{ backgroundImage: `url('${assetPath}')` }} />
-                  )
-                })}
+                  })}
+                </div>
               </div>
-            </div>
+            </figure>
           )
         }
       }
-      // Handle single images and videos
       else if (line.startsWith('![')) {
         flushCurrentSection()
-        // Try to match ![alt](url) format first
         let match = line.match(/!\[.*?\]\((.*?)\)/)
-        let mediaUrl = null
-        
-        if (match) {
-          mediaUrl = match[1]
-        } else {
-          // Try to match ![url] format
-          match = line.match(/!\[(.*?)\]/)
-          if (match) {
-            mediaUrl = match[1]
-          }
-        }
-        
+        let mediaUrl: string | null = null
+        if (match) mediaUrl = match[1]; else { match = line.match(/!\[(.*?)\]/); if (match) mediaUrl = match[1] }
         if (mediaUrl) {
           const assetPath = resolveAssetPath(mediaUrl.trim())
-          
           if (isVideoFile(mediaUrl.trim())) {
             elements.push(
-              <div key={`video-${currentIndex++}`} className="w-full">
-                <div className="aspect-[1298/730.125] rounded-[4.5px] overflow-hidden">
-                  <AdaptiveVideoPlayer 
-                    videoUrl={assetPath}
-                    color={accentColor}
-                    autoStart={false}
-                  />
+              <figure key={`video-${currentIndex++}`} className={fullBleed + " my-10 last:mb-0 article-video-block"}>
+                <div className="aspect-video overflow-hidden bg-black">
+                  <AdaptiveVideoPlayer videoUrl={assetPath} color={accentColor} autoStart={false} />
                 </div>
-              </div>
+              </figure>
             )
           } else {
             elements.push(
-              <div key={`image-${currentIndex++}`} className="w-full">
-                <div className="aspect-[1298/730.125] bg-center bg-cover bg-no-repeat" 
-                     style={{ backgroundImage: `url('${assetPath}')` }} />
-              </div>
+              <figure key={`image-${currentIndex++}`} className={"media-row my-10 last:mb-0"}>
+                <div className="media-row-inner">
+                  <img src={assetPath} alt="" className="block w-full h-auto mx-auto object-cover rounded-md" loading="lazy" decoding="async" />
+                </div>
+              </figure>
             )
           }
         }
       }
-      // Handle video embeds (special syntax: [video](path|thumbnail))
       else if (line.includes('[video')) {
         flushCurrentSection()
         const match = line.match(/\[video([^\]]*)\]\((.*?)\)/)
         if (match) {
-          const optionsRaw = match[1].trim() // e.g. "loop autoplay"
+          const optionsRaw = match[1].trim()
           const parts = match[2].split('|')
           const rawVideoRef = parts[0].trim()
           const videoPath = resolveAssetPath(rawVideoRef)
           const thumbnailPath = parts[1] ? resolveAssetPath(parts[1].trim()) : undefined
           const finalThumbnailPath = thumbnailPath || (parts[1] ? resolveAssetPath(`assets/${parts[1].trim()}`) : undefined)
-
           const optionSet = new Set(optionsRaw ? optionsRaw.split(/\s+/).map(o => o.toLowerCase()) : [])
           const isLoop = optionSet.has('loop')
           const isAutoplay = isLoop || optionSet.has('autoplay')
           const isMuted = isLoop || optionSet.has('muted') || optionSet.has('silent')
           const isMinimal = isLoop || optionSet.has('minimal') || optionSet.has('bare')
-
           elements.push(
-            <div key={`video-${currentIndex++}`} className="px-6 py-4">
-              <div className="aspect-[345/194] rounded-[4.5px] overflow-hidden">
-                <AdaptiveVideoPlayer 
-                  videoUrl={videoPath}
-                  thumbnailUrl={isMinimal ? undefined : finalThumbnailPath}
-                  color={accentColor}
-                  autoStart={isAutoplay}
-                  loop={isLoop}
-                  muted={isMuted}
-                  minimal={isMinimal}
-                />
+            <div key={`video-${currentIndex++}`} className={"media-row my-10 last:mb-0 article-video-block"}>
+              <div className="media-row-inner">
+                <div className="aspect-[16/9] rounded-[4.5px] overflow-hidden">
+                  <AdaptiveVideoPlayer
+                    videoUrl={videoPath}
+                    thumbnailUrl={isMinimal ? undefined : finalThumbnailPath}
+                    color={accentColor}
+                    autoStart={isAutoplay}
+                    loop={isLoop}
+                    muted={isMuted}
+                    minimal={isMinimal}
+                  />
+                </div>
               </div>
             </div>
           )
         }
       }
-      // Regular text lines
       else if (line.length > 0) {
         currentSection.push(line)
-      }
-      // Empty lines create paragraph breaks
-      else if (currentSection.length > 0) {
+      } else if (currentSection.length > 0) {
         currentSection.push('')
       }
-
       i++
     }
-
     flushCurrentSection()
-    return elements
+
+    // Post-process: highlight final heading + trailing video block(s)
+    const enhanced = [...elements]
+    // Collect trailing video blocks
+    let tailIndex = enhanced.length - 1
+    const trailingVideos: React.ReactElement[] = []
+    while (tailIndex >= 0) {
+      const el = enhanced[tailIndex]
+      if (hasClassName(el) && el.props.className!.includes('article-video-block')) {
+        trailingVideos.unshift(el)
+        tailIndex--
+        continue
+      }
+      break
+    }
+    if (trailingVideos.length) {
+      const possibleHeadingIndex = tailIndex
+      const headingEl = enhanced[possibleHeadingIndex]
+      if (isHeadingElement(headingEl)) {
+        const headingText = headingEl.props.children
+
+        // Helper: Extract AdaptiveVideoPlayer from original wrapper
+        const extractPlayer = (node: React.ReactElement): React.ReactElement | null => {
+          if (!React.isValidElement(node)) return null
+          if ((node.type as any) === AdaptiveVideoPlayer) return node as React.ReactElement
+          const children = (node.props as any)?.children
+          if (!children) return null
+          const arr = React.Children.toArray(children) as React.ReactElement[]
+          for (const child of arr) {
+            const found = extractPlayer(child)
+            if (found) return found
+          }
+          return null
+        }
+
+        const rebuiltVideos = trailingVideos.map((orig, i) => {
+          const player = extractPlayer(orig)
+          if (player) {
+            return (
+              <div key={i} className="final-highlight-video w-full max-w-5xl aspect-video overflow-hidden rounded-[4.5px] bg-black flex items-center justify-center shadow-lg">
+                {React.cloneElement(player, { key: 'p', autoStart: player.props?.autoStart ?? false })}
+              </div>
+            )
+          }
+          // Fallback: clone original but neutralize layout classes
+            if (hasClassName(orig)) {
+              return React.cloneElement(orig, { key: i, className: 'final-highlight-video w-full max-w-5xl m-0 aspect-video overflow-hidden rounded-[4.5px] bg-black flex items-center justify-center shadow-lg', style: { ...(orig.props.style||{}), margin:0, left:'auto', transform:'none', maxWidth:'100%' } })
+            }
+          return orig
+        })
+
+        // Remove heading + trailing videos
+        enhanced.splice(possibleHeadingIndex, trailingVideos.length + 1, (
+          <section key="final-highlight" className="final-highlight-section mt-24 md:mt-32" style={{ backgroundColor: accentColor }}>
+            <div className="h-screen w-full flex items-center">
+              <div className="w-full max-w-5xl mx-auto px-6 flex flex-col items-center text-center">
+                <h1 className="font-space-grotesk font-bold leading-tight mb-12 text-black" style={{ fontSize: 'clamp(2.6rem,6vw,4.5rem)' }}>
+                  {headingText}
+                </h1>
+                <div className="w-full flex flex-col gap-14 items-center justify-center">
+                  {rebuiltVideos.map(v => {
+                    if (hasClassName(v)) {
+                      return React.cloneElement(v, { className: 'final-highlight-video mx-auto w-full aspect-video overflow-hidden rounded-[4.5px] bg-black flex items-center justify-center shadow-lg' })
+                    }
+                    return v
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+        ))
+      }
+    }
+
+    return enhanced
   }
 
-  return <div className="w-full">{parseMarkdown(content)}</div>
+  // Parse markdown to elements (includes potential final highlight transform)
+  const elements = parseMarkdown(content)
+  // Detect final highlight wrapper
+  const highlightIndex = elements.findIndex(el => (
+    React.isValidElement(el) && typeof (el.props as any)?.className === 'string' && (el.props as any).className.includes('final-highlight-section')
+  ))
+
+  if (highlightIndex === -1) {
+    return <div className="w-full" style={{ ['--accent-color' as any]: accentColor }}>
+      <div className="prose-article py-14 md:py-24">
+        {elements.map((el, i) => (
+          <motion.div
+            key={(el as any)?.key || i}
+            initial={itemBase}
+            whileInView={itemShow}
+            viewport={{ once: true, margin: '0px 0px 0px 0px' }}
+            transition={{ duration: 0.6, ease: 'easeOut', delay: i * 0.05 }}
+          >
+            {el}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  }
+
+  const before = elements.slice(0, highlightIndex)
+  const highlight = elements[highlightIndex]
+  const after = elements.slice(highlightIndex + 1) // aktuell leer (Highlight am Ende), aber generisch gelassen
+
+  return <div className="w-full" style={{ ['--accent-color' as any]: accentColor }}>
+    {before.length > 0 && (
+      <div className="prose-article pt-14 md:pt-24 pb-0 md:pb-0">
+        {before.map((el, i) => (
+          <motion.div
+            key={(el as any)?.key || `b-${i}`}
+            initial={itemBase}
+            whileInView={itemShow}
+            viewport={{ once: true, margin: '0px 0px 0px 0px' }}
+            transition={{ duration: 0.6, ease: 'easeOut', delay: i * 0.05 }}
+          >
+            {el}
+          </motion.div>
+        ))}
+      </div>
+    )}
+    <motion.div
+      key={(highlight as any)?.key || 'final-highlight'}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    >
+      {highlight}
+    </motion.div>
+    {after.length > 0 && (
+      <div className="prose-article py-14 md:py-24">
+        {after.map((el, i) => (
+          <motion.div
+            key={(el as any)?.key || `a-${i}`}
+            initial={itemBase}
+            whileInView={itemShow}
+            viewport={{ once: true, margin: '0px 0px 0px 0px' }}
+            transition={{ duration: 0.6, ease: 'easeOut', delay: i * 0.05 }}
+          >
+            {el}
+          </motion.div>
+        ))}
+      </div>
+    )}
+  </div>
 }
 
 export default function Article({ project }: ArticleProps) {
@@ -409,7 +502,7 @@ export default function Article({ project }: ArticleProps) {
   const tags = generateTags(project.category, project.title)
 
   return (
-    <div className="min-h-screen bg-[rgba(0,0,0,0.92)] text-white">
+    <div className="min-h-screen bg-[rgba(0,0,0,0.92)] text-white" style={{ ['--accent-color' as any]: accentColor }}>
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#000000]/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
@@ -426,46 +519,30 @@ export default function Article({ project }: ArticleProps) {
       <article className="w-full">
         {/* Header Section */}
         <motion.div 
-          className="bg-[#000000] py-[100px] lg:py-[190px] px-4 sm:px-8 md:px-16 lg:px-[159px] relative w-full "
+          className="bg-[#000000] pt-[100px] lg:pt-[170px] pb-16 px-4 sm:px-8 md:px-16 lg:px-[159px] w-full"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="space-y-8 md:space-y-16" style={{ maxWidth: '760px' }}>
-            {/* Title */}
-            <div className="space-y-1 md:space-y-2">
-              <h1 className="text-[42px] sm:text-5xl md:text-6xl lg:text-7xl font-space-grotesk font-bold leading-none" style={{ color: accentColor }}>
+          <div className="max-w-[72ch] space-y-10">
+            <div className="space-y-4">
+              <h1 className="font-space-grotesk font-bold leading-tight" style={{ fontSize: 'clamp(2.6rem,6vw,4.5rem)', color: accentColor }}>
                 {project.title}
               </h1>
               {project.subtitle && (
-                <h2 className="text-[34px] sm:text-4xl md:text-5xl lg:text-6xl text-white font-inter font-extralight leading-[1.2] w-[80%]">
+                <h2 className="font-inter font-light leading-tight text-[rgba(255,255,255,0.88)]" style={{ fontSize: 'clamp(1.6rem,4.5vw,3rem)' }}>
                   {project.subtitle}
                 </h2>
               )}
             </div>
-
-            {/* Tags and Info */}
-            <div className="space-y-4">
-              {/* Category Tags */}
+            <div className="space-y-5">
               <div className="flex flex-wrap gap-2.5">
                 {tags.map((tag, index) => (
-                  <div key={index} className="px-2 py-0 rounded-[20px]" style={{ backgroundColor: accentColor, opacity: 0.5 }}>
-                    <span className="text-[8px] sm:text-xs md:text-sm text-black font-inter font-bold lowercase leading-[24px]">
-                      {tag}
-                    </span>
-                  </div>
+                  <span key={index} className="tag" style={{ backgroundColor: 'rgba(255,255,255,1)' }}>{tag}</span>
                 ))}
               </div>
-
-              {/* Description */}
-              <p className="text-[14px] sm:text-md text-[rgba(255,255,255,0.92)] font-inter font-normal leading-[24px] md:w-[80%]">
-                {project.excerpts}
-              </p>
-
-              {/* Date */}
-              <p className="text-[10px] sm:text-xs md:text-sm text-[#969696] font-inter font-normal leading-[24px]">
-                {formatDate(project.published)}
-              </p>
+              <p className="font-inter text-[15px] md:text-[16px] leading-[1.55] text-[rgba(255,255,255,0.88)] max-w-[60ch]">{project.excerpts}</p>
+              <p className="font-inter text-[11px] md:text-[12px] tracking-wide uppercase text-[#969696]">{formatDate(project.published)}</p>
             </div>
           </div>
         </motion.div>
@@ -473,9 +550,9 @@ export default function Article({ project }: ArticleProps) {
         {/* Hero Media (Video or Image) */}
         {project.pageVideo ? (
           <motion.div 
-            className="w-full aspect-[1298/730.125]"
+            className="w-full aspect-[1298/730.125] mb-16"
             initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: 1, scale: 0.95 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <AdaptiveVideoPlayer 
@@ -487,7 +564,7 @@ export default function Article({ project }: ArticleProps) {
           </motion.div>
         ) : project.image ? (
           <motion.div 
-            className="w-full aspect-[1298/730.125] bg-center bg-cover bg-no-repeat"
+            className="w-full aspect-[1298/730.125] bg-center bg-cover bg-no-repeat mb-16"
             style={{ backgroundImage: `url('${project.image}')` }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -497,7 +574,7 @@ export default function Article({ project }: ArticleProps) {
 
         {/* Article Content with Enhanced Markdown */}
         <motion.div 
-          className="py-[100px]"
+          className="" /* padding moved into MarkdownRenderer to allow flush highlight bottom */
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
@@ -505,42 +582,9 @@ export default function Article({ project }: ArticleProps) {
           {project.content ? (
             <MarkdownRenderer content={project.content} project={project} accentColor={accentColor} />
           ) : (
-            <div className="px-6 py-8">
-              <div className="text-gray-300 font-inter font-normal">
-                <p>Content is being processed...</p>
-              </div>
-            </div>
+            <div className="content-container py-8 text-gray-300 font-inter"><p>Content is being processed...</p></div>
           )}
         </motion.div>
-
-        {/* Next Project Section */}
-        {/* <motion.div 
-          className="bg-[#1f5c85] px-6 py-12 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-        >
-          <h3 className="text-[14px] sm:text-lg md:text-xl text-[rgba(255,255,255,0.92)] font-space-grotesk font-bold leading-[24px] mb-8">
-            Next Project
-          </h3>
-          
-          <div className="bg-white p-[18px] rounded-[4.5px] max-w-[345px] mx-auto h-[460px] relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-600 rounded-[4.5px]">
-              <div className="p-4 h-full flex flex-col justify-between">
-                <span className="text-white font-inter font-normal text-[16px] leading-[24px] text-left">
-                  Award
-                </span>
-                <div className="text-left">
-                  <h4 className="text-white font-helvetica font-bold text-[19.844px] leading-[24px]">
-                    Multiple Projects won an Eyes
-                    <br />
-                    and Ears Award 2024
-                  </h4>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div> */}
       </article>
     </div>
   )

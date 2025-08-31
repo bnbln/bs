@@ -7,7 +7,6 @@ category: "Show Design"
 excerpts: "A fresh take on history: I created the full visual branding for a new TV show – blending retro vibes, bold typography, and a color palette inspired by aged film reels."
 published: "2024-04-15"
 image: "assets/Zeitreise.webp"
-pageVideo: "assets/Zeitreise_Opener.mp4"
 bgColor: "#CD412D"
 hasAnimation: false
 featured: false
@@ -26,8 +25,8 @@ The first idea came from the reference book and "Der Bader-Meinhof-Komplex", pai
 The color palette leans into black and white images and warm rust tones – like old film footage that’s been sitting on a shelf a little too long. There’s nostalgia, but also a sharp digital clarity that keeps it grounded in the now.
 
 ```palette
-RustRed #CD412D rgb(205,65,45) usage=Primary
-OffWhite #F5F5F5 rgb(245,245,245) usage=Background
+Rust-Red #CD412D rgb(205,65,45) usage=Primary
+Off-White #F5F5F5 rgb(245,245,245) usage=Background
 Charcoal #121212 rgb(18,18,18) usage=TextBG
 ```
 
@@ -36,3 +35,7 @@ Charcoal #121212 rgb(18,18,18) usage=TextBG
 For the typeface, I chose **Berthold Block** – bold, boxy, full of character. It screams “headline” in the best way. And whether it’s in the opener, lower thirds, or on the site, it holds its ground.
 
 ![assets/Zeitreise_6.avif]
+
+
+# The Opener
+[video](asstes/Zeitreise_Opener.mp4|assets/Zeitreise.webp)

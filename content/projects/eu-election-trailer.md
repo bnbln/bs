@@ -16,15 +16,10 @@ featured: false
 
 For the 2024 EU election campaign, I created a trailer that frames Europe as a vibrant, forward-looking idea. The color palette is rooted in the EU flag: a deep blue with a turquoise twist and that unmistakable golden yellow.
 
-```palette title="EU Color Palette" description="Primäre Trailer-Farben (Blau, Türkis, Gold + Kontraste)"
-DeepNavy #021821 rgb(2,24,33) usage=Tiefe/Shadow
-GradientStart #063349 rgb(6,51,73) usage=BG-Gradient-Left
-GradientMid #0A4962 rgb(10,73,98) usage=BG-Gradient-Center
-GradientEnd #0F6A84 rgb(15,106,132) usage=BG-Gradient-Right
-TurquoiseAccent #0DA7C7 rgb(13,167,199) usage=Akzent/Modernität
-EUGold #E6A105 rgb(230,161,5) usage=Sterne/Highlight
-EUGoldAlt #F2B71B rgb(242,183,27) usage=Leucht-Variante
-PureWhite #FFFFFF rgb(255,255,255) usage=Typografie/Haupt
+```palette title="EU Color Palette" description="Primäre Trailer-Farben (Blau, Türkis & Gold)"
+Deep-Navy #003a5a rgb(0,58,90) usage=Brand Color
+Turquoise #00728f rgb(0,114,143) usage=Brand Color
+EU-Gold #E6A105 rgb(230,161,5) usage=Sterne/Highlight
 ```
 
 [video loop](assets/Eu Wahl Loop.mp4|assets/flag.png)
