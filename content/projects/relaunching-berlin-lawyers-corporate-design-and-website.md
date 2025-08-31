@@ -4,90 +4,42 @@ title: "Relaunching a Berlin Lawyers Corporate Design and Website"
 subtitle: "Complete Brand & Digital Transformation"
 slug: "relaunching-berlin-lawyers-corporate-design-and-website"
 category: "UX&UI, Development"
-excerpts: "Complete rebrand and digital transformation for a prestigious Berlin law firm"
+excerpts: "Professional, modern, and digitally future-proof: This Berlin-based law firm needed a new brand identity and a clear, flexible website that also worked behind the scenes."
 published: "2024-01-10"
-image: "assets/rk.webp"
-pageVideo: "assets/rk.webp"
-bgColor: "bg-azure"
+image: "assets/rk-4.jpg"
+bgColor: "#33457C"
 hasAnimation: false
 featured: true
 ---
 
-# Relaunching a Berlin Lawyers Corporate Design and Website
+# Rebrand and digital transformation for a Berlin law firm
 
-A comprehensive rebranding and digital transformation project for a prestigious Berlin law firm, combining traditional legal gravitas with modern digital accessibility.
+A contemporary law firm needs more than just a digital business card. In this project, I created a refined brand identity and a modern web presence tailored to the needs of a professional legal practice.
 
-## Project Scope
+A comprehensive rebranding and digital transformation project for a  Berlin law firm, combining traditional legal gravitas with modern digital accessibility.
 
-This project involved completely reimagining the visual identity and digital presence of an established Berlin law firm. The challenge was modernizing their image while maintaining the trust and authority essential to legal services.
+![assets/rk-1.png|assets/rk-2.png]
 
-## Brand Strategy
 
-### **Visual Identity**
-- Clean, professional typography reflecting legal precision
-- Sophisticated color palette balancing trust and approachability
-- Minimalist logo design emphasizing clarity and strength
-- Consistent visual language across all touchpoints
 
-### **Digital Experience**
-- Intuitive navigation reflecting legal service structure
-- Accessibility compliance for diverse user needs
-- Mobile-first responsive design
-- German and English language optimization
+## Confidence meets Clarity
 
-## Technical Implementation
+The visual language is simple and strong: A deep blue establishes trust and reliability, while subtle turquoise accents add a modern twist. The logo feels calm and confident, designed for flexible use across all media. The typography is clean and structured, ensuring excellent readability – especially on mobile.
 
-### **Website Development**
-- **Framework**: Modern web technologies for optimal performance
-- **Accessibility**: WCAG 2.1 AA compliance
-- **Performance**: Optimized loading times and mobile experience
-- **SEO**: Strategic optimization for legal search terms
+```palette
+Dark-Blue #172340 rgb(23,35,64) usage=Primary
+Cyan-Blue #258EA6 rgb(37, 142, 166) usage=Secondary
+Light-Blue #33457C rgb(51,69,124) usage=Highlight
+Paper #E9ECF6 rgb(233,236,246) usage=Fond/Background
+```
 
-### **Content Management**
-- User-friendly CMS for easy content updates
-- Multi-language content management
-- Document management integration
-- News and publication systems
 
-## User Experience Design
+## Built for Daily Use
 
-### **Client Journey Mapping**
-Understanding the specific needs of legal service clients:
-- Initial consultation booking
-- Service area exploration
-- Team member introduction
-- Contact and communication preferences
+The design system is modular, allowing dynamic layouts for service pages, legal content, or blog posts. The site is built with Next.js, hosted via Vercel for top performance, and content can be edited easily via a lightweight CMS.
 
-### **Information Architecture**
-- Logical service categorization
-- Clear attorney profiles and specializations
-- Streamlined contact processes
-- Resource libraries for clients
+The result: A consistent, flexible system that looks professional and can grow with the firm's needs – whether it’s expanding legal topics, adding blog posts or publishing updates.
 
-## Brand Applications
-
-### **Digital Assets**
-- Website design and development
-- Email templates and signatures
-- Social media visual guidelines
-- Digital business cards
-
-### **Print Materials**
-- Business card redesign
-- Letterhead and document templates
-- Brochure and presentation materials
-- Office signage integration
-
-## Results and Impact
-
-### **Measurable Improvements**
-- 300% increase in website engagement time
-- 150% improvement in contact form conversions
-- Significant improvement in mobile user experience
-- Enhanced search engine visibility
-
-### **Client Feedback**
-The new brand identity successfully conveys professionalism while being more approachable than the previous design. Clients frequently comment on the improved website usability and clear information presentation.
 
 ## Technical Specifications
 

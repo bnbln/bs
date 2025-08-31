@@ -9,6 +9,7 @@ import ColorPalette from './ColorPalette'
 
 interface ArticleProps {
   project: Project
+  allProjects?: Project[]
 }
 
 // Helper function to check if a file is a video
@@ -74,7 +75,7 @@ const parsePaletteLines = (lines: string[]) => {
 }
 
 // Custom markdown components
-const MarkdownRenderer = ({ content, project, accentColor }: { content: string; project: Project; accentColor: string }) => {
+const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { content: string; project: Project; accentColor: string; allProjects?: Project[] }) => {
   // Einzel-Item Animation (Viewport getriggert)
   const itemBase = { opacity: 0, y: 32 }
   const itemShow = { opacity: 1, y: 0 }
@@ -139,6 +140,41 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
     while (i < lines.length) {
       const rawLine = lines[i]
       const line = rawLine.trim()
+
+      // Project reference syntax: [project:slug] or [projects:slug1,slug2]
+      if (/^\[(project|projects):/i.test(line)) {
+        flushCurrentSection()
+        const match = line.match(/^\[(project|projects):(.*)\]$/i)
+        if (match) {
+          const listRaw = match[2].trim()
+          const slugs = listRaw.split(/[,|]/).map(s => s.trim()).filter(Boolean)
+          const refs = (allProjects || []).filter(p => slugs.includes(p.slug) && p.slug !== project.slug)
+          if (refs.length > 0) {
+            elements.push(
+              <div key={`projrefs-${currentIndex++}`} className="block-spacing">
+                <div className={`grid gap-6 ${refs.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+                  {refs.map(ref => (
+                    <a key={ref.slug} href={`/project/${ref.slug}`} className="group project-ref-card no-underline hover:no-underline focus:no-underline rounded-[6px] overflow-hidden bg-[#101113] border border-white/10 hover:border-white/25 transition-colors flex flex-col focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/40" style={{ ['--ref-accent' as any]: ref.bgColor || accentColor }}>
+                      <div className="aspect-video relative bg-black/50 overflow-hidden">
+                        {ref.image && <img src={ref.image} alt={ref.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" loading="lazy" decoding="async" />}
+                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                      </div>
+                      <div className="p-4 flex flex-col gap-2">
+                        <h4 className="font-space-grotesk font-semibold text-[15px] leading-snug text-white">{ref.title}</h4>
+                        {ref.excerpts && <p className="text-[13px] leading-snug text-white/70">{ref.excerpts}</p>}
+                        <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-inter uppercase tracking-wide text-white/50 group-hover:text-white/80 transition-colors">View Project →</span>
+                      </div>
+                      <div className="absolute inset-0 border-2 border-transparent group-hover:border-[var(--ref-accent)]/60 rounded-[6px] transition-colors" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        }
+        i++
+        continue
+      }
 
       if (line.startsWith('```')) {
         flushCurrentSection()
@@ -444,7 +480,7 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
   </div>
 }
 
-export default function Article({ project }: ArticleProps) {
+export default function Article({ project, allProjects }: ArticleProps) {
   const router = useRouter()
 
   if (!project) {
@@ -501,6 +537,9 @@ export default function Article({ project }: ArticleProps) {
   
   const tags = generateTags(project.category, project.title)
 
+  const heroAspect = project.heroAspect || '1298/730.125'
+  const aspectStyle: React.CSSProperties = { aspectRatio: heroAspect }
+
   return (
     <div className="min-h-screen bg-[rgba(0,0,0,0.92)] text-white" style={{ ['--accent-color' as any]: accentColor }}>
       {/* Navigation */}
@@ -548,29 +587,30 @@ export default function Article({ project }: ArticleProps) {
         </motion.div>
 
         {/* Hero Media (Video or Image) */}
-        {project.pageVideo ? (
-          <motion.div 
-            className="w-full aspect-[1298/730.125] mb-16"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 0.95 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <AdaptiveVideoPlayer 
-              videoUrl={project.pageVideo}
-              thumbnailUrl={project.image}
-              color={accentColor}
-              autoStart={false}
+        {!project.heroHide && (
+          project.pageVideo ? (
+            <motion.div 
+              className="w-full mb-16" style={aspectStyle}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 0.95 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <AdaptiveVideoPlayer 
+                videoUrl={project.pageVideo}
+                thumbnailUrl={project.heroImage || project.image}
+                color={accentColor}
+                autoStart={false}
+              />
+            </motion.div>
+          ) : (project.heroImage || project.image) ? (
+            <motion.div 
+              className="w-full mb-16 bg-center bg-cover bg-no-repeat" style={{ ...aspectStyle, backgroundImage: `url('${project.heroImage || project.image}')` }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             />
-          </motion.div>
-        ) : project.image ? (
-          <motion.div 
-            className="w-full aspect-[1298/730.125] bg-center bg-cover bg-no-repeat mb-16"
-            style={{ backgroundImage: `url('${project.image}')` }}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          />
-        ) : null}
+          ) : null
+        )}
 
         {/* Article Content with Enhanced Markdown */}
         <motion.div 
@@ -580,7 +620,7 @@ export default function Article({ project }: ArticleProps) {
           transition={{ duration: 0.6, delay: 0.4 }}
         >
           {project.content ? (
-            <MarkdownRenderer content={project.content} project={project} accentColor={accentColor} />
+            <MarkdownRenderer content={project.content} project={project} accentColor={accentColor} allProjects={allProjects} />
           ) : (
             <div className="content-container py-8 text-gray-300 font-inter"><p>Content is being processed...</p></div>
           )}

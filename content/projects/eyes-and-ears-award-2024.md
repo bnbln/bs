@@ -6,15 +6,12 @@ slug: "eyes-and-ears-award-2024"
 category: "Award"
 excerpts: "Recognition for excellence in design and creativity"
 published: "2024-06-01"
-image: "assets/eyes.webp"
-bgColor: "#3DB1FF"
+image: "assets/Eyes and Ears 1080x1528.jpg"
+bgColor: "#f6396c"
 hasAnimation: false
 featured: true
 ---
 
-# Multiple Projects won an Eyes and Ears Award 2024
-
-A prestigious recognition of excellence in audiovisual design and creativity, with multiple projects receiving acclaim at the 2024 Eyes and Ears Awards.
 
 ## About the Awards
 
@@ -22,37 +19,17 @@ The Eyes and Ears Awards represent the highest honor in European audiovisual des
 
 ## Awarded Projects
 
-Our success at the 2024 ceremony reflects a year of innovative design solutions across various media platforms:
+I was very thankful to be nominated in three of the many categories including **Best programme lead-in Culture & Documentary**, **Best programme spot: News** and **Best promotion of election coverage**.
 
-### **Motion Graphics Excellence**
-- Advanced animation techniques
-- Innovative visual storytelling
-- Technical achievement in digital media
+My team and I we're very delighted to bring home multiple Awards - including the categories Best promotion of election coverage with my Design for the **EU-election** and Best programme lead-in Culture & Documentary for my favorite project **Zeitreise**.
 
-### **Broadcast Design Innovation**
-- Creative solutions for live television
-- Integrated visual systems
-- Real-time graphics implementation
-
-### **Digital Media Achievement**
-- Interactive design solutions
-- User experience innovation
-- Cross-platform optimization
-
-## Recognition Categories
-
-- **Best Motion Graphics Sequence**
-- **Innovation in Broadcast Design**
-- **Excellence in Digital Storytelling**
-- **Technical Achievement Award**
 
 ## Impact and Significance
 
 This recognition validates our commitment to pushing creative boundaries while maintaining the highest production standards. Each awarded project represents months of collaborative effort, technical innovation, and creative problem-solving.
 
-## Industry Recognition
 
-The Eyes and Ears Awards are considered the "Oscars" of audiovisual design in Europe, making this recognition particularly meaningful for our studio and our clients. The awards ceremony brought together the industry's most talented designers, directors, and producers.
+[projects:history-documentary-design, eu-election-trailer]
 
 ## Looking Forward
 

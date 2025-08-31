@@ -1,15 +1,16 @@
 import { GetStaticPaths, GetStaticProps } from 'next'
 import { NextSeo } from 'next-seo'
-import { getStaticProjectPaths, getProjectWithHtml, Project } from '../../lib/markdown'
+import { getStaticProjectPaths, getProjectWithHtml, Project, getAllProjects } from '../../lib/markdown'
 import StructuredData from '../../components/StructuredData'
 import Article from '../../components/Article'
 import Footer from '../../components/Footer'
 
 interface ProjectPageProps {
   project: Project
+  allProjects: Project[]
 }
 
-export default function ProjectPage({ project }: ProjectPageProps) {
+export default function ProjectPage({ project, allProjects }: ProjectPageProps) {
   return (
     <>
       <NextSeo
@@ -52,7 +53,7 @@ export default function ProjectPage({ project }: ProjectPageProps) {
       />
       <div className="min-h-screen bg-[#1C1D20] w-full">
         <div className="mb-[403px]" style={{ zIndex: -1 }}>
-          <Article project={project} />
+          <Article project={project} allProjects={allProjects} />
           <Footer />
         </div>
       </div>
@@ -77,10 +78,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 
   const project = await getProjectWithHtml(params.slug)
+  const allProjects = getAllProjects()
   
   return {
     props: {
-      project
+      project,
+      allProjects
     }
   }
-} 
+}

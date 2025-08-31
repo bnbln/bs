@@ -342,7 +342,7 @@
   .code-block-wrapper, .palette-wrapper { margin-top:var(--vr-4); margin-bottom:var(--vr-5); }
   .code-block-wrapper + .palette-wrapper, .palette-wrapper + .code-block-wrapper { margin-top:var(--vr-3); }
 
-  /* MOBILE MODERATION */
+  /* Mobile moderation */
   @media (max-width:479px){
     :root { --vr-2:2rem; --vr-3:3.1rem; --vr-4:4.5rem; --vr-5:5.8rem; }
     .prose-article h1 { margin-top:var(--vr-4); }
@@ -478,4 +478,7 @@
   .prose-article .final-highlight-section { margin-top:var(--stack-4); margin-bottom:0; }
   /* Shadow für alle Aspect-Ratio Wrapper ohne problematische Escapes */
   .final-highlight-section .aspect-video, .final-highlight-section [class*="aspect-"] { box-shadow:0 8px 32px -8px rgba(0,0,0,0.35); }
+
+  .prose-article a.project-ref-card, .prose-article a.project-ref-card:hover, .prose-article a.project-ref-card:focus, .prose-article a.project-ref-card:active, .prose-article a.project-ref-card:visited { text-decoration:none !important; }
+  .prose-article a.project-ref-card * { text-decoration:none !important; }
 }

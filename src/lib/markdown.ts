@@ -20,6 +20,9 @@ export interface Project {
   image: string
   video?: string // Existing field for background videos
   pageVideo?: string // New field for page-specific videos
+  heroImage?: string // Optional: separates hero image from generic image
+  heroHide?: boolean // Optional: hide hero media block entirely
+  heroAspect?: string // Optional: custom aspect ratio (e.g. "16/9" or "1298/730.125")
   hasAnimation: boolean
   animationSequence?: {
     // Legacy image sequence support
@@ -99,4 +102,4 @@ export function getStaticProjectPaths() {
   return slugs.map(slug => ({
     params: { slug }
   }))
-} 
+}
