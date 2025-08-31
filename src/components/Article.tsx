@@ -3,7 +3,9 @@ import { useRouter } from 'next/router'
 import { motion } from 'framer-motion'
 import { Project } from '../lib/markdown'
 import { resolveAssetPath } from '../lib/assets'
-import CustomVideoPlayer from './CustomVideoPlayer'
+import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
+import CodeBlock from './CodeBlock'
+import ColorPalette from './ColorPalette'
 
 interface ArticleProps {
   project: Project
@@ -26,6 +28,48 @@ const formatDate = (dateString: string): string => {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
+  })
+}
+
+// Attribute parser for fenced code blocks (key=value pairs, quotes supported)
+const parseFenceAttributes = (attr: string): Record<string, string> => {
+  const attrs: Record<string, string> = {}
+  const regex = /(\w+)=(("[^"]*")|('[^']*')|([^\s]+))/g
+  let m: RegExpExecArray | null
+  while ((m = regex.exec(attr)) !== null) {
+    const key = m[1]
+    let val = m[2]
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1)
+    }
+    attrs[key] = val
+  }
+  return attrs
+}
+
+// Try to parse JSON color palette body
+const tryParsePaletteJSON = (body: string) => {
+  try {
+    const parsed = JSON.parse(body)
+    if (Array.isArray(parsed)) return parsed
+  } catch (_) { /* ignore */ }
+  return null
+}
+
+// Parse simple line-based palette lines (Name #HEX rgb(...) usage=...)
+const parsePaletteLines = (lines: string[]) => {
+  return lines.filter(l => l.trim()).map(l => {
+    const usageMatch = l.match(/usage=(.*)$/)
+    let usage: string | undefined
+    if (usageMatch) {
+      usage = usageMatch[1].trim()
+      l = l.replace(/usage=.*$/, '').trim()
+    }
+    const parts = l.split(/\s+/)
+    const name = parts[0]
+    const hex = parts.find(p => p.startsWith('#')) || '#000000'
+    const rgb = parts.find(p => p.startsWith('rgb'))
+    return { name, hex, rgb, usage }
   })
 }
 
@@ -75,10 +119,58 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
 
     let i = 0
     while (i < lines.length) {
-      const line = lines[i].trim()
+      const rawLine = lines[i]
+      const line = rawLine.trim()
 
+      // Fenced blocks (code or palette)
+      if (line.startsWith('```')) {
+        flushCurrentSection()
+        const fenceLine = line
+        const fenceInfo = fenceLine.replace(/^```+/, '').trim()
+        const [maybeType, ...restAttrParts] = fenceInfo.split(/\s+/)
+        const attrString = restAttrParts.join(' ')
+        const attrs = parseFenceAttributes(attrString)
+        const type = maybeType || ''
+        i++
+        const bodyLines: string[] = []
+        while (i < lines.length && !lines[i].trim().startsWith('```')) {
+          bodyLines.push(lines[i])
+          i++
+        }
+        const body = bodyLines.join('\n')
+
+        if (type.toLowerCase() === 'palette') {
+          // color palette block
+          let colorsData: any = tryParsePaletteJSON(body) || parsePaletteLines(bodyLines)
+          elements.push(
+            <div key={`palette-${currentIndex++}`} className={"py-8 " + pagepx}>
+              <ColorPalette
+                title={attrs.title}
+                description={attrs.description}
+                colors={colorsData}
+              />
+            </div>
+          )
+        } else {
+          // standard code block
+          const language = type || attrs.lang || 'text'
+          elements.push(
+            <div key={`code-${currentIndex++}`} className={"py-8 " + pagepx}>
+              <CodeBlock
+                title={attrs.title}
+                description={attrs.description}
+                code={body}
+                language={language}
+                filename={attrs.filename}
+                githubUrl={attrs.github}
+                liveUrl={attrs.live}
+              />
+            </div>
+          )
+        }
+      }
       // Handle headers
-      if (line.startsWith('###')) {
+      else if (line.startsWith('###')) {
         flushCurrentSection()
         elements.push(
           <div key={`h3-${currentIndex++}`} className={"pt-4 pb-2 " + pagepx}>
@@ -103,25 +195,6 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
             <h1 className="text-[32px] sm:text-4xl md:text-5xl text-[rgba(255,255,255,0.92)] font-space-grotesk font-bold leading-[24px]">
               {line.replace('# ', '')}
             </h1>
-          </div>
-        )
-      }
-      // Handle code blocks
-      else if (line.startsWith('```')) {
-        flushCurrentSection()
-        i++
-        const codeLines: string[] = []
-        while (i < lines.length && !lines[i].trim().startsWith('```')) {
-          codeLines.push(lines[i])
-          i++
-        }
-        elements.push(
-          <div key={`code-${currentIndex++}`} className={"py-4 " + pagepx}>
-            <div className="bg-[rgba(34,36,42,0.5)] rounded-[4.5px] p-[8px]">
-              <code className="text-[10px] sm:text-xs md:text-sm text-[rgba(255,255,255,0.75)] font-space-grotesk font-normal leading-[1.75] block">
-                {codeLines.join('\n')}
-              </code>
-            </div>
           </div>
         )
       }
@@ -164,10 +237,10 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
                   if (isVideoFile(img.trim())) {
                     return (
                       <div key={idx} className="flex-1 aspect-[1298/730.125] rounded-[4.5px] overflow-hidden">
-                        <CustomVideoPlayer 
+                        <AdaptiveVideoPlayer 
                           videoUrl={assetPath}
                           color={accentColor}
-                          startPlaying={true}
+                          autoStart={true}
                         />
                       </div>
                     )
@@ -206,10 +279,10 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
             elements.push(
               <div key={`video-${currentIndex++}`} className="w-full">
                 <div className="aspect-[1298/730.125] rounded-[4.5px] overflow-hidden">
-                  <CustomVideoPlayer 
+                  <AdaptiveVideoPlayer 
                     videoUrl={assetPath}
                     color={accentColor}
-                    startPlaying={false}
+                    autoStart={false}
                   />
                 </div>
               </div>
@@ -225,27 +298,34 @@ const MarkdownRenderer = ({ content, project, accentColor }: { content: string; 
         }
       }
       // Handle video embeds (special syntax: [video](path|thumbnail))
-      else if (line.includes('[video]')) {
+      else if (line.includes('[video')) {
         flushCurrentSection()
-        const match = line.match(/\[video\]\((.*?)\)/)
+        const match = line.match(/\[video([^\]]*)\]\((.*?)\)/)
         if (match) {
-          const parts = match[1].split('|')
-          const videoPath = resolveAssetPath(parts[0].trim())
+          const optionsRaw = match[1].trim() // e.g. "loop autoplay"
+          const parts = match[2].split('|')
+          const rawVideoRef = parts[0].trim()
+          const videoPath = resolveAssetPath(rawVideoRef)
           const thumbnailPath = parts[1] ? resolveAssetPath(parts[1].trim()) : undefined
-          
-          // If thumbnail path doesn't start with http/https, try to resolve it as an asset
           const finalThumbnailPath = thumbnailPath || (parts[1] ? resolveAssetPath(`assets/${parts[1].trim()}`) : undefined)
-          
 
-          
+          const optionSet = new Set(optionsRaw ? optionsRaw.split(/\s+/).map(o => o.toLowerCase()) : [])
+          const isLoop = optionSet.has('loop')
+          const isAutoplay = isLoop || optionSet.has('autoplay')
+          const isMuted = isLoop || optionSet.has('muted') || optionSet.has('silent')
+          const isMinimal = isLoop || optionSet.has('minimal') || optionSet.has('bare')
+
           elements.push(
             <div key={`video-${currentIndex++}`} className="px-6 py-4">
               <div className="aspect-[345/194] rounded-[4.5px] overflow-hidden">
-                <CustomVideoPlayer 
+                <AdaptiveVideoPlayer 
                   videoUrl={videoPath}
-                  thumbnailUrl={finalThumbnailPath}
+                  thumbnailUrl={isMinimal ? undefined : finalThumbnailPath}
                   color={accentColor}
-                  startPlaying={false}
+                  autoStart={isAutoplay}
+                  loop={isLoop}
+                  muted={isMuted}
+                  minimal={isMinimal}
                 />
               </div>
             </div>
@@ -398,11 +478,11 @@ export default function Article({ project }: ArticleProps) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <CustomVideoPlayer 
+            <AdaptiveVideoPlayer 
               videoUrl={project.pageVideo}
               thumbnailUrl={project.image}
               color={accentColor}
-              startPlaying={false}
+              autoStart={false}
             />
           </motion.div>
         ) : project.image ? (
@@ -416,7 +496,7 @@ export default function Article({ project }: ArticleProps) {
         ) : null}
 
         {/* Article Content with Enhanced Markdown */}
-        {/* <motion.div 
+        <motion.div 
           className="py-[100px]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -431,7 +511,7 @@ export default function Article({ project }: ArticleProps) {
               </div>
             </div>
           )}
-        </motion.div> */}
+        </motion.div>
 
         {/* Next Project Section */}
         {/* <motion.div 
@@ -464,4 +544,4 @@ export default function Article({ project }: ArticleProps) {
       </article>
     </div>
   )
-} 
+}

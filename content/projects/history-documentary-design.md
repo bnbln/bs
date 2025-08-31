@@ -17,12 +17,19 @@ featured: false
 
 Designing for a history format that feels fast, fresh and not like a museum tour? Yes, please. When the production company asked me to take on the show’s visual identity, I knew this would be something fun to dig into.
 
+
 ![assets/Zeitreise Logo.avif|assets/Zeitreise_1.avif]
 ![assets/Zeitreise_2.avif|assets/Zeitreise_3.avif]
 
 The first idea came from the reference book and "Der Bader-Meinhof-Komplex", paired with those gritty 90s Spiegel TV graphics. Rough textures, Helvetica, punchy cuts – that raw, documentary feel was the core vibe I wanted to channel.
 
 The color palette leans into black and white images and warm rust tones – like old film footage that’s been sitting on a shelf a little too long. There’s nostalgia, but also a sharp digital clarity that keeps it grounded in the now.
+
+```palette
+RustRed #CD412D rgb(205,65,45) usage=Primary
+OffWhite #F5F5F5 rgb(245,245,245) usage=Background
+Charcoal #121212 rgb(18,18,18) usage=TextBG
+```
 
 ![assets/Zeitreise_4.avif|assets/Zeitreise_5.avif]
 

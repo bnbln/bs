@@ -101,6 +101,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   const [isReady, setIsReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(screenfull.isEnabled ? screenfull.isFullscreen : false);
   const [showControls, setShowControls] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false); // Neu: Nutzer hat aktiv gestartet
 
   // --- Controls Visibility Logic ---
   const hideControls = useCallback(() => {
@@ -110,6 +111,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   }, [playedSeconds, isPlaying]);
 
   const displayControls = useCallback(() => {
+    if (!hasInteracted) return; // Vor erstem Play keine Controls sichtbar
     setShowControls(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
@@ -117,20 +119,20 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
     if (isPlaying && playedSeconds > 0) {
        controlsTimeoutRef.current = setTimeout(hideControls, 3000);
     }
-  }, [hideControls, isPlaying, playedSeconds]);
+  }, [hideControls, isPlaying, playedSeconds, hasInteracted]);
 
   // --- Handlers ---
   const handlePlayPause = useCallback(() => {
     if (!videoRef.current) return;
-    
     if (!isPlaying) {
+      if (!hasInteracted) setHasInteracted(true);
       displayControls();
       videoRef.current.play();
     } else {
       videoRef.current.pause();
     }
     setIsPlaying(!isPlaying);
-  }, [isPlaying, displayControls]);
+  }, [isPlaying, displayControls, hasInteracted]);
   
   const handleVolumeChange = (value: number) => { 
     if (!videoRef.current) return;
@@ -207,10 +209,11 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   // --- Handler for clicking the main video area ---
   const handleVideoAreaClick = useCallback(() => {
     if (isReady) {
+      if (!hasInteracted) setHasInteracted(true);
       handlePlayPause();
       displayControls();
     }
-  }, [isReady, handlePlayPause, displayControls]);
+  }, [isReady, handlePlayPause, displayControls, hasInteracted]);
 
   // --- Keyboard Listener for Space Bar ---
   useEffect(() => {
@@ -309,11 +312,11 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
     <div
       ref={playerWrapperRef}
       className={`relative w-full bg-black overflow-hidden focus-visible:outline-2 focus-visible:outline-teal-500 ${
-        showControls ? 'cursor-default' : 'cursor-none'
+        (hasInteracted && isPlaying && !showControls) ? 'cursor-none' : 'cursor-default'
       }`}
-      onMouseEnter={displayControls}
-      onMouseLeave={hideControls}
-      onMouseMove={displayControls}
+      onMouseEnter={hasInteracted ? displayControls : undefined}
+      onMouseLeave={hasInteracted ? hideControls : undefined}
+      onMouseMove={hasInteracted ? displayControls : undefined}
       onClick={handleVideoAreaClick}
       tabIndex={0}
     >
@@ -355,7 +358,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         </div>
       )}
 
-      {isReady && (
+      {isReady && hasInteracted && (
         <div
           className={`absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-40 backdrop-blur-sm z-20 transition-all duration-300 ease-in-out ${
             showControls 
@@ -427,4 +430,4 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   );
 };
 
-export default CustomVideoPlayer; 
+export default CustomVideoPlayer;
