@@ -38,4 +38,4 @@ For the typeface, I chose **Berthold Block** – bold, boxy, full of character. 
 
 
 # The Opener
-[video](asstes/Zeitreise_Opener.mp4|assets/Zeitreise.webp)
+[video](assets/Zeitreise_Opener.mp4|assets/Zeitreise.webp)
