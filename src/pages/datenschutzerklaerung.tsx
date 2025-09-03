@@ -10,12 +10,11 @@ const Datenschutzerklaerung = () => {
         description="Datenschutzerklärung und Informationen zum Datenschutz"
         noindex={true}
       />
-      
+
       <div className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 md:px-16 py-16">
-          {/* Back to Home */}
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-8"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
@@ -24,101 +23,126 @@ const Datenschutzerklaerung = () => {
             Zurück zur Startseite
           </Link>
 
-          {/* Content */}
           <div className="prose prose-lg max-w-none">
             <h1 className="text-3xl font-bold text-black mb-8">Datenschutzerklärung</h1>
-            
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-black mb-4">1. Datenschutz auf einen Blick</h2>
-              
-              <h3 className="text-lg font-semibold text-black mb-3">Allgemeine Hinweise</h3>
-              <p className="text-gray-700 mb-4">
-                Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können. Ausführliche Informationen zum Thema Datenschutz entnehmen Sie unserer unter diesem Text aufgeführten Datenschutzerklärung.
-              </p>
 
-              <h3 className="text-lg font-semibold text-black mb-3">Datenerfassung auf dieser Website</h3>
-              <p className="text-gray-700 mb-4">
-                <strong>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</strong><br />
-                Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Abschnitt „Hinweis zur Verantwortlichen Stelle" in dieser Datenschutzerklärung entnehmen.
-              </p>
-              <p className="text-gray-700 mb-4">
-                <strong>Wie erfassen wir Ihre Daten?</strong><br />
-                Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z. B. um Daten handeln, die Sie in ein Kontaktformular eingeben. Andere Daten werden automatisch oder nach Ihrer Einwilligung beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem technische Daten (z. B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs). Die Erfassung dieser Daten erfolgt automatisch, sobald Sie diese Website betreten.
-              </p>
-              <p className="text-gray-700 mb-4">
-                <strong>Wofür nutzen wir Ihre Daten?</strong><br />
-                Ein Teil der Daten wird erhoben, um eine fehlerfreie Bereitstellung der Website zu gewährleisten. Andere Daten können zur Analyse Ihres Nutzerverhaltens verwendet werden.
-              </p>
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-black mb-4">1. Verantwortliche Stelle</h2>
               <p className="text-gray-700">
-                <strong>Welche Rechte haben Sie bezüglich Ihrer Daten?</strong><br />
-                Sie haben jederzeit das Recht, unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung oder Löschung dieser Daten zu verlangen. Wenn Sie eine Einwilligung zur Datenverarbeitung erteilt haben, können Sie diese Einwilligung jederzeit für die Zukunft widerrufen. Außerdem haben Sie das Recht, unter bestimmten Umständen die Einschränkung der Verarbeitung Ihrer personenbezogenen Daten zu verlangen. Des Weiteren steht Ihnen ein Beschwerderecht bei der zuständigen Aufsichtsbehörde zu.
+                Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br />
+                <strong>Benedikt Schnupp</strong><br />
+                Danziger Str. 126A, 12161 Berlin<br />
+                E-Mail: mail@benediktschnupp.com
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-black mb-4">2. Hosting</h2>
+              <h2 className="text-xl font-semibold text-black mb-4">2. Datenschutz auf einen Blick</h2>
               <p className="text-gray-700 mb-4">
-                Wir hosten unsere Website bei [Name des Hosting-Anbieters]. Der Hoster erhebt in sog. Logfiles folgende Daten, die Ihr Browser an uns übermittelt:
+                Beim Besuch dieser Website werden automatisch technische Daten erfasst (Server-Logfiles). Außerdem nutzen wir
+                <strong> Vercel Web Analytics</strong> und <strong>Vercel Speed Insights</strong> für eine cookielose, datensparsame Reichweitenmessung.
+                Personalisierte Profile werden nicht erstellt.
+              </p>
+              <p className="text-gray-700">
+                Sie haben u. a. das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerspruch gegen
+                Verarbeitungen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO sowie das Recht auf Beschwerde bei einer Aufsichtsbehörde.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-black mb-4">3. Hosting (Vercel)</h2>
+              <p className="text-gray-700 mb-4">
+                Diese Website wird bei <strong>Vercel Inc.</strong>, 440 N Barranca Ave #4133, Covina, CA 91723, USA, gehostet.
+                Beim Aufruf der Website werden durch Vercel Server-Logfiles verarbeitet, die Ihr Browser automatisch übermittelt:
               </p>
               <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li>IP-Adresse</li>
-                <li>die Adresse der vorher besuchten Website (Referer Anfrage-Header)</li>
-                <li>Datum und Uhrzeit der Anfrage</li>
-                <li>Zeitzonendifferenz zur Greenwich Mean Time (GMT)</li>
-                <li>Inhalt der Anforderung</li>
-                <li>Zugriffsstatus/HTTP-Statuscode</li>
-                <li>übertragene Datenmenge</li>
-                <li>Website, von der die Anforderung kommt</li>
-                <li>Browser</li>
-                <li>Betriebssystem und dessen Oberfläche</li>
-                <li>Sprache und Version der Browsersoftware</li>
+                <li>IP-Adresse (gekürzt/anonymisiert nach Vercel-Standard),</li>
+                <li>Datum und Uhrzeit der Anfrage, Zeitzone,</li>
+                <li>URL/Referrer,</li>
+                <li>HTTP-Statuscode, übertragene Datenmenge,</li>
+                <li>User-Agent (Browser, Betriebssystem).</li>
               </ul>
-              <p className="text-gray-700">
-                Das ist erforderlich, um unsere Website anzuzeigen und die Stabilität und Sicherheit zu gewährleisten. Dies entspricht unserem berechtigten Interesse im Sinne des Art. 6 Abs. 1 S. 1 lit. f DSGVO.
+              <p className="text-gray-700 mb-4">
+                Die Verarbeitung ist zur Bereitstellung, Stabilität und Sicherheit der Website erforderlich (Art. 6 Abs. 1 lit. f DSGVO).
+                Mit Vercel besteht ggf. ein Vertrag zur Auftragsverarbeitung. Eine Datenübermittlung in die USA kann stattfinden; wir stützen
+                diese auf Art. 46 DSGVO (Standardvertragsklauseln) bzw. ein gültiges Angemessenheitsinstrument.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-black mb-4">3. Allgemeine Hinweise und Pflichtinformationen</h2>
-              
-              <h3 className="text-lg font-semibold text-black mb-3">Datenschutz</h3>
-              <p className="text-gray-700 mb-4">
-                Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend den gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.
+              <h2 className="text-xl font-semibold text-black mb-4">4. Cookielose Reichweitenmessung & Performance</h2>
+
+              <h3 className="text-lg font-semibold text-black mb-2">4.1 Vercel Web Analytics</h3>
+              <p className="text-gray-700 mb-3">
+                Wir verwenden <strong>@vercel/analytics</strong> zur statistischen Auswertung der Nutzung unserer Seiten.
+                Das Tracking erfolgt <strong>ohne Cookies</strong> und ohne persistente Identifikatoren. Es werden aggregierte Metriken
+                zu Seitenaufrufen, Referrern, Geräten, Ländern etc. erhoben. Rechtsgrundlage ist unser berechtigtes Interesse
+                an einer datensparsamen Reichweitenmessung (Art. 6 Abs. 1 lit. f DSGVO).
               </p>
-              <p className="text-gray-700 mb-4">
-                Wenn Sie diese Website benutzen, werden verschiedene personenbezogene Daten erhoben. Personenbezogene Daten sind Daten, mit denen Sie persönlich identifiziert werden können. Die vorliegende Datenschutzerklärung erläutert, welche Daten wir erheben und wofür wir sie nutzen. Sie erläutert auch, wie und zu welchem Zweck das geschieht.
+              <p className="text-gray-700 mb-6">
+                Sie können der Verarbeitung aus Gründen, die sich aus Ihrer besonderen Situation ergeben, jederzeit widersprechen
+                (Art. 21 DSGVO). Da keine Cookies eingesetzt werden, ist kein Cookie-Banner für dieses Tool erforderlich.
               </p>
+
+              <h3 className="text-lg font-semibold text-black mb-2">4.2 Vercel Speed Insights</h3>
               <p className="text-gray-700">
-                Wir weisen darauf hin, dass die Datenübertragung im Internet (z. B. bei der Kommunikation per E-Mail) Sicherheitslücken aufweisen kann. Ein lückenloser Schutz der Daten vor dem Zugriff durch Dritte ist nicht möglich.
+                Wir nutzen <strong>@vercel/speed-insights</strong>, um Web-Vitals und Performance-Metriken zu erfassen
+                (z. B. LCP, FID, CLS). Die Erhebung erfolgt <strong>cookielos</strong> und dient der technischen Optimierung unserer Website
+                (Art. 6 Abs. 1 lit. f DSGVO).
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-black mb-4">4. Datenerfassung auf dieser Website</h2>
-              
-              <h3 className="text-lg font-semibold text-black mb-3">Kontaktformular</h3>
+              <h2 className="text-xl font-semibold text-black mb-4">5. Eingesetzte Bibliotheken & Drittinhalte</h2>
               <p className="text-gray-700 mb-4">
-                Wenn Sie uns per Kontaktformular Anfragen zukommen lassen, werden Ihre Angaben aus dem Anfrageformular inklusive der von Ihnen dort angegebenen Kontaktdaten zwecks Bearbeitung der Anfrage und für den Fall von Anschlussfragen bei uns gespeichert. Diese Daten geben wir nicht ohne Ihre Einwilligung weiter.
+                Die folgenden Bibliotheken werden primär zur <strong>Darstellung und Interaktion</strong> genutzt und verarbeiten
+                selbst keine personenbezogenen Daten zu eigenen Zwecken: <em>next, react, react-dom, tailwindcss, @tailwindcss/typography,
+                framer-motion, gsap, lenis, screenfull, lucide-react, next-seo, gray-matter, remark, remark-html</em>.
+              </p>
+
+              <h3 className="text-lg font-semibold text-black mb-2">5.1 Video-Einbettungen (react-player)</h3>
+              <p className="text-gray-700 mb-3">
+                Für Video-Inhalte verwenden wir <strong>react-player</strong>. Abhängig von der jeweiligen Quelle (z. B. YouTube, Vimeo)
+                kann beim Laden des Players eine Verbindung zu Servern des Anbieters aufgebaut werden. Dabei können diese Anbieter
+                eigene Daten (inkl. Cookies oder ähnlicher Technologien) verarbeiten und Daten in Drittländer (z. B. USA) übertragen.
+              </p>
+              <p className="text-gray-700 mb-3">
+                <strong>Hinweis:</strong> Wenn wir eine „Klick-zum-Laden“-Lösung einsetzen, werden externe Inhalte erst nach Ihrem aktiven Klick geladen.
+                Erst dann findet eine Datenübertragung an den jeweiligen Anbieter statt. Rechtsgrundlage in diesem Fall ist Ihre Einwilligung
+                (Art. 6 Abs. 1 lit. a DSGVO), die Sie jederzeit mit Wirkung für die Zukunft widerrufen können.
               </p>
               <p className="text-gray-700">
-                Die Verarbeitung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO, sofern Ihre Anfrage mit der Erfüllung eines Vertrags zusammenhängt oder zur Durchführung vorvertraglicher Maßnahmen erforderlich ist. In allen übrigen Fällen beruht die Verarbeitung auf unserem berechtigten Interesse an der effektiven Bearbeitung der an uns gerichteten Anfragen (Art. 6 Abs. 1 lit. f DSGVO) oder auf Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO) sofern diese abgefragt wurde; die Einwilligung ist jederzeit widerrufbar.
+                Ohne „Klick-zum-Laden“ stützen wir die Einbindung auf unser berechtigtes Interesse an einer ansprechenden Darstellung
+                unserer Inhalte (Art. 6 Abs. 1 lit. f DSGVO). Bitte beachten Sie die Datenschutzhinweise der jeweiligen Anbieter.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-black mb-4">5. Analyse-Tools und Tools von Drittanbietern</h2>
-              <p className="text-gray-700 mb-4">
-                Beim Besuch dieser Website kann Ihr Surf-Verhalten statistisch ausgewertet werden. Das geschieht vor allem mit sogenannten Analyseprogrammen.
-              </p>
+              <h2 className="text-xl font-semibold text-black mb-4">6. Kontaktaufnahme</h2>
               <p className="text-gray-700">
-                Detaillierte Informationen zu diesen Analyseprogrammen finden Sie in der folgenden Datenschutzerklärung.
+                Bei Kontaktaufnahme per E-Mail verarbeiten wir Ihre Angaben zur Bearbeitung der Anfrage (Art. 6 Abs. 1 lit. b DSGVO,
+                ggf. Art. 6 Abs. 1 lit. f DSGVO). Die Daten werden gelöscht, sobald sie für die Zweck­erfüllung nicht mehr erforderlich sind.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-black mb-4">6. Plugins und Tools</h2>
+              <h2 className="text-xl font-semibold text-black mb-4">7. Ihre Rechte</h2>
+              <ul className="list-disc pl-6 text-gray-700 mb-4">
+                <li>Auskunft (Art. 15 DSGVO),</li>
+                <li>Berichtigung (Art. 16 DSGVO),</li>
+                <li>Löschung (Art. 17 DSGVO),</li>
+                <li>Einschränkung der Verarbeitung (Art. 18 DSGVO),</li>
+                <li>Datenübertragbarkeit (Art. 20 DSGVO),</li>
+                <li>Widerspruch gegen Verarbeitungen (Art. 21 DSGVO),</li>
+                <li>Beschwerde bei einer Aufsichtsbehörde (Art. 77 DSGVO).</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-black mb-4">8. Aktualität und Änderungen</h2>
               <p className="text-gray-700">
-                Diese Website bindet eventuell Inhalte von Drittanbietern ein. Diese können theoretisch Cookies setzen, z. B. wenn Sie eine Seite mit eingebetteten Inhalten aufrufen. Bitte informieren Sie sich bei den jeweiligen Drittanbietern über deren Datenschutzrichtlinien.
+                Wir passen diese Datenschutzerklärung an, sobald technische oder rechtliche Änderungen dies erforderlich machen.
+                Stand: 01.09.2025
               </p>
             </section>
           </div>
@@ -128,4 +152,4 @@ const Datenschutzerklaerung = () => {
   )
 }
 
-export default Datenschutzerklaerung 
+export default Datenschutzerklaerung
