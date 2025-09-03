@@ -10,6 +10,7 @@ image: "assets/airport-04.png"
 bgColor: "#319B7B"
 hasAnimation: false
 featured: true
+heroImage: "assets/airport-03.jpg"
 ---
 
 
