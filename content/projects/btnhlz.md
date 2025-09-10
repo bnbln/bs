@@ -5,7 +5,7 @@ subtitle: "A Frontend Developement Project opening Perspectives with three.js"
 slug: "btnhlz"
 category: "Frontend-Developement"
 published: "2024-05-21"
-image: "assets/frame 32.png"
+image: "assets/frame32.png"
 bgColor: "#00ECEB"
 hasAnimation: false
 featured: true
@@ -13,7 +13,7 @@ featured: true
 # Developing a Next.js-Portfolio for a Product Designer
 How can a portfolio become more than a static showcase? That was the question driving this project for a product designer. Instead of relying on flat galleries or PDF presentations, I built an interactive web experience that brings his objects and furniture designs into a spatial, almost tangible environment.
 
-![assets/frame 33.png|assets/frame 34.png]
+![assets/frame33.png|assets/frame34.png]
 
 The site was developed with **Next.js** as the framework and **three.js** for rendering 3D visuals directly in the browser. This combination allowed us to merge robust performance and SEO with immersive, GPU-accelerated graphics. Every piece of furniture can be rotated, zoomed, and experienced in context, turning the website into a lightweight digital exhibition.
 
