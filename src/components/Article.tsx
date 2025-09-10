@@ -125,14 +125,43 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
     const parseInlineElements = (text: string) => {
       const boldRegex = /\*\*(.*?)\*\*/g
+      const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+
+      const renderLinks = (segment: string) => {
+        const nodes: React.ReactNode[] = []
+        let lastIndex = 0
+        let m: RegExpExecArray | null
+        while ((m = linkRegex.exec(segment)) !== null) {
+          if (m.index > lastIndex) nodes.push(segment.slice(lastIndex, m.index))
+          const label = m[1]
+          const href = m[2]
+          const isExternal = /^https?:\/\//i.test(href)
+          nodes.push(
+            <a
+              key={`l-${currentIndex++}`}
+              href={href}
+              {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              style={{ color: accentColor, fontWeight: 700 }}
+            >
+              {label}
+            </a>
+          )
+          lastIndex = m.index + m[0].length
+        }
+        if (lastIndex < segment.length) nodes.push(segment.slice(lastIndex))
+        return nodes
+      }
+
       const parts = text.split(boldRegex)
       return parts.map((part, index) => {
         if (index % 2 === 1) {
           return (
-            <strong key={index} style={{ color: accentColor }}>{part}</strong>
+            <strong key={`b-${currentIndex++}`} style={{ color: accentColor }}>
+              {renderLinks(part)}
+            </strong>
           )
         }
-        return part
+        return renderLinks(part)
       })
     }
 

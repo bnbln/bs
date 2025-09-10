@@ -1,25 +1,49 @@
 ---
 id: 5
-title: "Relaunching a Berlin Lawyers Corporate Design and Website"
-subtitle: "Complete Brand & Digital Transformation"
+title: "Relaunching a Berlin Lawyers Website with Gatsby & Netlify"
+subtitle: "Frontend Development and Digital Transformation"
 slug: "relaunching-berlin-lawyers-corporate-design-and-website"
 category: "UX&UI, Development"
-excerpts: "Professional, modern, and digitally future-proof: This Berlin-based law firm needed a new brand identity and a clear, flexible website that also worked behind the scenes."
-published: "2024-01-10"
+excerpts: "Future-proof, performant, and editor-friendly: This Berlin law firm now runs on Gatsby with Netlify CMS, combining React components with simple content editing."
+published: "2025-01-10"
 image: "assets/rk-4.jpg"
-bgColor: "#33457C"
+bgColor: "#47B7D7"
 hasAnimation: false
 featured: true
 ---
 
 # Rebrand and digital transformation for a Berlin law firm
 
-A contemporary law firm needs more than just a digital business card. In this project, I created a refined brand identity and a modern web presence tailored to the needs of a professional legal practice.
+For the Berlin law firm Rechtsklarheit and lawyer Tarik Sharif, the relaunch wasn’t just about aesthetics - it was about building a fast, reliable, and editor-friendly digital foundation. The new brand identity set the tone, but the real strength lies in the **frontend stack: Gatsby, React, Netlify, and Netlify CMS**.
 
-A comprehensive rebranding and digital transformation project for a  Berlin law firm, combining traditional legal gravitas with modern digital accessibility.
+A rebranding and web development project where corporate gravitas meets the flexibility of a modern JAMstack approach.
+
 
 ![assets/rk-1.png|assets/rk-2.png]
 
+## Why Gatsby & React?
+
+**Gatsby** delivers blazing-fast static pages with strong SEO benefits, while **React** components allow for a modular system: legal content, services, and blog posts all follow the same design logic.  
+
+Hosting on **Netlify** ensures global CDN delivery, continuous deployment from Git, and automated builds — meaning every change goes live within minutes.  
+
+## Content Editing Made Simple
+
+Behind the scenes, **Netlify CMS** empowers the firm’s team to manage their own content without touching code.  
+- Blog posts, service pages, and updates can be added through a simple UI.  
+- The CMS writes directly to the Git repository, keeping the workflow consistent and version-controlled.  
+- Editors enjoy a clean, structured dashboard tailored to their needs.  
+- Contact forms flow directly into the E-Mail inbox of the law firm.
+
+
+## Performance & Scalability
+
+- **Performance**: Lighthouse scores consistently above 90  
+- **Scalability**: New practice areas or features can be added easily thanks to React components  
+- **Accessibility**: WCAG 2.1 AA compliance built into the design system  
+- **Security**: HTTPS/SSL by default via Netlify  
+
+The result is a site that looks professional, performs brilliantly, and is easy for the firm to maintain long term.  
 
 
 ## Confidence meets Clarity
@@ -38,14 +62,10 @@ Paper #E9ECF6 rgb(233,236,246) usage=Fond/Background
 
 The design system is modular, allowing dynamic layouts for service pages, legal content, or blog posts. The site is built with Next.js, hosted via Vercel for top performance, and content can be edited easily via a lightweight CMS.
 
-The result: A consistent, flexible system that looks professional and can grow with the firm's needs – whether it’s expanding legal topics, adding blog posts or publishing updates.
+The result: A consistent, flexible system that looks professional and can grow with the firm's needs – whether it’s expanding legal topics, adding blog posts or publishing updates. 
+
+Check it out here: [rechtsklarheit.de](https://rechtsklarheit.de)
 
 
-## Technical Specifications
-
-- **Performance**: Lighthouse scores above 90 in all categories
-- **Accessibility**: Full WCAG 2.1 AA compliance
-- **Compatibility**: Cross-browser and device testing
-- **Security**: SSL implementation and data protection compliance
-
-This project demonstrates how thoughtful design can bridge traditional professional services with modern digital expectations, creating a brand that serves both the firm's reputation and their clients' needs. 
+For the coming future a redesign of the page is in the works as of 2025. We are developing a Brand Identity reflecting on the transparancy element of the name Rechtsklarheit (legal certainty/transparency).
+![assets/rk-5.png]

@@ -12,6 +12,14 @@ interface CodeBlockProps {
   liveUrl?: string
 }
 
+// Escape raw code so that JSX/HTML is rendered as text, not parsed by the browser
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 // Lightweight code block styled similarly to motion-meets-code project
 const CodeBlock: React.FC<CodeBlockProps> = ({
   title,
@@ -35,15 +43,58 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   }
 
   const highlightCode = (raw: string, lang: string) => {
-    let highlighted = raw
-    if (/(ts|js|typescript|javascript)/.test(lang)) {
-      highlighted = highlighted
-        .replace(/\b(const|let|var|function|return|import|export|from|if|else|for|while|async|await|try|catch|throw|new)\b/g, '<span class="text-purple-400">$1<\/span>')
-        .replace(/\b(true|false|null|undefined)\b/g, '<span class="text-orange-400">$1<\/span>')
-        .replace(/'(.*?)'/g, "<span class='text-green-400'>'$1'<\/span>")
-        .replace(/"(.*?)"/g, '<span class="text-green-400">"$1"<\/span>')
-        .replace(/`([^`]*?)`/g, '<span class="text-green-400">`$1`<\/span>')
-        .replace(/\/\/.*$/gm, '<span class="text-gray-500">$&<\/span>')
+    // Always escape first so that any JSX/HTML is shown literally
+    let highlighted = escapeHtml(raw)
+
+    // Helper: perform replacements only outside existing <span>...</span> we inject
+    const splitSpanRegex = /(<span[^>]*>[\s\S]*?<\/span>)/g
+    const replaceOutsideSpans = (input: string, pattern: RegExp, replacer: string | ((...args: any[]) => string)) => {
+      return input
+        .split(splitSpanRegex)
+        .map((seg, i) => (i % 2 === 0 ? seg.replace(pattern, replacer as any) : seg))
+        .join('')
+    }
+
+    // Basic token highlighting for JS/TS/JSX/TSX on the escaped text
+    if (/(tsx|jsx|ts|js|typescript|javascript)/i.test(lang)) {
+      // Strings first
+      highlighted = replaceOutsideSpans(highlighted, /'(.*?)'/g, "<span class='text-green-400'>'$1'<\/span>")
+      highlighted = replaceOutsideSpans(highlighted, /"(.*?)"/g, '<span class="text-green-400">"$1"<\/span>')
+      highlighted = replaceOutsideSpans(highlighted, /`([^`]*?)`/g, '<span class="text-green-400">`$1`<\/span>')
+
+      // Comments
+      highlighted = replaceOutsideSpans(highlighted, /\/\/.*$/gm, '<span class="text-gray-500">$&<\/span>')
+
+      // Booleans / nullish
+      highlighted = replaceOutsideSpans(highlighted, /\b(true|false|null|undefined)\b/g, '<span class="text-orange-400">$1<\/span>')
+
+      // Keywords
+      highlighted = replaceOutsideSpans(
+        highlighted,
+        /\b(const|let|var|function|return|import|export|from|if|else|for|while|async|await|try|catch|throw|new)\b/g,
+        '<span class="text-purple-400">$1<\/span>'
+      )
+
+      // Numbers
+      highlighted = replaceOutsideSpans(highlighted, /\b(\d+(?:\.(?:\d+)?)?)\b/g, '<span class="text-amber-300">$1<\/span>')
+
+      // JSX/TSX: tag open + tag name (on escaped text: &lt; and &gt;)
+      highlighted = replaceOutsideSpans(
+        highlighted,
+        /(&lt;\/?)([A-Za-z][\w.:-]*)/g,
+        '<span class="text-gray-400">$1<\/span><span class="text-blue-400">$2<\/span>'
+      )
+
+      // JSX props (propName=)
+      highlighted = replaceOutsideSpans(
+        highlighted,
+        /(\s)([A-Za-z_:][\w:.-]*)(=)/g,
+        '$1<span class="text-cyan-300">$2<\/span>$3'
+      )
+
+      // Brackets/punctuation and closing >
+      highlighted = replaceOutsideSpans(highlighted, /([{}()[\],.])/g, '<span class="text-gray-400">$1<\/span>')
+      highlighted = replaceOutsideSpans(highlighted, /(&gt;)/g, '<span class="text-gray-400">$1<\/span>')
     }
     return highlighted
   }
