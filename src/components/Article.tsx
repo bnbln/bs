@@ -124,7 +124,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       // Headers - Apple Style: Sharp, ample white space
       if (line.startsWith('#')) {
         flushCurrentSection()
-        const level = line.match(/^#+/)[0].length
+        const match = line.match(/^#+/)
+        const level = match ? match[0].length : 1
         const text = line.replace(/^#+\s*/, '')
         const sizes = {
             1: "text-[40px] md:text-[56px] leading-[1.07] tracking-[-0.015em] font-bold font-space-grotesk mt-20 mb-8 text-[#1D1D1F]",
