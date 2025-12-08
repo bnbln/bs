@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
+import Link from 'next/link'
 import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 
@@ -100,15 +101,17 @@ const Footer = () => {
         {/* Links Column: Sitemap */}
         <motion.div className="md:col-span-2 flex flex-col gap-4" variants={itemVariants}>
             <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Sitemap</h3>
-            {['About', 'Work', 'Contact'].map((item) => (
-                <a 
-                    key={item}
-                    href={`#${item.toLowerCase()}`}
-                    className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
-                >
-                    {item}
-                </a>
-            ))}
+            <div className="flex flex-col gap-4">
+              <Link href="/about" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
+                About
+              </Link>
+              <Link href="/work" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
+                Work
+              </Link>
+              <Link href="/#contact" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
+                Contact
+              </Link>
+            </div>
         </motion.div>
 
         {/* Links Column: Socials */}

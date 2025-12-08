@@ -26,7 +26,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
   const [isHovered, setIsHovered] = useState(false);
   const [isFastScrolling, setIsFastScrolling] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
   const [isMouseInsideThisProject, setIsMouseInsideThisProject] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -419,8 +419,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
     if (canvas.width !== newWidth || canvas.height !== newHeight) {
       canvas.width = newWidth;
       canvas.height = newHeight;
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
+      // Note: We deliberately do NOT set canvas.style.width/height here
+      // to allow CSS (w-full h-full) to handle the display size responsively.
       
       // Reset context scale and apply new DPR
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -452,48 +452,35 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
 
   // Setup resize observer for responsive canvas
   useEffect(() => {
-    if (useVideoScrubbing && canvasRef.current && videoRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      
-      // Create resize observer
-      resizeObserver.current = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          if (entry.target === canvas) {
-            // Force redraw when canvas size changes
-            if (video.readyState >= 2) { // HAVE_CURRENT_DATA
-              const ctx = canvas.getContext('2d');
-              if (ctx) {
-                drawVideoFrame(video, canvas, ctx);
-              }
-            }
-          }
+    if (!canvasRef.current) return;
+    
+    const handleResize = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        // Force immediate redraw on resize
+        if (useVideoScrubbing && videoRef.current && videoRef.current.readyState >= 2) {
+             const ctx = canvas.getContext('2d');
+             if (ctx) drawVideoFrame(videoRef.current, canvas, ctx);
+        } else if (!useVideoScrubbing && loadedImages.length > 0) {
+            // Re-render image sequence frame if applicable
+            // (Image rendering is usually handled by CSS object-fit, but if we used canvas for images, we'd redraw here)
         }
-      });
-      
-      // Observe canvas for size changes
-      resizeObserver.current.observe(canvas);
-      
-      // Also listen for window resize events
-      const handleWindowResize = () => {
-        if (video.readyState >= 2) { // HAVE_CURRENT_DATA
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            drawVideoFrame(video, canvas, ctx);
-          }
-        }
-      };
-      
-      window.addEventListener('resize', handleWindowResize);
-      
-      return () => {
-        if (resizeObserver.current) {
-          resizeObserver.current.disconnect();
-        }
-        window.removeEventListener('resize', handleWindowResize);
-      };
-    }
-  }, [useVideoScrubbing, drawVideoFrame]);
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // Also use ResizeObserver for container size changes
+    const resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(handleResize);
+    });
+    resizeObserver.observe(canvasRef.current);
+
+    return () => {
+        window.removeEventListener('resize', handleResize);
+        resizeObserver.disconnect();
+    };
+  }, [useVideoScrubbing, drawVideoFrame, loadedImages.length]);
 
   // High-performance frame update using requestAnimationFrame (for image sequences)
   const updateImageFrame = useCallback((scrollProgress: number) => {
@@ -725,21 +712,29 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         </div>
       )}
 
-      {/* Desktop title in top-left corner (desktop only) */}
+      {/* Floating Cursor Title (Desktop) */}
       <motion.div
-        className="absolute top-4 left-4 hidden md:block pointer-events-none z-10"
-        initial={{ opacity: 0, y: -10 }}
+        className="fixed pointer-events-none z-50 hidden md:flex flex-col items-start gap-1"
+        style={{
+          left: mousePosition.x,
+          top: mousePosition.y,
+        }}
+        initial={{ opacity: 0, scale: 0.9 }}
         animate={{ 
-          opacity: isHovered && !isFastScrolling ? 1 : 0,
-          y: isHovered && !isFastScrolling ? 0 : -10
+          opacity: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0,
+          scale: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0.9,
+          x: 24, // Offset from cursor
+          y: 24
         }}
         transition={{ 
-          duration: 0.2,
-          ease: "easeOut"
+          type: "spring",
+          stiffness: 400,
+          damping: 28,
+          mass: 0.5
         }}
       >
-        <div className="bg-black/90 backdrop-blur-sm text-white px-3 py-2 rounded-lg shadow-xl border border-white/10">
-          <span className="text-sm font-medium whitespace-nowrap">{project.title}</span>
+        <div className="bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full border border-white/10 shadow-2xl">
+          <span className="text-sm font-medium whitespace-nowrap font-space-grotesk tracking-wide">{project.title}</span>
         </div>
       </motion.div>
 
@@ -777,155 +772,11 @@ interface WorkProps {
 }
 
 const Work: React.FC<WorkProps> = ({ data }) => {
-  const [isHoveringWorkSection, setIsHoveringWorkSection] = useState(false);
-  const [globalMousePosition, setGlobalMousePosition] = useState({ x: 0, y: 0 });
-  const [hasFinePointer, setHasFinePointer] = useState(false);
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const mq = window.matchMedia('(pointer: fine)');
-      const update = () => setHasFinePointer(mq.matches);
-      update();
-      mq.addEventListener('change', update);
-      return () => mq.removeEventListener('change', update);
-    }
-  }, []);
-
-  // Global mouse tracking for cursor replacement - optimized for performance
-  useEffect(() => {
-    if (!hasFinePointer) return; // skip on touch devices
-    let animationId: number;
-    
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      // Cancel any pending animation frame to prevent lag
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-      
-      // Use requestAnimationFrame for smooth updates
-      animationId = requestAnimationFrame(() => {
-        setGlobalMousePosition({ x: e.clientX, y: e.clientY });
-      });
-    };
-
-    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
-    
-    return () => {
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [hasFinePointer]);
-
-  // Hide cursor globally when hovering work section (only on cursor-based devices)
-  useEffect(() => {
-    if (!hasFinePointer) return; // do not hide cursor on touch devices
-    // Check if device supports cursor (not touch-only)
-    const hasCursor = window.matchMedia('(pointer: fine)').matches;
-    
-    // Use requestAnimationFrame for smoother transitions
-    const updateCursor = () => {
-      if (isHoveringWorkSection && hasCursor) {
-        // Add a style tag to hide cursor globally
-        const style = document.createElement('style');
-        style.id = 'hide-cursor-style';
-        style.textContent = `
-          * {
-            cursor: none !important;
-          }
-          body {
-            cursor: none !important;
-          }
-        `;
-        document.head.appendChild(style);
-      } else {
-        // Remove the style when not hovering
-        const existingStyle = document.getElementById('hide-cursor-style');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-      }
-    };
-    
-    // Immediate update for better responsiveness
-    updateCursor();
-    
-    return () => {
-      // Cleanup on unmount
-      const existingStyle = document.getElementById('hide-cursor-style');
-      if (existingStyle) {
-        existingStyle.remove();
-      }
-    };
-  }, [isHoveringWorkSection, hasFinePointer]);
-
   return (
-    <section 
-      className={`bg-white w-full relative ${hasFinePointer && isHoveringWorkSection ? 'cursor-none' : ''}`}
-      onMouseEnter={hasFinePointer ? () => setIsHoveringWorkSection(true) : undefined}
-      onMouseLeave={hasFinePointer ? () => setIsHoveringWorkSection(false) : undefined}
-      style={{ 
-        cursor: hasFinePointer && isHoveringWorkSection ? 'none' : 'auto',
-      }}
-    >
-      {hasFinePointer && (
-        <div
-          className={`fixed pointer-events-none z-[9999] transition-opacity duration-75 ${
-            isHoveringWorkSection ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            left: globalMousePosition.x - 12, // Center the 24px icon
-            top: globalMousePosition.y - 12,
-            transform: 'translateZ(0)',
-            willChange: 'transform',
-            // Force hardware acceleration
-            backfaceVisibility: 'hidden',
-            perspective: '1000px',
-          }}
-        >
-          <div className="bg-black/80 text-white p-3 rounded-full shadow-lg">
-            <img
-              src={arrowSvg}
-              alt="Cursor"
-              className="w-4 h-4"
-              style={{ 
-                filter: 'brightness(0) invert(1)', 
-                transform: 'rotate(-180deg)',
-                // Optimize image rendering
-                imageRendering: 'auto',
-                willChange: 'auto',
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Section Title */}
-      {/* Section Title */}
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]">
-        <motion.h2
-          className="bg-white max-w-[1400px] mx-auto relative w-full text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] z-20"
-          initial={{ y: 0, opacity: 1 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-        >
-          Featured Design
-        </motion.h2>
-      </div>
-      
-      {/* Projects Container */}
-      <div className="relative pt-8">
-        <div className="w-full">
-          {data.map((project, index) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              index={index}
-            />
-          ))}
-        </div>
-      </div>
+    <section className="bg-[#f0f0f0] w-full relative" id="work">
+      {data.map((project, index) => (
+        <ProjectCard key={project.id} project={project} index={index} />
+      ))}
     </section>
   );
 };
