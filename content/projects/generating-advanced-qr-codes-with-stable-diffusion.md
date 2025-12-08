@@ -1,15 +1,20 @@
 ---
 id: 4
-title: "Generating QR-Codes with Stable Diffusion"
-subtitle: "Ad-campaign leaveraging Generative AI in Design"
-slug: "generating-advanced-qr-codes-with-stable-diffusion"
-category: "Artificial Intelligence"
-excerpts: "It was early 2023 when AI was just about to take center stage in the tech world. My initial foray into Generative Images began a few months earlier with Midjourney. However, my real breakthrough came when I discovered Stable Diffusion."
-published: "2024-02-20"
-image: "assets/qr.webp"
+title: Generating QR-Codes with Stable Diffusion
+subtitle: Ad-campaign leaveraging Generative AI in Design
+slug: generating-advanced-qr-codes-with-stable-diffusion
+category: Artificial Intelligence
+excerpts: >-
+  It was early 2023 when AI was just about to take center stage in the tech
+  world. My initial foray into Generative Images began a few months earlier with
+  Midjourney. However, my real breakthrough came when I discovered Stable
+  Diffusion.
+published: '2024-02-20'
+image: assets/qr.webp
 hasAnimation: false
 featured: true
-heroImage: "assets/qr-prev.png"
+heroImage: assets/qr-prev.png
+type: [Design, Development]
 ---
 
 The project was designed for the business department of the German news media brand WELT, aiming to attract young employees through an internal magazine by Axel Springer. The creative brief was to embody the claim "Erfolg beginnt mit neuem Denken" (Success begins with thinking new), integrating a QR-code.

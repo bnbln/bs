@@ -1,14 +1,15 @@
 ---
 id: 11
-title: "Hbb-TV Promotion"
-subtitle: "After Effects"
-slug: "app-promotion"
-category: "Promotion"
-published: "2023-11-21"
-image: "assets/hbb-max.jpg"
-bgColor: "#97ABBA"
+title: Hbb-TV Promotion
+subtitle: After Effects
+slug: app-promotion
+category: Promotion
+published: '2023-11-21'
+image: assets/hbb-max.jpg
+bgColor: '#97ABBA'
 hasAnimation: false
 featured: true
+type: Design
 ---
 
 

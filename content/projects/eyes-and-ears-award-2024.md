@@ -1,15 +1,16 @@
 ---
 id: 3
-title: "Multiple Projects won an Eyes and Ears Award 2024"
-subtitle: "Recognition for Excellence in Design and Creativity"
-slug: "eyes-and-ears-award-2024"
-category: "Award"
-excerpts: "Recognition for excellence in design and creativity"
-published: "2025-02-01"
-image: "assets/Eyes and Ears 1080x1528.jpg"
-bgColor: "#f6396c"
+title: Multiple Projects won an Eyes and Ears Award 2024
+subtitle: Recognition for Excellence in Design and Creativity
+slug: eyes-and-ears-award-2024
+category: Award
+excerpts: Recognition for excellence in design and creativity
+published: '2025-02-01'
+image: assets/Eyes and Ears 1080x1528.jpg
+bgColor: '#f6396c'
 hasAnimation: false
 featured: true
+type: Design
 ---
 
 

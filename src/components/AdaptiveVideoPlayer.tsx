@@ -127,6 +127,7 @@ const AdaptiveVideoPlayer: React.FC<AdaptiveVideoPlayerProps> = ({
         <video
           ref={videoRef}
           src={videoUrl}
+          poster={thumbnailUrl}
           className="w-full h-full object-cover"
           controls={!minimal}
           playsInline

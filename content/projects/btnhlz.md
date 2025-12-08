@@ -1,14 +1,15 @@
 ---
 id: 14
-title: "Developing a Next.js-Portfolio for a Product Designer"
-subtitle: "A Frontend Developement Project opening Perspectives with three.js"
-slug: "btnhlz"
-category: "Frontend-Developement"
-published: "2024-05-21"
-image: "assets/bt-3.jpg"
-bgColor: "#00ECEB"
+title: Developing a Next.js-Portfolio for a Product Designer
+subtitle: A Frontend Developement Project opening Perspectives with three.js
+slug: btnhlz
+category: Frontend-Developement
+published: '2024-05-21'
+image: assets/bt-3.jpg
+bgColor: '#00ECEB'
 hasAnimation: false
 featured: true
+type: [Design, Development]
 ---
 # Developing a Next.js-Portfolio for a Product Designer
 How can a portfolio become more than a static showcase? That was the question driving this project for a product designer. Instead of relying on flat galleries or PDF presentations, I built an interactive web experience that brings his objects and furniture designs into a spatial, almost tangible environment.

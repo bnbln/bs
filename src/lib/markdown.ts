@@ -13,6 +13,7 @@ export interface Project {
   subtitle?: string
   slug: string
   category: string
+  type?: string | string[]
   excerpts: string
   published: string
   description?: string
@@ -48,7 +49,7 @@ export function getAllProjectSlugs(): string[] {
 export function getAllProjects(): Project[] {
   const slugs = getAllProjectSlugs()
   const projects = slugs.map(slug => getProjectBySlug(slug))
-  
+
   // Sort by published date, newest first
   return projects.sort((a, b) => (a.published > b.published ? -1 : 1))
 }
@@ -89,7 +90,7 @@ export function getProjectsData(): {
   featuredProjects: Project[]
 } {
   const allProjects = getAllProjects()
-  
+
   return {
     projects: allProjects.filter(p => !p.featured),
     featuredProjects: allProjects.filter(p => p.featured)

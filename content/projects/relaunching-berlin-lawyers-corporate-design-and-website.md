@@ -1,15 +1,19 @@
 ---
 id: 5
-title: "Relaunching a Berlin Lawyers Website with Gatsby & Netlify"
-subtitle: "Frontend Development and Digital Transformation"
-slug: "relaunching-berlin-lawyers-corporate-design-and-website"
-category: "UX&UI, Development"
-excerpts: "Future-proof, performant, and editor-friendly: This Berlin law firm now runs on Gatsby with Netlify CMS, combining React components with simple content editing."
-published: "2025-01-10"
-image: "assets/rk-4.jpg"
-bgColor: "#47B7D7"
+title: Relaunching a Berlin Lawyers Website with Gatsby & Netlify
+subtitle: Frontend Development and Digital Transformation
+slug: relaunching-berlin-lawyers-corporate-design-and-website
+category: 'UX&UI, Development'
+excerpts: >-
+  Future-proof, performant, and editor-friendly: This Berlin law firm now runs
+  on Gatsby with Netlify CMS, combining React components with simple content
+  editing.
+published: '2025-01-10'
+image: assets/rk-4.jpg
+bgColor: '#47B7D7'
 hasAnimation: false
 featured: true
+type: Development
 ---
 
 # Rebrand and digital transformation for a Berlin law firm

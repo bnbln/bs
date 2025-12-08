@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
 
-const Navigation = () => {
+interface NavigationProps {
+  theme?: 'dark' | 'light'
+}
+
+const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrollY, setScrollY] = useState(0)
+  const router = useRouter()
+  const isHome = router.pathname === '/'
 
   useEffect(() => {
+    // Only track scroll on Home for the "delayed fixed" effect
+    if (!isHome) return
+
     const handleScroll = () => {
       const scrollPosition = window.scrollY
       setScrollY(scrollPosition)
@@ -13,7 +24,7 @@ const Navigation = () => {
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isHome])
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -23,66 +34,79 @@ const Navigation = () => {
     setIsMenuOpen(false)
   }
 
-  // Calculate the y position based on scroll
+  // Calculate the y position based on scroll (Only for Home)
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0
   const threshold = viewportHeight * 0.35 - 50
-  const navY = scrollY > threshold ? -(scrollY - threshold) : 0
   
-  // Add offset to hamburger menu appearance to prevent overlapping
-  const hamburgerOffset = viewportHeight * 0.7 // pixels
-  const showHamburger = scrollY > (threshold + hamburgerOffset)
+  // Logic: 
+  // Home: Fixed. Stays at 0 until threshold, then moves up (-y) to simulate scrolling away.
+  // Others: Absolute. Stays at 0 relative to page (so moves up naturally with scroll).
+  const navY = isHome 
+    ? (scrollY > threshold ? -(scrollY - threshold) : 0) 
+    : 0
+
+  const positionClass = isHome ? 'fixed' : 'absolute'
+  
+  // Text color logic
+  const textColor = theme === 'light' ? 'text-[#1D1D1F]' : 'text-white'
+
+  // Link helper
+  const getLink = (hash: string) => isHome ? hash : `/${hash}`
 
   return (
     <>
-      {/* Main Navigation - Scrolls up with page content when scrolled */}
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 px-10 py-[38px] flex items-center justify-between"
-        initial={{ y: -100, opacity: 0 }}
+        className={`${positionClass} top-0 left-0 right-0 z-50 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] py-[38px] flex items-center justify-between pointer-events-none`}
+        initial={isHome ? { y: -100, opacity: 0 } : { y: 0, opacity: 1 }}
         animate={{ 
           y: navY, 
           opacity: 1 
         }}
-        transition={{ 
-          y: { duration: 0, ease: "linear" }, // No transition for y to follow scroll smoothly
+        transition={isHome ? { 
+          y: { duration: 0, ease: "linear" },
           opacity: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }
-        }}
+        } : { duration: 0 }}
         style={{zIndex: 1000}}
         viewport={{ once: true }}
       >
         <motion.div 
-          className="text-white font-space-grotesk font-medium text-[14.375px] leading-[14px] md:leading-[16.5px]"
-          initial={{ x: -100, opacity: 0, scale: 1 }}
+          className={`${textColor} font-space-grotesk font-medium text-[14.375px] leading-[14px] md:leading-[16.5px] pointer-events-auto`}
+          initial={isHome ? { x: -100, opacity: 0, scale: 1 } : { x: 0, opacity: 1, scale: 1 }}
           animate={{ x: 0, opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={isHome ? { duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] } : { duration: 0 }}
         >
-          Benedikt Schnupp
+          <Link href="/" className="hover:opacity-70 transition-opacity">
+            Benedikt Schnupp
+          </Link>
         </motion.div>
         
         <motion.div 
-          className="flex items-center sm:gap-10 gap-5 text-white font-space-grotesk font-medium text-[12px] md:text-[14.375px] leading-[14px] md:leading-[16.5px]"
-          initial={{ x: 100, opacity: 0 }}
+          className={`flex items-center sm:gap-10 gap-5 ${textColor} font-space-grotesk font-medium text-[12px] md:text-[14.375px] leading-[14px] md:leading-[16.5px] pointer-events-auto`}
+          initial={isHome ? { x: 100, opacity: 0 } : { x: 0, opacity: 1 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={isHome ? { duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] } : { duration: 0 }}
         >
+          <Link href="/about" passHref legacyBehavior>
+            <motion.a 
+              className="cursor-pointer hover:opacity-70 transition-opacity"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+            >
+              About
+            </motion.a>
+          </Link>
+          <Link href="/work" passHref legacyBehavior>
+            <motion.a 
+              className="cursor-pointer hover:opacity-70 transition-opacity"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+            >
+              Work
+            </motion.a>
+          </Link>
           <motion.a 
-            href="#about" 
-            className="cursor-pointer"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-          >
-            About
-          </motion.a>
-          <motion.a 
-            href="#work" 
-            className="cursor-pointer"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-          >
-            Work
-          </motion.a>
-          <motion.a 
-            href="#contact" 
-            className="cursor-pointer"
+            href={getLink('#contact')} 
+            className="cursor-pointer hover:opacity-70 transition-opacity"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
@@ -90,48 +114,6 @@ const Navigation = () => {
           </motion.a>
         </motion.div>
       </motion.nav>
-
-      {/* Circular Hamburger Menu - Appears when scrolled */}
-      {/* <AnimatePresence>
-        {showHamburger && (
-          <motion.div
-            className="fixed top-6 right-6 z-50"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            <motion.button
-              className="w-14 h-14 bg-white rounded-full shadow-lg flex flex-col justify-center items-center cursor-pointer"
-              onClick={toggleMenu}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.span
-                className="block w-6 h-0.5 bg-black mb-1.5 transition-all duration-300"
-                animate={{
-                  rotate: isMenuOpen ? 45 : 0,
-                  y: isMenuOpen ? 6 : 0
-                }}
-              />
-              <motion.span
-                className="block w-6 h-0.5 bg-black mb-1.5 transition-all duration-300"
-                animate={{
-                  opacity: isMenuOpen ? 0 : 1
-                }}
-              />
-              <motion.span
-                className="block w-6 h-0.5 bg-black transition-all duration-300"
-                animate={{
-                  rotate: isMenuOpen ? -45 : 0,
-                  y: isMenuOpen ? -6 : 0
-                }}
-              />
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence> */}
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
@@ -153,26 +135,28 @@ const Navigation = () => {
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div className="flex flex-col items-start justify-start h-full pt-32 px-10">
+                <Link href="/about" passHref legacyBehavior>
+                  <motion.a
+                    className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer block"
+                    whileHover={{ scale: 1.05, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={closeMenu}
+                  >
+                    About
+                  </motion.a>
+                </Link>
+                <Link href="/work" passHref legacyBehavior>
+                  <motion.a
+                    className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer block"
+                    whileHover={{ scale: 1.05, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={closeMenu}
+                  >
+                    Work
+                  </motion.a>
+                </Link>
                 <motion.a
-                  href="#about"
-                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer"
-                  whileHover={{ scale: 1.05, x: 10 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={closeMenu}
-                >
-                  About
-                </motion.a>
-                <motion.a
-                  href="#work"
-                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer"
-                  whileHover={{ scale: 1.05, x: 10 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={closeMenu}
-                >
-                  Work
-                </motion.a>
-                <motion.a
-                  href="#contact"
+                  href={getLink('#contact')}
                   className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer"
                   whileHover={{ scale: 1.05, x: 10 }}
                   transition={{ duration: 0.2 }}

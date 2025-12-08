@@ -131,8 +131,40 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
     }
   }, [debouncedHandleScroll])
 
-  // Handle project click
+  // Drag to scroll implementation
+  const [isDragging, setIsDragging] = React.useState(false)
+  const [startX, setStartX] = React.useState(0)
+  const [scrollLeftStart, setScrollLeftStart] = React.useState(0)
+  const dragMovedRef = React.useRef(0)
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return
+    setIsDragging(true)
+    dragMovedRef.current = 0
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft)
+    setScrollLeftStart(scrollContainerRef.current.scrollLeft)
+  }
+
+  const onMouseLeave = () => {
+    setIsDragging(false)
+  }
+
+  const onMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return
+    e.preventDefault()
+    const x = e.pageX - scrollContainerRef.current.offsetLeft
+    const walk = (x - startX) * 1.5 // Scroll speed multiplier
+    scrollContainerRef.current.scrollLeft = scrollLeftStart - walk
+    dragMovedRef.current += Math.abs(walk)
+  }
+
+  // Handle project click - Prevent click if dragged
   const handleProjectClick = useCallback((slug: string) => {
+    if (dragMovedRef.current > 5) return // Threshold for click vs drag
     router.push(`/project/${slug}`)
   }, [router])
 
@@ -151,28 +183,27 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
             The Latest
           </h2>
           
-          {/* Navigation Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <motion.button
               onClick={scrollLeft}
-              className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+              className="w-12 h-12 rounded-full border border-neutral-300 bg-transparent hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Scroll to previous project"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
                 <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </motion.button>
             
             <motion.button
               onClick={scrollRight}
-              className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+              className="w-12 h-12 rounded-full border border-neutral-300 bg-transparent hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Scroll to next project"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </motion.button>
@@ -183,15 +214,21 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
       {/* Projects Container */}
       <div 
         ref={scrollContainerRef}
-        className="relative mt-[20px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide"
+        className="relative mt-[20px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab active:cursor-grabbing"
+        onMouseDown={onMouseDown}
+        onMouseLeave={onMouseLeave}
+        onMouseUp={onMouseUp}
+        onMouseMove={onMouseMove}
       >
-        <div className="flex gap-5 pl-4 sm:pl-8 md:pl-12 lg:pl-[100px] xl:pl-[140px]">
+        <motion.div 
+            className="flex gap-5 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
+        >
           {data.map((project, index) => (
             <motion.div
               key={project.id}
-              className={`project-card ${project.bgColor} w-[353.66px] flex-shrink-0 cursor-pointer relative overflow-hidden`}
-              initial={{ y: 50, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
+              className={`project-card ${project.bgColor} w-[353.66px] flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl`}
+              initial={{ x: 100, opacity: 0 }}
+              whileInView={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: index * 0.1 }}
               viewport={{ once: true }}
               onClick={() => handleProjectClick(project.slug)}
@@ -199,7 +236,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
             >
               {/* Background Image */}
               <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-[4.5px]"
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-xl"
                 style={{ backgroundImage: `url('${project.image}')` }}
               />
               
@@ -231,9 +268,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
               </div>
             </motion.div>
           ))}
-          {/* Spacer for right padding */}
-          <div className="w-4 flex-shrink-0"></div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )

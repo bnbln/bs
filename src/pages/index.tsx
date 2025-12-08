@@ -55,7 +55,8 @@ export default function Home({ data }: HomeProps) {
         }}
       />
       <div className="min-h-screen bg-[#1C1D20] w-full">
-        <div className="mb-[403px]" style={{ zIndex: -1 }}>
+        {/* Main Content - Slides over the footer on desktop, sits above it on mobile */}
+        <div className="relative z-10 bg-white shadow-2xl mb-0 md:mb-[500px]">
           <Navigation />
           <Hero />
           <About />
@@ -65,8 +66,10 @@ export default function Home({ data }: HomeProps) {
           <Work data={data.projects} />
           <Create />
           <Contact />
-          <Footer />
         </div>
+        
+        {/* Footer - Relative on Mobile, Fixed Reveal on Desktop */}
+        <Footer /> 
       </div>
     </>
   )

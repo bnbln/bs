@@ -1,16 +1,19 @@
 ---
 id: 11
-title: "Creating a Trailer for the artist edition of DIE WELT"
-subtitle: "Film Production"
-slug: "artwork-edition"
-category: "Motion Design"
-published: "2024-05-21"
-image: "assets/kunstlerausgaben-2.jpg"
-excerpt: "A concise, gallery-like film designed to stage the artist editions of the newspaper WELT AM SONNTAG with calm precision."
-bgColor: "#C7D244"
+title: Creating a Trailer for the artist edition of DIE WELT
+subtitle: Film Production
+slug: artwork-edition
+category: Motion Design
+published: '2024-05-21'
+image: assets/kunstlerausgaben-2.jpg
+excerpt: >-
+  A concise, gallery-like film designed to stage the artist editions of the
+  newspaper WELT AM SONNTAG with calm precision.
+bgColor: '#C7D244'
 hasAnimation: false
 featured: true
-heroImage: "assets/kunstlerausgaben-1.jpg"
+heroImage: assets/kunstlerausgaben-1.jpg
+type: Design
 ---
 # Film Production for Artist Editions
 Designing a film that behaves like a moving exhibition — that was the task for the WELT Künstlerausgabe in 2024. Instead of leaning on narration, the piece lets space, light, and composition carry the message. The result is a focused, under-one-minute film that’s effortless to present at events or embed online.
