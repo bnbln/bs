@@ -1,95 +1,158 @@
-import React from 'react'
-import { motion } from 'framer-motion'
+import React, { useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
+import { ArrowUpRight, Mail, Linkedin } from 'lucide-react'
 
 const About = () => {
+  const containerRef = useRef(null)
+  const isInView = useInView(containerRef, { once: true, margin: "-10%" })
+
+  const services = [
+    "Creative Development",
+    "Motion Design",
+    "UI/UX Architecture",
+    "Generative AI"
+  ]
+ // TODO: add "Awards: 4+"
+  const stats = [
+    { label: "Years Experience", value: "10+" },
+    { label: "Projects Delivered", value: "400+" },
+    { label: "Awards", value: "4+" },
+  ]
+
   return (
-    <section id="about" className="bg-white py-20 md:py-40 px-4 sm:px-8 md:px-16 lg:px-[159px] relative w-full">
-      <div className="max-w-[962px] mx-auto">
-        <motion.div 
-          className="space-y-6 sm:space-y-8"
-          initial={{ y: 50, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1 }}
-          viewport={{ once: true }}
-        >
-          {/* Large Heading */}
-          <motion.h2 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-black font-space-grotesk font-bold leading-tight sm:leading-[1.1] md:leading-[1.15] lg:leading-[81.2px]"
-            initial={{ y: 100, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.2, delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            <div>Crafting Connections</div>
-            <div>through Code & Creativity</div>
-          </motion.h2>
-          
-          {/* Description */}
-          <motion.div 
-            className="text-[rgba(0,0,0,0.92)] font-inter font-normal text-sm sm:text-base leading-relaxed"
-            initial={{ y: 50, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            viewport={{ once: true }}
-          >
-            <div>I'm a creative, tech-savvy Motion Designer & Front-End Developer with 7+ years of experience in branding, motion design and modern web development. I plan and build innovative visual concepts that blend storytelling, design and cutting-edge code. Leveraging deep technical expertise in contemporary web technologies and generative AI tools, I deliver high-performance, scalable interfaces that elevate brand identity. Proactive, solution-oriented and committed to driving impactful, brand-defining projects from idea to launch.</div>
-          </motion.div>
-        </motion.div>
+    <section 
+      id="about" 
+      ref={containerRef}
+      className="bg-white py-16 md:py-40 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
+    >
+      <div className="max-w-[1400px] mx-auto relative z-10">
         
-        {/* Action Buttons */}
+        {/* Top Headline Section */}
         <motion.div 
-          className="flex gap-4 mt-8 sm:mt-12"
-          initial={{ y: 30, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          viewport={{ once: true }}
+          initial={{ y: 20, opacity: 0 }}
+          animate={isInView ? { y: 0, opacity: 1 } : {}}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-16 md:mb-24"
         >
-          {/* Email Button - Simple Circle */}
-          <motion.a 
-            href="mailto:mail@benediktschnupp.com"
-            className="bg-[#1C1D20] text-white h-12 w-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#2a2b2e] transition-colors duration-200"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-            aria-label="Send email"
-          >
-            <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 0H2C0.9 0 0.0100002 0.9 0.0100002 2L0 14C0 15.1 0.9 16 2 16H18C19.1 16 20 15.1 20 14V2C20 0.9 19.1 0 18 0ZM18 4L10 9L2 4V2L10 7L18 2V4Z" fill="currentColor"/>
-            </svg>
-          </motion.a>
-
-          {/* LinkedIn Button - Simple Circle */}
-          <motion.a 
-            href="https://linkedin.com/in/benedikt-schnupp-928112116"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#1C1D20] text-white h-12 w-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#2a2b2e] transition-colors duration-200"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-            aria-label="LinkedIn profile"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18.5 0H1.5C0.675 0 0 0.675 0 1.5V18.5C0 19.325 0.675 20 1.5 20H18.5C19.325 20 20 19.325 20 18.5V1.5C20 0.675 19.325 0 18.5 0ZM6 17H3V8H6V17ZM4.5 6.5C3.675 6.5 3 5.825 3 5C3 4.175 3.675 3.5 4.5 3.5C5.325 3.5 6 4.175 6 5C6 5.825 5.325 6.5 4.5 6.5ZM17 17H14V12.5C14 11.675 13.325 11 12.5 11C11.675 11 11 11.675 11 12.5V17H8V8H11V9.5C11.825 8.675 12.825 8 14 8C16.2 8 17 9.8 17 12.5V17Z" fill="currentColor"/>
-            </svg>
-          </motion.a>
-
-          {/* GitHub Button - Simple Circle */}
-          {/* <motion.a 
-            href="https://github.com/bnbln"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#1C1D20] text-white h-12 w-12 rounded-full flex items-center justify-center cursor-pointer hover:bg-[#2a2b2e] transition-colors duration-200"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-            aria-label="GitHub profile"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 0C4.477 0 0 4.477 0 10C0 14.42 2.865 18.17 6.839 19.49C7.339 19.58 7.5 19.27 7.5 19C7.5 18.77 7.5 18.14 7.5 17.31C5 17.88 4.35 16.23 4.15 15.5C4.05 15.18 3.6 14.5 3.1 14.23C2.75 14.05 2.4 13.66 3.1 13.65C3.8 13.64 4.35 14.23 4.55 14.5C5.5 16.1 6.9 15.7 7.5 15.4C7.6 14.8 7.9 14.4 8.2 14.2C6.2 14 4.1 13.1 4.1 9.3C4.1 8.2 4.5 7.3 5.1 6.6C5 6.4 4.6 5.4 5.2 4C5.2 4 6 3.7 7.5 5.2C8.3 5 9.2 4.9 10 4.9C10.8 4.9 11.7 5 12.5 5.2C14 3.7 14.8 4 14.8 4C15.4 5.4 15 6.4 14.9 6.6C15.5 7.3 15.9 8.2 15.9 9.3C15.9 13.1 13.8 14 11.8 14.2C12.2 14.5 12.5 15 12.5 15.7C12.5 16.5 12.5 17.3 12.5 18C12.5 18.27 12.66 18.58 13.16 18.49C17.135 18.17 20 14.42 20 10C20 4.477 15.523 0 10 0Z" fill="currentColor"/>
-            </svg>
-          </motion.a> */}
+          <h2 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mix-blend-exclusion">
+            <div>Crafting Connections</div>
+            <div className="text-[#333]">through Code &</div>
+            <div>Creativity</div>
+          </h2>
         </motion.div>
+
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
+          
+          {/* Left Column: Bio & CTA */}
+          <div className="lg:col-span-7 flex flex-col justify-between">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={isInView ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <h3 className="text-2xl md:text-3xl font-space-grotesk font-medium mb-8">
+                Building digital experiences that matter.
+              </h3>
+              <div className="space-y-6 text-lg md:text-xl text-neutral-700 font-inter leading-relaxed max-w-2xl">
+                <p>
+                  I'm a creative, tech-savvy <span className="text-black font-semibold">Motion Designer & Front-End Developer</span> with a passion for blending storytelling with cutting-edge code.
+                </p>
+                <p>
+                  From branding to modern web development, I plan and build innovative visual concepts. Leveraging deep technical expertise in contemporary web technologies and generative AI tools, I deliver high-performance, scalable interfaces that elevate brand identity.
+                </p>
+                <p>
+                  Proactive, solution-oriented, and committed to driving impactful, brand-defining projects from idea to launch.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Buttons / Actions */}
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={isInView ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-12 flex flex-wrap gap-4 items-center"
+            >
+              <a 
+                href="mailto:mail@benediktschnupp.com"
+                className="group relative inline-flex items-center justify-center px-8 py-3.5 bg-black text-white rounded-full overflow-hidden transition-all hover:bg-neutral-800"
+              >
+                <span className="relative z-10 font-medium text-lg mr-2 font-inter">Let's Work Together</span>
+                <ArrowUpRight className="w-5 h-5 relative z-10 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
+              
+              <div className="flex gap-2">
+                <a 
+                  href="https://linkedin.com/in/benedikt-schnupp-928112116" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-300 transition-colors text-black"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="w-5 h-5" />
+                </a>
+                <a 
+                  href="mailto:mail@benediktschnupp.com"
+                  className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-300 transition-colors text-black"
+                  aria-label="Email"
+                >
+                  <Mail className="w-5 h-5" />
+                </a>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Right Column: Services & Stats */}
+          <div className="lg:col-span-4 lg:col-start-9 flex flex-col gap-12">
+            
+            {/* Services List */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={isInView ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-6 font-inter border-b border-neutral-200 pb-2">
+                Expertise
+              </h4>
+              <ul className="space-y-4">
+                {services.map((service, index) => (
+                  <li key={index} className="flex items-center text-xl md:text-2xl font-space-grotesk text-black">
+                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mr-4"></span>
+                    {service}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={isInView ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-6 font-inter border-b border-neutral-200 pb-2">
+                Impact
+              </h4>
+              <div className="grid grid-cols-2 gap-8">
+                {stats.map((stat, index) => (
+                  <div key={index}>
+                    <div className="text-4xl md:text-5xl font-bold font-space-grotesk text-black mb-1">
+                      {stat.value}
+                    </div>
+                    <div className="text-sm text-neutral-500 font-inter">
+                      {stat.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
       </div>
     </section>
   )
 }
 
-export default About 
+export default About

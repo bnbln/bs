@@ -22,10 +22,10 @@ export default function Home({ data }: HomeProps) {
   return (
     <>
       <NextSeo
-        description="Creative Motion Designer & Front-End Developer with 7+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany."
+        description="Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany."
         openGraph={{
           title: 'Benedikt Schnupp - Motion Designer & Developer',
-          description: 'Creative Motion Designer & Front-End Developer with 8+ years of experience in branding, motion design and modern web development.',
+          description: 'Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development.',
           images: [
             {
               url: 'https://benediktschnupp.com/og-image.jpg',
@@ -41,7 +41,7 @@ export default function Home({ data }: HomeProps) {
         data={{
           name: 'Benedikt Schnupp',
           jobTitle: 'Motion Designer & Developer',
-          description: 'Creative Motion Designer & Front-End Developer with 7+ years of experience in branding, motion design and modern web development.',
+          description: 'Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development.',
           url: 'https://benediktschnupp.com',
           worksFor: {
             '@type': 'Organization',
@@ -59,11 +59,11 @@ export default function Home({ data }: HomeProps) {
           <Navigation />
           <Hero />
           <About />
-          <Work data={data.projects} />
-          <Create />
           <div className="featured-projects">
             <FeaturedProjects data={data.featuredProjects} />
           </div>
+          <Work data={data.projects} />
+          <Create />
           <Contact />
           <Footer />
         </div>

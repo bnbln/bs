@@ -901,15 +901,18 @@ const Work: React.FC<WorkProps> = ({ data }) => {
       )}
 
       {/* Section Title */}
-      <motion.h2
-        className="bg-white max-w-7xl mx-auto px-4 sm:px-8 md:px-16 relative w-full text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] z-20"
-        initial={{ y: 50, opacity: 0 }}
-        whileInView={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        viewport={{ once: true }}
-      >
-        Featured Design
-      </motion.h2>
+      {/* Section Title */}
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]">
+        <motion.h2
+          className="bg-white max-w-[1400px] mx-auto relative w-full text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] z-20"
+          initial={{ y: 0, opacity: 1 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          Featured Design
+        </motion.h2>
+      </div>
       
       {/* Projects Container */}
       <div className="relative pt-8">

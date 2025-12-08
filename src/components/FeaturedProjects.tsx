@@ -137,53 +137,55 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   }, [router])
 
   return (
-    <section className="bg-white h-[737px] relative w-full" id="work">
+    <section className="bg-white h-[640px] relative w-full" id="work">
       {/* Section Title with Navigation */}
       <motion.div 
-        className="absolute left-10 top-[108px] translate-y-[-50%] flex items-center gap-4"
-        initial={{ x: -50, opacity: 0 }}
+        className="w-full top-[60px] px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
+        initial={{ x: 0, opacity: 1 }}
         whileInView={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
       >
-        <h2 className="text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] whitespace-pre">
-          The Latest
-        </h2>
-        
-        {/* Navigation Buttons */}
-        <div className="flex gap-2">
-          <motion.button
-            onClick={scrollLeft}
-            className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Scroll to previous project"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </motion.button>
+        <div className="max-w-[1400px] mx-auto flex items-center gap-4">
+          <h2 className="text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] whitespace-pre">
+            The Latest
+          </h2>
           
-          <motion.button
-            onClick={scrollRight}
-            className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Scroll to next project"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </motion.button>
+          {/* Navigation Buttons */}
+          <div className="flex gap-2">
+            <motion.button
+              onClick={scrollLeft}
+              className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Scroll to previous project"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </motion.button>
+            
+            <motion.button
+              onClick={scrollRight}
+              className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Scroll to next project"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
       {/* Projects Container */}
       <div 
         ref={scrollContainerRef}
-        className="absolute left-0 top-[162px] h-[472px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide"
+        className="relative mt-[20px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide"
       >
-        <div className="flex gap-5 pl-10">
+        <div className="flex gap-5 pl-4 sm:pl-8 md:pl-12 lg:pl-[100px] xl:pl-[140px]">
           {data.map((project, index) => (
             <motion.div
               key={project.id}
