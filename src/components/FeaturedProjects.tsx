@@ -11,8 +11,8 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current
-      const cardWidth = 353.66 // Width of each project card
-      const gap = 20 // Gap between cards (gap-5 = 20px)
+      const cardWidth = window.innerWidth < 768 ? 300 : 353.66 
+      const gap = 20 
       const totalCardWidth = cardWidth + gap
       
       // Calculate current scroll position
@@ -36,8 +36,8 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const scrollRight = () => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current
-      const cardWidth = 353.66 // Width of each project card
-      const gap = 20 // Gap between cards (gap-5 = 20px)
+      const cardWidth = window.innerWidth < 768 ? 300 : 353.66 
+      const gap = 20 
       const totalCardWidth = cardWidth + gap
       
       // Calculate current scroll position
@@ -58,84 +58,16 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
     }
   }
 
-  const handleScroll = useCallback(() => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current
-      const cardWidth = 353.66 // Width of each project card
-      const gap = 20 // Gap between cards (gap-5 = 20px)
-      const totalCardWidth = cardWidth + gap
-      
-      // Calculate current scroll position
-      const currentScroll = container.scrollLeft
-      
-      // Find the nearest card position (no padding offset needed)
-      const nearestIndex = Math.round(currentScroll / totalCardWidth)
-      
-      // Ensure index is within bounds
-      const clampedIndex = Math.max(0, Math.min(data.length - 1, nearestIndex))
-      const nearestScroll = clampedIndex * totalCardWidth
-      
-      // Only snap if we're close enough to a card position (within 60px for more responsive snapping)
-      if (Math.abs(currentScroll - nearestScroll) > 20) {
-        // Ensure we don't scroll beyond the maximum possible scroll position
-        const maxScroll = container.scrollWidth - container.clientWidth
-        const finalTargetScroll = Math.min(nearestScroll, maxScroll)
-        
-        // Custom smooth scrolling with longer duration
-        const startPosition = container.scrollLeft
-        const distance = finalTargetScroll - startPosition
-        const duration = 800 // 800ms for longer, smoother animation
-        const startTime = performance.now()
-        
-        const animateScroll = (currentTime: number) => {
-          const elapsed = currentTime - startTime
-          const progress = Math.min(elapsed / duration, 1)
-          
-          // Easing function for smooth animation
-          const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-          
-          const newPosition = startPosition + (distance * easeOutQuart)
-          container.scrollLeft = newPosition
-          
-          if (progress < 1) {
-            requestAnimationFrame(animateScroll)
-          }
-        }
-        
-        requestAnimationFrame(animateScroll)
-      }
-    }
-  }, [])
-
-  // Debounced scroll handler
-  const debouncedHandleScroll = useCallback(() => {
-    let timeoutId: NodeJS.Timeout
-    return () => {
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        handleScroll()
-      }, 150) // Wait 150ms after scrolling stops for more responsive snapping
-    }
-  }, [handleScroll])
-
-  // Set up scroll event listener
-  useEffect(() => {
-    const container = scrollContainerRef.current
-    if (container) {
-      const debouncedScroll = debouncedHandleScroll()
-      container.addEventListener('scroll', debouncedScroll)
-      
-      return () => {
-        container.removeEventListener('scroll', debouncedScroll)
-      }
-    }
-  }, [debouncedHandleScroll])
-
   // Drag to scroll implementation
   const [isDragging, setIsDragging] = React.useState(false)
   const [startX, setStartX] = React.useState(0)
   const [scrollLeftStart, setScrollLeftStart] = React.useState(0)
   const dragMovedRef = React.useRef(0)
+  
+  // Physics refs
+  const velocityRef = React.useRef(0)
+  const lastXRef = React.useRef(0)
+  const lastTimeRef = React.useRef(0)
 
   const onMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return
@@ -143,24 +75,86 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
     dragMovedRef.current = 0
     setStartX(e.pageX - scrollContainerRef.current.offsetLeft)
     setScrollLeftStart(scrollContainerRef.current.scrollLeft)
+    
+    // Init physics
+    velocityRef.current = 0
+    lastXRef.current = e.pageX
+    lastTimeRef.current = performance.now()
   }
 
-  const onMouseLeave = () => {
-    setIsDragging(false)
+  const handleDragEnd = () => {
+    if (scrollContainerRef.current && isDragging) {
+        setIsDragging(false)
+        
+        const container = scrollContainerRef.current
+        const cardWidth = window.innerWidth < 768 ? 300 : 353.66 
+        const gap = 20 
+        const totalCardWidth = cardWidth + gap
+        const currentScroll = container.scrollLeft
+        
+        // Calculate projection based on velocity
+        // A velocity of 2 means we moved 2px per ms. 
+        // Let's project where we'd land in ~300ms
+        const velocity = velocityRef.current
+        const inertia = Math.abs(velocity) > 0.5 ? 300 : 0 // Only apply inertia if decent swipe
+        const projectedScroll = currentScroll - (velocity * inertia)
+        
+        // Find nearest index to projection
+        const nearestIndex = Math.round(projectedScroll / totalCardWidth)
+        
+        // Clamp index
+        const clampedIndex = Math.max(0, Math.min(data.length - 1, nearestIndex))
+        const targetScroll = clampedIndex * totalCardWidth
+        
+        container.scrollTo({ left: targetScroll, behavior: 'smooth' })
+    } else {
+        setIsDragging(false)
+    }
   }
 
-  const onMouseUp = () => {
-    setIsDragging(false)
-  }
+  const onMouseLeave = handleDragEnd
+  const onMouseUp = handleDragEnd
 
   const onMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !scrollContainerRef.current) return
     e.preventDefault()
+    
+    // Calculate Velocity
+    const now = performance.now()
+    const dt = now - lastTimeRef.current
+    const dx = e.pageX - lastXRef.current
+    
+    if (dt > 0) {
+        velocityRef.current = dx / dt
+        lastXRef.current = e.pageX
+        lastTimeRef.current = now
+    }
+    
     const x = e.pageX - scrollContainerRef.current.offsetLeft
-    const walk = (x - startX) * 1.5 // Scroll speed multiplier
+    const walk = (x - startX) * 1.0 // 1:1 movement
     scrollContainerRef.current.scrollLeft = scrollLeftStart - walk
     dragMovedRef.current += Math.abs(walk)
   }
+
+  // Check for mobile to disable scrolling animations
+  const [isMobile, setIsMobile] = React.useState(false) // Default to false (desktop) until checked
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    // Initial check
+    checkMobile()
+    
+    // Add listener
+    window.addEventListener('resize', checkMobile)
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // ... rest of component logic ...
 
   // Handle project click - Prevent click if dragged
   const handleProjectClick = useCallback((slug: string) => {
@@ -214,22 +208,23 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
       {/* Projects Container */}
       <div 
         ref={scrollContainerRef}
-        className="relative mt-[20px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab active:cursor-grabbing"
+        className={`relative mt-[20px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab active:cursor-grabbing select-none scroll-pl-4 sm:scroll-pl-8 md:scroll-pl-12 lg:scroll-pl-[100px] xl:scroll-pl-[140px] ${isDragging ? '' : 'snap-x snap-mandatory'}`}
         onMouseDown={onMouseDown}
         onMouseLeave={onMouseLeave}
         onMouseUp={onMouseUp}
         onMouseMove={onMouseMove}
       >
         <motion.div 
-            className="flex gap-5 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
+            key={isMobile ? 'mobile' : 'desktop'}
+            className="inline-flex min-w-full gap-5 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
         >
           {data.map((project, index) => (
             <motion.div
               key={project.id}
-              className={`project-card ${project.bgColor} w-[353.66px] flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl`}
-              initial={{ x: 100, opacity: 0 }}
+              className={`project-card ${project.bgColor} w-[300px] sm:w-[353.66px] h-[424px] sm:h-auto flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start`}
+              initial={isMobile ? { x: 0, opacity: 1 } : { x: 100, opacity: 0 }}
               whileInView={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: index * 0.1 }}
+              transition={{ duration: 0.8, delay: isMobile ? 0 : index * 0.1 }}
               viewport={{ once: true }}
               onClick={() => handleProjectClick(project.slug)}
               whileHover="hover"

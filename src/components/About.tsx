@@ -23,7 +23,7 @@ const About = () => {
     <section 
       id="about" 
       ref={containerRef}
-      className="bg-white py-16 md:py-40 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
+      className="bg-white py-12 md:py-24 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto relative z-10">
         
@@ -32,7 +32,7 @@ const About = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={isInView ? { y: 0, opacity: 1 } : {}}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-16 md:mb-24"
+          className="mb-10 md:mb-12"
         >
           <h2 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mix-blend-exclusion">
             <div>Crafting Connections</div>
@@ -42,7 +42,7 @@ const About = () => {
         </motion.div>
 
         {/* Main Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-6">
           
           {/* Left Column: Bio & CTA */}
           <div className="lg:col-span-7 flex flex-col justify-between">
@@ -51,19 +51,19 @@ const About = () => {
               animate={isInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h3 className="text-2xl md:text-3xl font-space-grotesk font-medium mb-8">
+              <h3 className="text-2xl md:text-3xl font-space-grotesk font-medium mb-5">
                 Building digital experiences that matter.
               </h3>
               <div className="space-y-6 text-lg md:text-xl text-neutral-700 font-inter leading-relaxed max-w-2xl">
                 <p>
                   I'm a creative, tech-savvy <span className="text-black font-semibold">Motion Designer & Front-End Developer</span> with a passion for blending storytelling with cutting-edge code.
                 </p>
-                <p>
+                {/* <p>
                   From branding to modern web development, I plan and build innovative visual concepts. Leveraging deep technical expertise in contemporary web technologies and generative AI tools, I deliver high-performance, scalable interfaces that elevate brand identity.
                 </p>
                 <p>
                   Proactive, solution-oriented, and committed to driving impactful, brand-defining projects from idea to launch.
-                </p>
+                </p> */}
               </div>
             </motion.div>
 
@@ -72,7 +72,7 @@ const About = () => {
               initial={{ y: 20, opacity: 0 }}
               animate={isInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-12 flex flex-wrap gap-4 items-center"
+              className="mt-6 flex flex-wrap gap-4 items-center"
             >
               <a 
                 href="mailto:mail@benediktschnupp.com"
@@ -104,7 +104,7 @@ const About = () => {
           </div>
 
           {/* Right Column: Services & Stats */}
-          <div className="lg:col-span-4 lg:col-start-9 flex flex-col gap-12">
+          <div className="lg:col-span-4 lg:col-start-9 flex flex-col gap-6">
             
             {/* Services List */}
             <motion.div
@@ -112,13 +112,12 @@ const About = () => {
               animate={isInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-6 font-inter border-b border-neutral-200 pb-2">
+              <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-3 font-inter">
                 Expertise
               </h4>
-              <ul className="space-y-4">
+              <ul className="space-y-1">
                 {services.map((service, index) => (
-                  <li key={index} className="flex items-center text-xl md:text-2xl font-space-grotesk text-black">
-                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mr-4"></span>
+                  <li key={index} className="text-xl md:text-2xl font-space-grotesk text-black">
                     {service}
                   </li>
                 ))}
@@ -131,10 +130,10 @@ const About = () => {
               animate={isInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-6 font-inter border-b border-neutral-200 pb-2">
+              <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-3 font-inter">
                 Impact
               </h4>
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-2 gap-y-4 gap-x-2">
                 {stats.map((stat, index) => (
                   <div key={index}>
                     <div className="text-4xl md:text-5xl font-bold font-space-grotesk text-black mb-1">
