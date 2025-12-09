@@ -7,7 +7,7 @@ const Create = () => {
       <div className="max-w-[1400px] mx-auto">
         <motion.div 
           className="space-y-6 sm:space-y-8"
-          initial={{ y: 50, opacity: 0 }}
+          initial={{ y: 0, opacity: 0 }}
           whileInView={{ y: 0, opacity: 1 }}
           transition={{ duration: 1 }}
           viewport={{ once: true }}
@@ -15,7 +15,7 @@ const Create = () => {
           {/* Large Heading */}
           <motion.h2 
             className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] text-white font-space-grotesk font-bold leading-[0.9] tracking-tight"
-            initial={{ y: 100, opacity: 0 }}
+            initial={{ y: 0, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ duration: 1.2, delay: 0.2 }}
             viewport={{ once: true }}

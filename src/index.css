@@ -75,7 +75,7 @@
   }
   
   .project-card {
-    @apply relative overflow-hidden rounded-[4.5px] bg-white p-[18px] flex flex-col gap-[363.55px] h-[471.55px];
+    @apply relative overflow-hidden rounded-xl;
   }
   
   .project-card-blue {

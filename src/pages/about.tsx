@@ -2,9 +2,12 @@ import React, { useRef } from 'react'
 import { GetStaticProps } from 'next'
 import { NextSeo } from 'next-seo'
 import { motion, useScroll, useTransform, useInView } from 'framer-motion'
+import dynamic from 'next/dynamic'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
 import FeaturedProjects from '../components/FeaturedProjects'
+
+const Shuffle = dynamic(() => import('../components/Shuffle'), { ssr: false })
 import { getProjectsData, Project } from '../lib/markdown'
 import { ArrowUpRight, Mail, Linkedin, Copy, Calendar, Award, Briefcase, GraduationCap } from 'lucide-react'
 
@@ -33,7 +36,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
 
   const timelineEvents = [
     {
-      year: "1994 - 2014",
+      year: "1996 - 2014",
       title: "Born & Raised in Berlin",
       description: "Growing up in the vibrant heart of Germany, I developed an early passion for technology and creativity.",
       icon: <Award className="w-5 h-5" />
@@ -95,37 +98,51 @@ const AboutPage = ({ data }: AboutPageProps) => {
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               >
                   <h1 className="text-[10vw] sm:text-[8vw] md:text-[6vw] lg:text-[5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk mb-8">
-                    <div>Designing</div>
-                    <div className="text-neutral-500">the Future,</div>
-                    <div>One Pixel at a Time.</div>
+                    <div>Designing the Future</div>
+                    <Shuffle
+                      text="one Pixel at a Time."
+                      tag="span"
+                      shuffleDirection="right"
+                      duration={0.35}
+                      animationMode="evenodd"
+                      shuffleTimes={1}
+                      ease="power3.out"
+                      stagger={0.03}
+                      threshold={0.1}
+                      triggerOnce={true}
+                      triggerOnHover={true}
+                      respectReducedMotion={true}
+                      textAlign="left"
+                      className="!text-[10vw] !sm:text-[8vw] !md:text-[6vw] !lg:text-[5vw] !leading-[0.9] !tracking-tight font-bold font-space-grotesk !normal-case"
+                    />
                   </h1>
               </motion.div>
            </section>
 
            {/* Personal Story & Image */}
-           <section className="px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] py-12 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+           <section className="px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] py-12 max-w-[1600px] mx-auto flex flex-col-reverse lg:grid lg:grid-cols-12 gap-12 items-start">
              
              {/* Text Content */}
-             <div className="lg:col-span-7 space-y-8">
+             <div className="lg:col-span-7 space-y-8 order-2 lg:order-1">
                 <motion.div
                    initial={{ y: 20, opacity: 0 }}
                    whileInView={{ y: 0, opacity: 1 }}
                    viewport={{ once: true }}
                    transition={{ duration: 0.8 }}
                 >
-                   <h2 className="text-3xl md:text-4xl font-space-grotesk font-medium mb-6">
+                   <h2 className="text-3xl md:text-5xl font-space-grotesk font-medium mb-6 pr-12">
                       A blend of creative vision and technical precision.
                    </h2>
                    <div className="prose prose-lg text-neutral-600 font-inter leading-relaxed">
                       <p>
                         I am an outgoing, friendly Berliner with a creative and tech-savvy mind. My journey began in this vibrant city, where I was born and raised, soaking in the diverse culture and relentless innovation that defines Berlin.
                       </p>
+                      <br />
                       <p>
                         Through my studies in <strong>Media Management & Communication Design</strong> and years of hands-on experience, I've cultivated a unique skill set that bridges the gap between aesthetic beauty and functional code.
-                      </p>
-                      <p>
                         I don't just build websites; I craft digital experiences. Whether it's 3D motion graphics, complex frontend logic, or AI-driven interfaces, I approach every project with passion and a solution-oriented mindset.
                       </p>
+                      <br />
                       <p>
                         Outside of work, I'm a maker at heart. You'll find me experimenting with <strong>3D printing</strong>, whipping up new recipes in the kitchen, or enjoying movie nights.
                       </p>
@@ -134,7 +151,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
              </div>
 
              {/* Image */}
-             <div className="lg:col-span-5 relative">
+             <div className="lg:col-span-5 relative order-1 lg:order-2 lg:-mt-32">
                 <motion.div
                   className="w-full aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-200"
                   initial={{ scale: 0.95, opacity: 0 }}

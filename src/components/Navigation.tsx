@@ -86,6 +86,15 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
           animate={{ x: 0, opacity: 1 }}
           transition={isHome ? { duration: 0.8, delay: 0.9, ease: [0.25, 0.46, 0.45, 0.94] } : { duration: 0 }}
         >
+          <Link href="/" passHref legacyBehavior>
+            <motion.a 
+              className="cursor-pointer hover:opacity-70 transition-opacity"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+            >
+              Home
+            </motion.a>
+          </Link>
           <Link href="/about" passHref legacyBehavior>
             <motion.a 
               className="cursor-pointer hover:opacity-70 transition-opacity"

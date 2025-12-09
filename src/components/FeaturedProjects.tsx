@@ -163,7 +163,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   }, [router])
 
   return (
-    <section className="bg-white h-[640px] relative w-full" id="work">
+    <section className="bg-white my-[60px] relative w-full" id="work">
       {/* Section Title with Navigation */}
       <motion.div 
         className="w-full top-[60px] px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
@@ -221,7 +221,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
           {data.map((project, index) => (
             <motion.div
               key={project.id}
-              className={`project-card ${project.bgColor} w-[300px] sm:w-[353.66px] h-[424px] sm:h-auto flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start`}
+              className={`project-card ${project.bgColor} w-[300px] sm:w-[353.66px] h-[424px] sm:h-[471.55px] flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start flex flex-col p-4 sm:p-6`}
               initial={isMobile ? { x: 0, opacity: 1 } : { x: 100, opacity: 0 }}
               whileInView={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: isMobile ? 0 : index * 0.1 }}
