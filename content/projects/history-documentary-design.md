@@ -8,7 +8,7 @@ excerpts: >-
   A fresh take on history: I created the full visual branding for a new TV show
   – blending retro vibes, bold typography, and a color palette inspired by aged
   film reels.
-published: '2024-04-15'
+published: '2023-04-15'
 image: assets/Zeitreise.webp
 bgColor: '#CD412D'
 hasAnimation: false

@@ -11,7 +11,7 @@ excerpts: >-
 published: '2024-05-01'
 description: Trailer for EU election campaign
 bgColor: '#E6A105'
-image: assets/flag.png
+image: assets/EU_wahl.webp
 video: assets/Eu Wahl Loop.mp4
 hasAnimation: false
 featured: false
@@ -29,6 +29,10 @@ EU-Gold #E6A105 rgb(230,161,5) usage=Sterne/Highlight
 [video loop](assets/Eu Wahl Loop.mp4|assets/flag.png)
 
 One standout detail: the twelve stars. They rotate in opposition to the overall scene while staying perfectly horizontal within the viewport. It's a subtle effect powered by After Effects expressions – but visually, it makes all the difference.
+
+```insight title="Die zwölf Sterne – der Trick, der alles zusammenhält"
+Die zwölf Sterne rotieren gegenläufig zur Szene, bleiben aber im Viewport perfekt horizontal. Ein subtiler Move – visuell macht er sofort den Unterschied und verankert den Look klar in der EU-Identität.
+```
 
 ```javascript title="After Effects Expression"
 -thisComp.layer("EU FLAG ROTATION").transform.rotation

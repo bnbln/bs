@@ -8,53 +8,67 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  const getCarouselEls = useCallback((): HTMLElement[] => {
+    const container = scrollContainerRef.current
+    if (!container) return []
+    return Array.from(container.querySelectorAll<HTMLElement>('[data-carousel-item="true"]'))
+  }, [])
+
+  const getScrollLeftForEl = useCallback((container: HTMLElement, el: HTMLElement) => {
+    const c = container.getBoundingClientRect()
+    const r = el.getBoundingClientRect()
+    return r.left - c.left + container.scrollLeft
+  }, [])
+
+  const getNearestIndex = useCallback(
+    (scrollLeft: number) => {
+      const container = scrollContainerRef.current
+      if (!container) return 0
+      const els = getCarouselEls()
+      if (!els.length) return 0
+
+      let bestIdx = 0
+      let bestDist = Infinity
+      for (let i = 0; i < els.length; i++) {
+        const left = getScrollLeftForEl(container, els[i])
+        const dist = Math.abs(left - scrollLeft)
+        if (dist < bestDist) {
+          bestDist = dist
+          bestIdx = i
+        }
+      }
+      return bestIdx
+    },
+    [getCarouselEls, getScrollLeftForEl]
+  )
+
+  const scrollToIndex = useCallback(
+    (targetIndex: number) => {
+      const container = scrollContainerRef.current
+      if (!container) return
+      const els = getCarouselEls()
+      if (!els.length) return
+
+      const clamped = Math.max(0, Math.min(els.length - 1, targetIndex))
+      const left = getScrollLeftForEl(container, els[clamped])
+      container.scrollTo({ left, behavior: 'smooth' })
+    },
+    [getCarouselEls, getScrollLeftForEl]
+  )
+
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current
-      const cardWidth = window.innerWidth < 768 ? 300 : 353.66 
-      const gap = 20 
-      const totalCardWidth = cardWidth + gap
-      
-      // Calculate current scroll position
-      const currentScroll = container.scrollLeft
-      
-      // Find the index of the currently visible card (no padding offset needed)
-      const currentIndex = Math.round(currentScroll / totalCardWidth)
-      
-      // Calculate target scroll position for the previous card
-      const targetIndex = Math.max(0, currentIndex - 1)
-      const targetScroll = targetIndex * totalCardWidth
-      
-      // Ensure we don't scroll beyond the maximum possible scroll position
-      const maxScroll = container.scrollWidth - container.clientWidth
-      const finalTargetScroll = Math.min(targetScroll, maxScroll)
-      
-      container.scrollTo({ left: finalTargetScroll, behavior: 'smooth' })
+      const currentIndex = getNearestIndex(container.scrollLeft)
+      scrollToIndex(currentIndex - 1)
     }
   }
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current
-      const cardWidth = window.innerWidth < 768 ? 300 : 353.66 
-      const gap = 20 
-      const totalCardWidth = cardWidth + gap
-      
-      // Calculate current scroll position
-      const currentScroll = container.scrollLeft
-      
-      // Find the index of the currently visible card (no padding offset needed)
-      const currentIndex = Math.round(currentScroll / totalCardWidth)
-      
-      // Calculate target scroll position for the next card
-      const targetIndex = Math.min(data.length - 1, currentIndex + 1)
-      const targetScroll = targetIndex * totalCardWidth
-      
-      // Ensure we don't scroll beyond the maximum possible scroll position
-      const maxScroll = container.scrollWidth - container.clientWidth
-      const finalTargetScroll = Math.min(targetScroll, maxScroll)
-      
-      container.scrollTo({ left: finalTargetScroll, behavior: 'smooth' })
+      const currentIndex = getNearestIndex(container.scrollLeft)
+      scrollToIndex(currentIndex + 1)
     }
   }
 
@@ -87,9 +101,6 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
         setIsDragging(false)
         
         const container = scrollContainerRef.current
-        const cardWidth = window.innerWidth < 768 ? 300 : 353.66 
-        const gap = 20 
-        const totalCardWidth = cardWidth + gap
         const currentScroll = container.scrollLeft
         
         // Calculate projection based on velocity
@@ -99,14 +110,9 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
         const inertia = Math.abs(velocity) > 0.5 ? 300 : 0 // Only apply inertia if decent swipe
         const projectedScroll = currentScroll - (velocity * inertia)
         
-        // Find nearest index to projection
-        const nearestIndex = Math.round(projectedScroll / totalCardWidth)
-        
-        // Clamp index
-        const clampedIndex = Math.max(0, Math.min(data.length - 1, nearestIndex))
-        const targetScroll = clampedIndex * totalCardWidth
-        
-        container.scrollTo({ left: targetScroll, behavior: 'smooth' })
+        // Snap auf die nächste Karte basierend auf echten DOM-Positionen (variable Breiten)
+        const nearestIndex = getNearestIndex(projectedScroll)
+        scrollToIndex(nearestIndex)
     } else {
         setIsDragging(false)
     }
@@ -137,7 +143,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   }
 
   // Check for mobile to disable scrolling animations
-  const [isMobile, setIsMobile] = React.useState(false) // Default to false (desktop) until checked
+  const [isMobile, setIsMobile] = React.useState(false) // Default: Desktop; wird clientseitig gemessen
   
   useEffect(() => {
     const checkMobile = () => {
@@ -161,6 +167,27 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
     if (dragMovedRef.current > 5) return // Threshold for click vs drag
     router.push(`/project/${slug}`)
   }, [router])
+
+  const handleMoreProjectsClick = useCallback(() => {
+    if (dragMovedRef.current > 5) return
+    router.push('/work')
+  }, [router])
+
+  type CarouselItem =
+    | { kind: 'project'; project: Project }
+    | { kind: 'more-projects' }
+
+  // Nur die ersten 6 Projekte anzeigen; Rest gehört auf /work
+  const visibleProjects = React.useMemo(() => (data || []).slice(0, 7), [data])
+
+  const items: CarouselItem[] = React.useMemo(() => {
+    const out: CarouselItem[] = visibleProjects.map((project) => ({ kind: 'project', project }))
+    // CTA immer direkt nach den 6 Einträgen (oder nach dem letzten, falls <6)
+    out.push({ kind: 'more-projects' })
+    return out
+  }, [visibleProjects])
+
+  const carouselLength = items.length
 
   return (
     <section className="bg-white my-[60px] relative w-full" id="work">
@@ -215,17 +242,91 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
         onMouseMove={onMouseMove}
       >
         <motion.div 
-            key={isMobile ? 'mobile' : 'desktop'}
-            className="inline-flex min-w-full gap-5 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
+            className="inline-flex min-w-full items-start gap-5 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
         >
-          {data.map((project, index) => (
+          {items.map((item, index) => {
+            if (item.kind === 'more-projects') {
+              return (
+                <motion.div
+                  key="more-projects"
+                  className={[
+                    // gleiche Größe wie die anderen Karten im Carousel
+                    'w-[300px] sm:w-[353.66px] h-[424px] sm:h-[471.55px] flex-shrink-0 snap-start',
+                    // “Article-Card” Look & Feel (Border/Shadow/Rounded)
+                    'group rounded-2xl border border-black/10 bg-white hover:border-black/20 shadow-sm hover:shadow-xl',
+                    'transition-[border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(.16,1,.3,1)]',
+                    'relative overflow-hidden cursor-pointer',
+                    // Inhalt zentrieren
+                    'flex flex-col items-center justify-center p-6',
+                  ].join(' ')}
+                  data-carousel-item="true"
+                  initial={isMobile ? false : { y: 12, opacity: 0 }}
+                  whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
+                  // Wichtig für Mobile: isMobile flippt erst nach dem ersten Render auf true.
+                  // Ohne explizites animate kann opacity:0 vom initial hängen bleiben.
+                  animate={isMobile ? { y: 0, opacity: 1 } : undefined}
+                  transition={isMobile ? undefined : { duration: 0.6, ease: 'easeOut', delay: index * 0.08 }}
+                  viewport={isMobile ? undefined : { once: true, amount: 0.6 }}
+                  onClick={handleMoreProjectsClick}
+                >
+                  <motion.button
+                    type="button"
+                    aria-label="More Projects"
+                    className="w-16 h-16 rounded-full border border-neutral-300 bg-transparent group-hover:bg-black group-hover:text-white group-hover:border-black flex items-center justify-center transition-all"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleMoreProjectsClick()
+                    }}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </motion.button>
+                  <div className="mt-5 text-center">
+                    <div className="text-[14px] font-bold uppercase tracking-widest text-[#86868b] font-inter">
+                      More Projects
+                    </div>
+                  </div>
+
+                  <div className="absolute inset-0 rounded-2xl ring-2 ring-transparent group-hover:ring-black/10 transition-colors pointer-events-none" />
+                </motion.div>
+              )
+            }
+
+            const project = item.project
+            // Umgekehrt: die bisher 16:9 (featured) sollen wieder portrait sein,
+            // und die übrigen (neu hinzugekommenen) sollen 16:9 bekommen.
+            // Jetzt: der Kartencontainer selbst ist 16:9 (breiter), bei gleicher Höhe.
+            const isLandscapeCard = !Boolean(project.featured)
+
+            return (
+            // In horizontalen Scroller-Layouts kann ein x-Entrance die In-View-Erkennung
+            // (IntersectionObserver) „flattern“ lassen. Daher: y/opacity Entrance.
+            // Auf Mobile/ungeklärten Breakpoints kein Entrance-Anim, um Remount/Jank zu vermeiden.
             <motion.div
               key={project.id}
-              className={`project-card ${project.bgColor} w-[300px] sm:w-[353.66px] h-[424px] sm:h-[471.55px] flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start flex flex-col p-4 sm:p-6`}
-              initial={isMobile ? { x: 0, opacity: 1 } : { x: 100, opacity: 0 }}
-              whileInView={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: isMobile ? 0 : index * 0.1 }}
-              viewport={{ once: true }}
+              className={[
+                'project-card',
+                project.bgColor,
+                // gleiche Höhe für alle Cards, damit eine saubere Row entsteht
+                'h-[424px] sm:h-[471.55px]',
+                // Portrait Cards: fixe Breite wie bisher
+                isLandscapeCard ? 'aspect-[4/3]' : 'w-[300px] sm:w-[353.66px]',
+                'flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start flex flex-col p-4 sm:p-6',
+              ].join(' ')}
+              data-carousel-item="true"
+              initial={isMobile ? false : { y: 12, opacity: 0 }}
+              whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
+              // Mobile-Safety: erzwingt Sichtbarkeit, falls whileInView durch State-Flip nicht feuert
+              animate={isMobile ? { y: 0, opacity: 1 } : undefined}
+              transition={
+                isMobile
+                  ? undefined
+                  : { duration: 0.6, ease: 'easeOut', delay: index * 0.08 }
+              }
+              viewport={isMobile ? undefined : { once: true, amount: 0.6 }}
               onClick={() => handleProjectClick(project.slug)}
               whileHover="hover"
             >
@@ -234,6 +335,8 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-xl"
                 style={{ backgroundImage: `url('${project.image}')` }}
               />
+              {/* leichte Abdunklung unten für Text-Lesbarkeit */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/35 pointer-events-none" />
               
               {/* Category */}
               <motion.div 
@@ -262,11 +365,12 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                 </h3>
               </div>
             </motion.div>
-          ))}
+            )
+          })}
         </motion.div>
       </div>
     </section>
   )
 }
 
-export default FeaturedProjects 
+export default FeaturedProjects

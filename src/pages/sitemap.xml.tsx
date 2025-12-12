@@ -1,10 +1,10 @@
 import { GetServerSideProps } from 'next'
-import { getProjectsData } from '../lib/markdown'
+import { getAllProjects } from '../lib/markdown'
 
 const Sitemap = () => null
 
 export const getServerSideProps: GetServerSideProps = async ({ res }) => {
-  const { projects } = getProjectsData()
+  const projects = getAllProjects()
   const baseUrl = 'https://benediktschnupp.com'
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

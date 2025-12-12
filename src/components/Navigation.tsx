@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
+import { Mail } from 'lucide-react'
 
 interface NavigationProps {
   theme?: 'dark' | 'light'
@@ -115,11 +116,12 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
           </Link>
           <motion.a 
             href={getLink('#contact')} 
-            className="cursor-pointer hover:opacity-70 transition-opacity"
+            className="cursor-pointer hover:opacity-70 transition-opacity inline-flex items-center justify-center"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
+            aria-label="Contact"
           >
-            Contact
+            <Mail className="w-[18px] h-[18px]" strokeWidth={1.75} aria-hidden="true" />
           </motion.a>
         </motion.div>
       </motion.nav>
@@ -166,12 +168,13 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                 </Link>
                 <motion.a
                   href={getLink('#contact')}
-                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer"
+                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer inline-flex items-center"
                   whileHover={{ scale: 1.05, x: 10 }}
                   transition={{ duration: 0.2 }}
                   onClick={closeMenu}
+                  aria-label="Contact"
                 >
-                  Contact
+                  <Mail className="w-[18px] h-[18px]" strokeWidth={1.75} aria-hidden="true" />
                 </motion.a>
               </div>
             </motion.div>

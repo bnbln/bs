@@ -5,7 +5,7 @@ subtitle: Cinematic 3D Animation for Television
 slug: book-3d-animation
 category: Book
 excerpts: 3D modeling and animation of a book for television commercial
-published: '2024-03-15'
+published: '2023-03-15'
 image: assets/book.avif
 hasAnimation: true
 animationSequence:

@@ -93,7 +93,8 @@ export function getProjectsData(): {
 
   return {
     projects: allProjects.filter(p => !p.featured),
-    featuredProjects: allProjects.filter(p => p.featured)
+    // FeaturedProjects-Carousel: soll ALLE Projekte zeigen (neueste zuerst)
+    featuredProjects: allProjects
   }
 }
 

@@ -38,7 +38,7 @@ I focused on refining three core ideas using ControlNet and careful prompting:
 - Micro Chip - Reflecting the intricate, technology-driven aspect of our brand.
 - Company Headquarters - Emphasizing our foundation and stability.
 
-![assets/qr-1.jpg|assets/qr-2.jpg|assets/qr-3.jpg|assets/qr-4.jpg|assets/qr-5.jpg|assets/qr-6.jpg]
+![assets/qr-1.jpg::Bits and Bytes|assets/qr-2.jpg::Office Headquarters|assets/qr-3.jpg::Connectivity and Ideas|assets/qr-4.jpg::Micro-Chip 01|assets/qr-5.jpg::Micro-Chip 02|assets/qr-6.jpg::Up in the Sky]
 
 ## Final Touches in Photoshop
 The last step was to outpaint, upscale, and composite the image using Photoshop. This stage was crucial for placing the campaign claim and brand logo, correcting colors, and preparing a printable PDF that met the specifications of the print company.
