@@ -11,6 +11,13 @@ interface ProjectPageProps {
 }
 
 export default function ProjectPage({ project, allProjects }: ProjectPageProps) {
+  const siteUrl = 'https://benediktschnupp.com'
+  const heroImage = project.heroImage || project.image
+  const toAbsoluteUrl = (url: string) =>
+    url?.startsWith('http') ? url : `${siteUrl}${url?.startsWith('/') ? '' : '/'}${url}`
+
+  const absoluteHeroImage = toAbsoluteUrl(heroImage)
+
   return (
     <>
       <NextSeo
@@ -21,7 +28,7 @@ export default function ProjectPage({ project, allProjects }: ProjectPageProps) 
           description: project.excerpts,
           images: [
             {
-              url: `https://benediktschnupp.com/${project.image}`,
+              url: absoluteHeroImage,
               width: 1200,
               height: 630,
               alt: project.title,
@@ -39,7 +46,7 @@ export default function ProjectPage({ project, allProjects }: ProjectPageProps) 
         data={{
           headline: project.title,
           description: project.excerpts,
-          image: `https://benediktschnupp.com/${project.image}`,
+          image: absoluteHeroImage,
           datePublished: project.published,
           author: {
             '@type': 'Person',
@@ -53,7 +60,7 @@ export default function ProjectPage({ project, allProjects }: ProjectPageProps) 
       />
       <div className="min-h-screen bg-[#1C1D20] w-full">
         <div className="mb-[403px]" style={{ zIndex: -1 }}>
-          <Article project={project} allProjects={allProjects} />
+          <Article project={project} allProjects={allProjects} heroPriority />
           <Footer />
         </div>
       </div>

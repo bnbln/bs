@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import ScrollVelocity from './ScrollVelocity'
 const locationIcon = '/assets/locationBackground.svg'
 const worldIcon = '/assets/World Icon.svg'
@@ -9,12 +10,18 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
   return (
     <section className="relative h-[90vh] md:h-[100vh] w-full overflow-hidden">
       {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('/assets/heroimage.webp')`
-        }}
-      />
+      <div className="absolute inset-0">
+        <Image
+          src="/assets/heroimage.webp"
+          alt=""
+          aria-hidden="true"
+          fill
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+        />
+      </div>
       
       {/* Title - ScrollVelocity text */}
       <motion.div 

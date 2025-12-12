@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import Image from 'next/image'
 import { Project } from '../lib/markdown'
 import { resolveAssetPath } from '../lib/assets'
 import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
@@ -13,6 +14,7 @@ import { ArrowLeft } from 'lucide-react'
 interface ArticleProps {
   project: Project
   allProjects?: Project[]
+  heroPriority?: boolean
 }
 
 // Helper function to check if a file is a video
@@ -776,7 +778,7 @@ import Footer from './Footer'
 
 // ... existing imports
 
-export default function Article({ project, allProjects }: ArticleProps) {
+export default function Article({ project, allProjects, heroPriority = false }: ArticleProps) {
   const router = useRouter()
   
   if (!project) return <div className="min-h-screen bg-white" />
@@ -965,7 +967,22 @@ export default function Article({ project, allProjects }: ArticleProps) {
                             color={accentColor} 
                         />
                     ) : (
-                        <img src={resolveAssetPath(project.heroImage || project.image || '')} className="w-full h-full object-cover" loading="eager" />
+                        (() => {
+                          const heroSrc = resolveAssetPath(project.heroImage || project.image || '')
+                          if (!heroSrc) return null
+                          return (
+                            <Image
+                              src={heroSrc}
+                              alt={project.title}
+                              fill
+                              priority={heroPriority}
+                              fetchPriority={heroPriority ? 'high' : undefined}
+                              sizes="(max-width: 768px) 100vw, 1400px"
+                              className="object-cover"
+                              draggable={false}
+                            />
+                          )
+                        })()
                     )}
                  </div>
                 </motion.div>

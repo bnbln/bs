@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/router'
+import Image from 'next/image'
 import { Project } from '../lib/markdown'
 
 const FeaturedProjects = ({ data }: { data: Project[] }) => {
@@ -300,6 +301,9 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
             // und die übrigen (neu hinzugekommenen) sollen 16:9 bekommen.
             // Jetzt: der Kartencontainer selbst ist 16:9 (breiter), bei gleicher Höhe.
             const isLandscapeCard = !Boolean(project.featured)
+            const imageSizes = isLandscapeCard
+              ? '(max-width: 640px) 565px, 630px'
+              : '(max-width: 640px) 300px, 354px'
 
             return (
             // In horizontalen Scroller-Layouts kann ein x-Entrance die In-View-Erkennung
@@ -331,10 +335,16 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
               whileHover="hover"
             >
               {/* Background Image */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-xl"
-                style={{ backgroundImage: `url('${project.image}')` }}
-              />
+              <div className="absolute inset-0 rounded-xl overflow-hidden">
+                <Image
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  sizes={imageSizes}
+                  className="object-cover object-center"
+                  draggable={false}
+                />
+              </div>
               {/* leichte Abdunklung unten für Text-Lesbarkeit */}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/35 pointer-events-none" />
               

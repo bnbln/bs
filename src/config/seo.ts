@@ -1,14 +1,14 @@
 export const defaultSEO = {
   titleTemplate: '%s | Benedikt Schnupp - Motion Designer & Developer',
   defaultTitle: 'Benedikt Schnupp - Motion Designer & Developer',
-  description: 'Creative Motion Designer & Front-End Developer with 7+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany.',
+  description: 'Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany.',
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://benediktschnupp.com',
     siteName: 'Benedikt Schnupp Portfolio',
     title: 'Benedikt Schnupp - Motion Designer & Developer',
-    description: 'Creative Motion Designer & Front-End Developer with 7+ years of experience in branding, motion design and modern web development.',
+    description: 'Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development.',
     images: [
       {
         url: 'https://benediktschnupp.com/og-image.jpg',
