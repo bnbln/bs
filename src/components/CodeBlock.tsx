@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 interface CodeBlockProps {
   title?: string
   description?: string
+  hideHeader?: boolean
   code: string
   language?: string
   filename?: string
@@ -23,6 +24,7 @@ function escapeHtml(str: string) {
 const CodeBlock: React.FC<CodeBlockProps> = ({
   title,
   description,
+  hideHeader = false,
   code,
   language = 'text',
   filename,
@@ -97,10 +99,10 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
 
   return (
     <section className="code-block-section w-full">
-      {(title || description) && (
+      {!hideHeader && (title || description) && (
         <div className="code-block-head mb-4">
-          {title && <h2 className="text-2xl md:text-3xl font-bold mb-2 font-space-grotesk text-[#1D1D1F]">{title}</h2>}
-          {description && <p className="text-[#86868b] text-[15px] font-inter">{description}</p>}
+          {title && <h2 className="code-block-title">{title}</h2>}
+          {description && <p className="code-block-description">{description}</p>}
         </div>
       )}
       <div className="code-block-frame">

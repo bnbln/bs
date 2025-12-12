@@ -595,7 +595,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
     >
       {/* Static Background Image (Fallback) */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
         style={{ 
           backgroundImage: `url('${project.image}')`,
           opacity: showAnimation ? 0 : 1,
@@ -606,7 +606,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       {/* Video Animation Sequence (Book Project Only) */}
       {project.hasAnimation && project.animationSequence && useVideoScrubbing && (
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             opacity: showAnimation ? 1 : 0,
             transition: 'opacity 0.5s ease-in-out'
@@ -658,7 +658,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       {/* Image Animation Sequence (Other Projects) */}
       {project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && (
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             opacity: showAnimation ? 1 : 0,
             transition: 'opacity 0.5s ease-in-out'

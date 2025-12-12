@@ -452,6 +452,28 @@
   .code-block-section, .palette-block-section { /* vertikaler Abstand kommt aus Artikel-Rhythmus */ }
   .code-block-head, .palette-block-head { max-width:72ch; margin:0 auto; padding:0; }
   .code-block-frame, .palette-block-frame { max-width:72ch; margin:1.1rem auto 0; padding:0; }
+  
+  /* Palette head typography: match "normal markdown" rhythm from Article renderer */
+  .palette-block-head { margin-bottom:1.5rem; }
+  .palette-block-frame { margin-top:0; }
+  .palette-block-title {
+    @apply text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk text-[#1D1D1F];
+    margin:0;
+  }
+  .palette-block-description {
+    @apply text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em];
+    margin:0 0 20px 0;
+  }
+  
+  /* Code block head typography: keep consistent with palette/article text rhythm */
+  .code-block-title {
+    @apply text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk text-[#1D1D1F];
+    margin:0;
+  }
+  .code-block-description {
+    @apply text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em];
+    margin:0;
+  }
   @media (min-width:640px){
     .code-block-head, .palette-block-head, .code-block-frame, .palette-block-frame { padding:0; }
   }

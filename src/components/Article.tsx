@@ -128,7 +128,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const level = match ? match[0].length : 1
         const text = line.replace(/^#+\s*/, '')
         const sizes = {
-            1: "text-[40px] md:text-[56px] leading-[1.07] tracking-[-0.015em] font-bold font-space-grotesk mt-20 mb-8 text-[#1D1D1F]",
+            1: "text-[40px] md:text-[56px] leading-[1.07] tracking-[-0.015em] font-bold font-space-grotesk mt-20 mb-0 text-[#1D1D1F]",
             2: "text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-16 mb-6 text-[#1D1D1F]",
             3: "text-[24px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-10 mb-4 text-[#1D1D1F]"
         }
@@ -182,15 +182,40 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
            // @ts-ignore
           const colors = parsePaletteLines(bodyLines)
           elements.push(
-            <div key={`palette-${currentIndex++}`} className={`${colWide} my-16`}>
-               <ColorPalette title={attrs.title} description={attrs.description} colors={colors} />
-            </div>
+            <React.Fragment key={`palette-${currentIndex++}`}>
+              {(attrs.title || attrs.description) && (
+                <div className={`${colText} mt-16`}>
+                  {attrs.title && <h2 className="palette-block-title">{attrs.title}</h2>}
+                  {attrs.description && <p className="palette-block-description">{attrs.description}</p>}
+                </div>
+              )}
+              <div className={`${colWide} ${attrs.title || attrs.description ? 'mb-16' : 'my-16'}`}>
+                <ColorPalette hideHeader title={attrs.title} description={attrs.description} colors={colors} />
+              </div>
+            </React.Fragment>
           )
         } else {
              elements.push(
-                <div key={`code-${currentIndex++}`} className={`${colWide} my-16`}>
-                   <CodeBlock title={attrs.title} code={body} language={type || 'text'} filename={attrs.filename} />
-                </div>
+                <React.Fragment key={`code-${currentIndex++}`}>
+                  {(attrs.title || attrs.description) && (
+                    <div className={`${colText} mt-16`}>
+                      {attrs.title && <h2 className="code-block-title">{attrs.title}</h2>}
+                      {attrs.description && <p className="code-block-description">{attrs.description}</p>}
+                    </div>
+                  )}
+                  <div className={`${colWide} ${attrs.title || attrs.description ? 'mb-16' : 'my-16'}`}>
+                    <CodeBlock
+                      hideHeader
+                      title={attrs.title}
+                      description={attrs.description}
+                      code={body}
+                      language={type || 'text'}
+                      filename={attrs.filename}
+                      githubUrl={attrs.githubUrl}
+                      liveUrl={attrs.liveUrl}
+                    />
+                  </div>
+                </React.Fragment>
             )
         }
       }

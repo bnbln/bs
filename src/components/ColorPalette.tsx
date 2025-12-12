@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 interface ColorPaletteProps {
   title?: string
   description?: string
+  hideHeader?: boolean
   colors: Array<{
     name: string
     hex: string
@@ -13,7 +14,7 @@ interface ColorPaletteProps {
   }>
 }
 
-const ColorPalette: React.FC<ColorPaletteProps> = ({ title, description, colors }) => {
+const ColorPalette: React.FC<ColorPaletteProps> = ({ title, description, hideHeader = false, colors }) => {
   const [copiedColor, setCopiedColor] = useState<string | null>(null)
 
   const copyToClipboard = async (color: string) => {
@@ -26,11 +27,11 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ title, description, colors 
 
   return (
     <section className="palette-block-section w-full">
-      {(title || description) && (
-        <div className="palette-block-head mb-6">
-          {title && <h2 className="text-2xl md:text-3xl font-bold mb-2 font-space-grotesk text-[#1D1D1F]">{title}</h2>}
+      {!hideHeader && (title || description) && (
+        <div className="palette-block-head">
+          {title && <h2 className="palette-block-title">{title}</h2>}
           {description && (
-            <p className="text-[#86868b] text-[15px] max-w-2xl font-inter">{description}</p>
+            <p className="palette-block-description">{description}</p>
           )}
         </div>
       )}
