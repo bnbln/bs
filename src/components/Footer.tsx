@@ -108,7 +108,7 @@ const Footer = () => {
               <Link href="/work" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
                 Work
               </Link>
-              <Link href="/#contact" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
+              <Link href="/contact" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
                 Contact
               </Link>
             </div>

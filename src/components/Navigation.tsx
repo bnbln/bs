@@ -114,15 +114,16 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
               Work
             </motion.a>
           </Link>
-          <motion.a 
-            href={getLink('#contact')} 
-            className="cursor-pointer hover:opacity-70 transition-opacity inline-flex items-center justify-center"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-            aria-label="Contact"
-          >
-            <Mail className="w-[18px] h-[18px]" strokeWidth={1.75} aria-hidden="true" />
-          </motion.a>
+          <Link href="/contact" passHref legacyBehavior>
+            <motion.a 
+              className="cursor-pointer hover:opacity-70 transition-opacity inline-flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+              aria-label="Contact"
+            >
+              <Mail className="w-[18px] h-[18px]" strokeWidth={1.75} aria-hidden="true" />
+            </motion.a>
+          </Link>
         </motion.div>
       </motion.nav>
 
@@ -166,16 +167,17 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                     Work
                   </motion.a>
                 </Link>
-                <motion.a
-                  href={getLink('#contact')}
-                  className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer inline-flex items-center"
-                  whileHover={{ scale: 1.05, x: 10 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={closeMenu}
-                  aria-label="Contact"
-                >
-                  <Mail className="w-[18px] h-[18px]" strokeWidth={1.75} aria-hidden="true" />
-                </motion.a>
+                <Link href="/contact" passHref legacyBehavior>
+                  <motion.a
+                    className="text-black font-space-grotesk font-medium text-[16px] leading-[20px] mb-8 cursor-pointer inline-flex items-center"
+                    whileHover={{ scale: 1.05, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={closeMenu}
+                    aria-label="Contact"
+                  >
+                    <Mail className="w-[18px] h-[18px]" strokeWidth={1.75} aria-hidden="true" />
+                  </motion.a>
+                </Link>
               </div>
             </motion.div>
           </motion.div>

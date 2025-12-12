@@ -1,17 +1,11 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef } from 'react'
+import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
 import { Mail, Linkedin, Copy } from 'lucide-react'
 
 const Contact = () => {
   const containerRef = useRef(null)
   const isInView = useInView(containerRef, { once: true, margin: "-10%" })
-  const [copied, setCopied] = useState(false)
-
-  const copyEmail = () => {
-    navigator.clipboard.writeText('mail@benediktschnupp.com')
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   const offerings = [
     "Web Development", "React / Next.js", "Three.js / WebGL",
@@ -91,19 +85,15 @@ const Contact = () => {
               </div>
 
                <div className="flex flex-col gap-4">
-                 <button 
-                  onClick={copyEmail}
-                  className="group w-full flex items-center justify-between p-6 bg-[#1C1D20] text-white rounded-2xl hover:bg-black transition-all"
-                >
+                 <Link href="/contact" className="group w-full flex items-center justify-between p-6 bg-[#1C1D20] text-white rounded-2xl hover:bg-black transition-all">
                   <div className="flex flex-col items-start text-left">
-                    <span className="text-sm text-neutral-400 mb-1">Drop me a line</span>
-                    <span className="text-lg md:text-xl font-space-grotesk font-medium break-all sm:break-normal">mail@benediktschnupp.com</span>
+                    <span className="text-sm text-neutral-400 mb-1">Start a project</span>
+                    <span className="text-lg md:text-xl font-space-grotesk font-medium">Contact Me</span>
                   </div>
                   <div className="relative shrink-0 ml-4">
-                     <Copy className={`w-6 h-6 transition-all ${copied ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`} />
-                     <span className={`absolute top-0 right-0 font-inter text-xs bg-white text-black px-2 py-1 rounded opacity-0 transition-all ${copied ? 'opacity-100 -translate-y-8' : ''}`}>Copied!</span>
+                     <Mail className="w-6 h-6" />
                   </div>
-                </button>
+                 </Link>
 
                 <div className="flex gap-4">
                   <a 
@@ -130,11 +120,6 @@ const Contact = () => {
           </div>
         </div>
         
-        {/* Footer Minimal */}
-        {/* <div className="mt-24 pt-8 border-t border-neutral-100 flex flex-col md:flex-row justify-between items-center text-sm text-neutral-400 font-inter">
-             <div>© {new Date().getFullYear()} Benedikt Schnupp</div>
-             <div className="mt-2 md:mt-0">Made with ❤️ in Berlin</div>
-        </div> */}
       </div>
     </section>
   )

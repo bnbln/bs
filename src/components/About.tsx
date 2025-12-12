@@ -1,4 +1,5 @@
 import React, { useRef } from 'react'
+import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
 import { ArrowUpRight, Mail, Linkedin } from 'lucide-react'
 
@@ -74,13 +75,13 @@ const About = () => {
               transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="mt-6 flex flex-wrap gap-4 items-center"
             >
-              <a 
-                href="mailto:mail@benediktschnupp.com"
+              <Link 
+                href="/contact"
                 className="group relative inline-flex items-center justify-center px-8 py-3.5 bg-black text-white rounded-full overflow-hidden transition-all hover:bg-neutral-800"
               >
                 <span className="relative z-10 font-medium text-lg mr-2 font-inter">Let's Work Together</span>
                 <ArrowUpRight className="w-5 h-5 relative z-10 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </a>
+              </Link>
               
               <div className="flex gap-2">
                 <a 
