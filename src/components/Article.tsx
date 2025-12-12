@@ -550,7 +550,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const level = match ? match[0].length : 1
         const text = line.replace(/^#+\s*/, '')
         const sizes = {
-            1: "text-[40px] md:text-[56px] leading-[1.07] tracking-[-0.015em] font-bold font-space-grotesk mt-20 mb-0 text-[#1D1D1F]",
+            1: "text-[40px] md:text-[56px] leading-[1.07] tracking-[-0.015em] font-bold font-space-grotesk mt-20 mb-8 text-[#1D1D1F]",
             2: "text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-16 mb-6 text-[#1D1D1F]",
             3: "text-[24px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-10 mb-4 text-[#1D1D1F]"
         }
@@ -812,65 +812,20 @@ export default function Article({ project, allProjects, heroPriority = false }: 
     label: string
     direction: 'newer' | 'older'
   }) => {
-    const img = p.heroImage || p.image || ''
     const isNewer = direction === 'newer'
     return (
       <a
         href={`/project/${p.slug}`}
-        className="group rounded-2xl border border-black/10 bg-white hover:border-black/20 shadow-sm hover:shadow-xl transition-[border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(.16,1,.3,1)] p-5 md:p-6 flex flex-col gap-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black/10 hover:-translate-y-0.5"
-        style={{ ['--ref-accent' as any]: p.bgColor || accentColor }}
+        className={`group flex flex-col justify-center w-full min-h-[200px] p-8 md:p-12 rounded-3xl bg-neutral-50 hover:bg-neutral-100 transition-colors duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isNewer ? 'items-end text-right' : 'items-start text-left'}`}
       >
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">
-            {label}
-          </div>
-          <div className="flex items-center gap-2 text-[11px] font-mono text-[#86868b]">
-            <ArrowLeft
-              className={[
-                'w-4 h-4 text-[#86868b] transition-transform duration-300',
-                isNewer ? 'rotate-180 group-hover:translate-x-0.5' : 'group-hover:-translate-x-0.5',
-              ].join(' ')}
-              aria-hidden="true"
-            />
-          </div>
+        <div className="flex flex-col gap-2 relative z-10">
+           <span className="text-[14px] md:text-[16px] uppercase tracking-widest font-bold text-neutral-400 group-hover:text-black transition-colors duration-300">
+             {label}
+           </span>
+           <span className="text-[28px] md:text-[40px] leading-[1.1] font-space-grotesk font-bold text-neutral-900 group-hover:text-[var(--ref-accent)] transition-colors duration-300" style={{ ['--ref-accent' as any]: p.bgColor || accentColor }}>
+             {p.title}
+           </span>
         </div>
-
-        <div className="flex items-center gap-4">
-          <div className="w-24 h-16 rounded-xl overflow-hidden bg-neutral-50 border border-black/5 ring-1 ring-black/5 shrink-0">
-            {img ? (
-              <img
-                src={resolveAssetPath(img)}
-                alt={p.title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            ) : (
-              <div className="w-full h-full" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-space-grotesk font-semibold text-[18px] leading-snug text-[#1D1D1F]">
-              {p.title}
-            </div>
-            <div className="mt-1 text-[11px] font-bold uppercase tracking-widest text-[#86868b]">
-              About the project
-            </div>
-            {(p.subtitle || p.excerpts) && (
-              <div className="mt-1 text-[14px] leading-snug text-[#6e6e73] font-inter">
-                {p.subtitle || p.excerpts}
-              </div>
-            )}
-            <div
-              className="mt-3 inline-flex items-center gap-1 text-[12px] font-inter font-medium tracking-[-0.01em] transition-colors"
-              style={{ color: p.bgColor || accentColor }}
-            >
-              View project →
-            </div>
-          </div>
-        </div>
-
-        <div className="absolute inset-0 rounded-2xl ring-2 ring-transparent group-hover:ring-[color:var(--ref-accent)]/35 transition-colors pointer-events-none" />
       </a>
     )
   }
@@ -996,17 +951,9 @@ export default function Article({ project, allProjects, heroPriority = false }: 
                    <div className="mt-24">
                      <div className="max-w-[1400px] mx-auto">
                        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-8">
-                         <div className="col-span-1 md:col-start-4 md:col-span-6">
-                           <div className="h-px w-full bg-black/10 mb-10" />
-                           <h2 className="text-[24px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk text-[#1D1D1F]">
-                             More Projects
-                           </h2>
-                           <p className="mt-2 text-[15px] leading-snug text-[#6e6e73] font-inter">
-                             Next and previous projects you might like.
-                           </p>
-                         </div>
 
-                         <div className="col-span-1 md:col-start-2 md:col-span-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                         <div className="col-span-1 md:col-start-1 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
                            {olderProject && (
                              <RelatedNavCard p={olderProject} label="Previous" direction="older" />
                            )}
