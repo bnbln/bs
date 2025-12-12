@@ -36,7 +36,7 @@ const About = () => {
         >
           <h2 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mix-blend-exclusion">
             <div>Crafting Connections</div>
-            <div className="text-[#333]">through Code &</div>
+            <div>through Code &</div>
             <div>Creativity</div>
           </h2>
         </motion.div>

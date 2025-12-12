@@ -37,7 +37,7 @@ export default function ProjectPage({ project, allProjects }: ProjectPageProps) 
           type: 'article',
           article: {
             publishedTime: project.published,
-            section: project.category,
+            section: Array.isArray(project.category) ? project.category[0] : project.category,
           },
         }}
       />

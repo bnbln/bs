@@ -12,7 +12,10 @@ export interface Project {
   title: string
   subtitle?: string
   slug: string
-  category: string
+  category: string | string[]
+  client?: string[]
+  collaboration?: any[]
+  awards?: string[]
   type?: string | string[]
   excerpts: string
   published: string

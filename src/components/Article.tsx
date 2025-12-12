@@ -788,10 +788,40 @@ export default function Article({ project, allProjects, heroPriority = false }: 
   const date = formatDate(project.published)
   const tags = ((project.category || '') + ',' + (project.title || '')).split(',').slice(0, 3) 
   
-  const generateTags = (category: string) => {
-    return category.split(' ').map(s => s.trim()).filter(Boolean)
+  // Helper for category (string or array)
+  const getCategories = (cat: string | string[]) => {
+    if (Array.isArray(cat)) return cat
+    return (cat || '').split(',').map(s => s.trim()).filter(Boolean)
   }
-  const projectTags = generateTags(project.category)
+  const projectTags = getCategories(project.category)
+
+  // Helper for collaboration parsing
+  // Supports: "Name", {Name: URL}, {Name, URL}
+  const parseCollaboration = (collab: any[]) => {
+    if (!collab || !Array.isArray(collab)) return []
+    return collab.map(item => {
+      if (typeof item === 'string') return { name: item, url: null }
+      if (typeof item === 'object') {
+        const keys = Object.keys(item)
+        if (keys.length === 0) return null
+        // Case: { "Hernan Gaete": null, "hernangaete.com": null } (loose format)
+        if (keys.length === 2 && item[keys[0]] === null && item[keys[1]] === null) {
+            // Heuristic: Check which looks like a URL
+            const p1 = keys[0]
+            const p2 = keys[1]
+            if (p2.includes('.') && !p1.includes('.')) return { name: p1, url: `https://${p2.replace(/^https?:\/\//, '')}` }
+            if (p1.includes('.') && !p2.includes('.')) return { name: p2, url: `https://${p1.replace(/^https?:\/\//, '')}` }
+            // Fallback
+            return { name: p1, url: null }
+        }
+        // Case: { "Name": "URL" }
+        return { name: keys[0], url: item[keys[0]] }
+      }
+      return null
+    }).filter(Boolean)
+  }
+
+  const collaborators = parseCollaboration(project.collaboration || [])
 
   // Adjacent projects by published date (newest first)
   const projectsByTime = (allProjects || [])
@@ -879,16 +909,64 @@ export default function Article({ project, allProjects, heroPriority = false }: 
                                  initial={{ opacity: 0, x: 20 }}
                                  animate={{ opacity: 1, x: 0 }}
                                  transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                 className="grid grid-cols-2 gap-y-10 gap-x-8 font-inter bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-black/5"
+                                 className="grid grid-cols-2 gap-y-10 gap-x-8 font-inter"
                             >
-                                {/* <div className="space-y-1">
-                                    <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Client</div>
-                                    <div className="text-[15px] font-medium text-[#1d1d1f] break-words">{project.title.includes('Zeitreise') ? 'Production Company' : 'Client Name'}</div>
-                                </div> */}
+                                 {/* CLIENT */}
+                                 {project.client && project.client.length > 0 && (
+                                    <div className="space-y-1">
+                                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Client</div>
+                                        <div className="text-[15px] font-medium text-[#1d1d1f]">
+                                            {project.client.join(', ')}
+                                        </div>
+                                    </div>
+                                 )}
+
+                                 {/* TIMELINE */}
                                 <div className="space-y-1">
                                     <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Timeline</div>
                                     <div className="text-[15px] font-medium text-[#1d1d1f]">{date}</div>
                                 </div>
+
+                                {/* COLLABORATION */}
+                                {collaborators.length > 0 && (
+                                    <div className="space-y-1">
+                                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Collaboration</div>
+                                        <div className="flex flex-col items-start gap-1">
+                                            {collaborators.map((c, i) => {
+                                                if (!c) return null
+                                                return (
+                                                    <React.Fragment key={i}>
+                                                        {c.url ? (
+                                                            <a 
+                                                                href={c.url} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="text-[15px] font-medium text-[#1d1d1f] hover:text-[var(--accent)] transition-colors underline decoration-1 underline-offset-2 decoration-black/20 hover:decoration-[var(--accent)]"
+                                                            >
+                                                                {c.name}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-[15px] font-medium text-[#1d1d1f]">{c.name}</span>
+                                                        )}
+                                                    </React.Fragment>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* AWARDS */}
+                                {project.awards && project.awards.length > 0 && (
+                                    <div className="space-y-1">
+                                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Awards</div>
+                                        <div className="flex flex-col gap-1">
+                                            {project.awards.map((award, i) => (
+                                                <span key={i} className="text-[15px] font-medium text-[#1d1d1f]">{award}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                  <div className="col-span-2 space-y-2">
                                     <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Scope</div>
                                     <div className="flex flex-wrap gap-2">

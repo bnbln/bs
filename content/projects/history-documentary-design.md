@@ -3,7 +3,10 @@ id: 1
 title: Zeitreise
 subtitle: Show Design for a German History Documentation Series
 slug: history-documentary-design
-category: Show Design
+category: [TV-Show, Show Design, Animation]
+client: [WELT]
+collaboration: [{Hernan Gaete, hernangaete.com}, {Guy Raphael}]
+awards: [Eyes and Ears Award 2024]
 excerpts: >-
   A fresh take on history: I created the full visual branding for a new TV show
   – blending retro vibes, bold typography, and a color palette inspired by aged

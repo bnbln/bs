@@ -24,7 +24,8 @@ const WorkPage = ({ projects }: WorkPageProps) => {
         isDesign: types.includes('Design')
       }
     }
-    const cats = project.category.toLowerCase()
+    const catVal = project.category
+    const cats = (Array.isArray(catVal) ? catVal.join(' ') : (catVal || '')).toLowerCase()
     const isDev = cats.includes('development') || cats.includes('code') || cats.includes('tech')
     const isDesign = cats.includes('design') || cats.includes('ux') || cats.includes('branding') || cats.includes('promotion') || cats.includes('art') || cats.includes('motion')
     return { isDev, isDesign }
@@ -143,7 +144,7 @@ const WorkPage = ({ projects }: WorkPageProps) => {
                                                         viewport={{ once: true }}
                                                     >
                                                         <p className="text-white font-inter font-normal text-[16px] leading-[24px]">
-                                                            {project.category}
+                                                            {Array.isArray(project.category) ? project.category.join(', ') : project.category}
                                                         </p>
                                                     </motion.div>
 
@@ -172,7 +173,7 @@ const WorkPage = ({ projects }: WorkPageProps) => {
                                                         {project.title}
                                                     </h3>
                                                     <p className="text-neutral-500 text-sm font-inter mt-1">
-                                                        {project.category}
+                                                        {Array.isArray(project.category) ? project.category.join(', ') : project.category}
                                                     </p>
                                                 </div>
                                                 <span className="text-xs font-mono text-neutral-400 border border-neutral-200 rounded px-2 py-1">
