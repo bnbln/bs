@@ -4,6 +4,7 @@ title: Relaunching a Berlin Lawyers Website with Gatsby & Netlify
 subtitle: Frontend Development and Digital Transformation
 slug: relaunching-berlin-lawyers-corporate-design-and-website
 category: 'UX&UI, Development'
+collaboration: [{Tarik Sharief}]
 excerpts: >-
   Future-proof, performant, and editor-friendly: This Berlin law firm now runs
   on Gatsby with Netlify CMS, combining React components with simple content
@@ -15,10 +16,7 @@ hasAnimation: false
 featured: true
 type: Development
 ---
-
-# Rebrand and digital transformation for a Berlin law firm
-
-For the Berlin law firm Rechtsklarheit and lawyer Tarik Sharif, the relaunch wasn’t just about aesthetics - it was about building a fast, reliable, and editor-friendly digital foundation. The new brand identity set the tone, but the real strength lies in the **frontend stack: Gatsby, React, Netlify, and Netlify CMS**.
+For the Berlin law firm Rechtsklarheit and lawyer Tarik Sharief, the relaunch wasn’t just about aesthetics - it was about building a fast, reliable, and editor-friendly digital foundation. The new brand identity set the tone, but the real strength lies in the **frontend stack: Gatsby, React, Netlify, and Netlify CMS**.
 
 A rebranding and web development project where corporate gravitas meets the flexibility of a modern JAMstack approach.
 

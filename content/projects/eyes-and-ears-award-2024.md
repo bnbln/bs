@@ -1,9 +1,11 @@
 ---
 id: 3
 title: Multiple Projects won an Eyes and Ears Award 2024
-subtitle: Recognition for Excellence in Design and Creativity
+subtitle: Grateful for the Work, the Process, and the People
 slug: eyes-and-ears-award-2024
 category: Award
+collaboration: [{Matthias Herrmann},{Hernan Gaete, hernangaete.com}, {Guy Raphael}]
+awards: [Eyes and Ears Award 2024]
 excerpts: Recognition for excellence in design and creativity
 published: '2025-02-01'
 image: assets/Eyes and Ears 1080x1528.jpg
@@ -13,25 +15,22 @@ featured: true
 type: Design
 ---
 
+The Eyes and Ears Awards are among the most respected recognitions in European audiovisual design, celebrating strong ideas, thoughtful craft, and collaborative work across motion graphics, broadcast design, and digital media. Being part of this community alone already means a lot.
 
-## About the Awards
+## The Projects
 
-The Eyes and Ears Awards represent the highest honor in European audiovisual design, recognizing outstanding achievements in motion graphics, broadcast design, and digital media. This year's recognition spans multiple categories, showcasing the breadth and quality of our creative work.
+I was very grateful to see our work nominated across several categories, including **Best programme lead-in: Culture & Documentary**, **Best programme spot: News**, and **Best promotion of election coverage**.
 
-## Awarded Projects
+Together with an amazing team, two projects were ultimately awarded: the **EU Election trailer**, recognized for *Best promotion of election coverage*, and **Zeitreise**, which received *Best programme lead-in: Culture & Documentary*. Both projects are very different in tone and purpose, but they share a common foundation—curiosity, trust in the process, and a lot of teamwork.
 
-I was very thankful to be nominated in three of the many categories including **Best programme lead-in Culture & Documentary**, **Best programme spot: News** and **Best promotion of election coverage**.
-
-My team and I we're very delighted to bring home multiple Awards - including the categories Best promotion of election coverage with my Design for the **EU-election** and Best programme lead-in Culture & Documentary for my favorite project **Zeitreise**.
-
-
-## Impact and Significance
-
-This recognition validates our commitment to pushing creative boundaries while maintaining the highest production standards. Each awarded project represents months of collaborative effort, technical innovation, and creative problem-solving.
-
+The EU Election trailer was about translating a complex, political topic into a clear and energetic visual language. *Zeitreise*, on the other hand, was a passion project rooted in storytelling, history, and a strong editorial look. Seeing both approaches appreciated side by side was especially meaningful.
 
 [projects:history-documentary-design, eu-election-trailer]
 
-## Looking Forward
+## What This Means to Me
 
-This recognition energizes our team to continue exploring new creative territories and developing innovative solutions for our clients. We're honored to be recognized alongside such talented colleagues in the audiovisual design community. 
+Awards are never the goal, but they are a wonderful moment to pause and reflect. These projects represent many conversations, iterations, late tweaks, shared references, and collective problem-solving. They wouldn’t exist without the trust of colleagues, editors, producers, and everyone involved along the way.
+
+## Looking Ahead
+
+I’m genuinely thankful for the recognition—and even more for the people I get to work with. It’s motivating to know that careful design, strong concepts, and collaborative thinking are seen and valued. I’m excited to keep building on this, exploring new ideas, and creating work that feels relevant, thoughtful, and fun to make.

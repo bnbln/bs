@@ -4,7 +4,8 @@ title: Creating a Trailer for the artist edition of DIE WELT
 subtitle: Film Production
 slug: artwork-edition
 category: Motion Design
-published: '2024-05-21'
+published: '2024-12-21'
+collaboration: [{Matthias Herrmann}]
 image: assets/kunstlerausgaben-2.jpg
 excerpt: >-
   A concise, gallery-like film designed to stage the artist editions of the

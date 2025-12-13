@@ -3,7 +3,6 @@ import { NextSeo } from 'next-seo'
 import { getStaticProjectPaths, getProjectWithHtml, Project, getAllProjects } from '../../lib/markdown'
 import StructuredData from '../../components/StructuredData'
 import Article from '../../components/Article'
-import Footer from '../../components/Footer'
 
 interface ProjectPageProps {
   project: Project
@@ -58,12 +57,7 @@ export default function ProjectPage({ project, allProjects }: ProjectPageProps) 
           },
         }}
       />
-      <div className="min-h-screen bg-[#1C1D20] w-full">
-        <div className="mb-[403px]" style={{ zIndex: -1 }}>
-          <Article project={project} allProjects={allProjects} heroPriority />
-          <Footer />
-        </div>
-      </div>
+      <Article project={project} allProjects={allProjects} heroPriority />
     </>
   )
 }

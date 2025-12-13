@@ -1,10 +1,10 @@
 ---
 id: 2
 title: Book 3D-Modeling & Animation for TV Spot
-subtitle: Cinematic 3D Animation for Television
+subtitle: A Short Cinematic 3D Sequence for a Space Book Trailer
 slug: book-3d-animation
 category: Book
-excerpts: 3D modeling and animation of a book for television commercial
+excerpts: A handcrafted 3D book animation created for a television book promotion
 published: '2023-03-15'
 image: assets/book.avif
 hasAnimation: true
@@ -15,43 +15,42 @@ featured: false
 type: Design
 ---
 
-A sophisticated 3D animation project featuring detailed book modeling and fluid page-turning animations for a high-profile television commercial campaign.
+This project is a short 3D book sequence created as part of a promotional trailer for a space-themed book. The goal was not to over-stylize the object, but to give a familiar book a slightly cinematic, almost weightless quality that fits the tone of the subject matter.
+
+The animation appears only briefly in the final trailer, but a lot of care went into making the movement feel calm, physical, and believable.
 
 ## Project Overview
 
-This project demanded photorealistic 3D modeling of a book with complex page-turning animations. The challenge was creating believable physics and lighting while maintaining the magical, aspirational quality needed for the commercial narrative.
+The focus of this piece was the page-turning motion. Books are deceptively complex objects: pages bend, overlap, collide, and never move in a perfectly clean way. Capturing that behavior in a controlled but natural-looking animation was the main challenge.
 
-## Technical Achievements
+The book was fully modeled and animated in **Blender**, with particular attention paid to scale, proportions, and how light interacts with paper and the cover material.
 
-- **Photorealistic Materials**: Detailed paper textures, binding materials, and realistic lighting
-- **Fluid Animation**: 500 frames of smooth page-turning motion
-- **Optimized Pipeline**: WebP frame sequence for web delivery
-- **High-End Rendering**: Cinema 4D with advanced lighting setups
+## Animation & Rigging
 
-## Animation Details
+Each page was rigged using an **armature setup**, allowing controlled deformation while still being influenced by physics. Subtle simulations were layered on top to avoid overly rigid motion and to introduce small imperfections that make the movement feel more organic.
 
-- **Frame Count**: 500 frames total
-- **Format**: WebP sequence for optimal web performance
-- **Resolution**: High-definition rendering
-- **Frame Rate**: Smooth 24fps motion
+Rather than aiming for dramatic motion, the animation stays restrained and precise — letting the pages open smoothly and settle into place without drawing attention to the technique itself.
 
-## Creative Process
+## Pipeline
 
-1. **Reference Gathering**: Study of real book physics and lighting
-2. **3D Modeling**: Detailed book construction with accurate proportions
-3. **Rigging**: Complex page-turning mechanism development
-4. **Animation**: Fluid motion with realistic physics simulation
-5. **Rendering**: High-quality output with cinematic lighting
-6. **Post-Processing**: Color grading and final optimization
+- **Modeling & Animation**: Blender  
+- **Rigging**: Armature-based page setup  
+- **Physics**: Subtle simulations for natural movement  
+- **Rendering**: Image sequence export  
+- **Compositing & Color**: After Effects  
 
-## Technical Pipeline
+Rendering was done as an image sequence to keep full control in post-production. In **After Effects**, the shots were composited, gently color-corrected, and integrated into the overall look of the trailer.
 
-- **3D Software**: Cinema 4D for modeling and animation
-- **Rendering**: Physical-based rendering for realism
-- **Optimization**: Frame sequence conversion to WebP
-- **Delivery**: Web-optimized animation for multiple platforms
+## Technical Details
 
-The final animation successfully captured the aspirational quality of reading while showcasing the product in an engaging, memorable way. The commercial achieved significant viewer engagement and brand recognition. 
+- **Frame Count**: 501 frames  
+- **Frame Rate**: 24 fps  
+- **Output**: Image sequence → final video  
+- **Resolution**: High-definition  
+
+## Reflection
+
+Even though the sequence is short, it was a great opportunity to dive deeper into character-like rigging for non-character objects and to combine controlled animation with physical behavior. Projects like this are a reminder that small moments in a trailer often benefit the most from careful detail work.
 
 # The Render
 [video](assets/book.mp4|assets/book.avif)

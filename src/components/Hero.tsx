@@ -75,7 +75,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             
             {/* Location Text */}
             <div className="absolute left-[50px] top-[46.997px] translate-y-[-50%] w-[110px] h-[59px] flex items-center">
-              <p className="text-white font-space-grotesk font-medium text-[14.375px] leading-[16.5px]">
+              <p className="text-white font-medium text-[14.375px] leading-[16.5px]">
                 Located in {location}
               </p>
             </div>

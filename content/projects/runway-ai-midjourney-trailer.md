@@ -5,7 +5,7 @@ subtitle: 'Using Midjourney, Chat-GPT 4o Image Generation and Runway to create F
 slug: runway-ai-midjourney-trailer
 category: Generative AI
 excerpts: How to leaverage AI in high value productions for TV channels
-published: '2024-01-01'
+published: '2024-06-01'
 image: assets/airport-04.png
 bgColor: '#319B7B'
 hasAnimation: false

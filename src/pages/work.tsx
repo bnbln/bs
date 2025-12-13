@@ -173,7 +173,7 @@ const WorkPage = ({ projects }: WorkPageProps) => {
                                                         {project.title}
                                                     </h3>
                                                     <p className="text-neutral-500 text-sm font-inter mt-1">
-                                                        {Array.isArray(project.category) ? project.category.join(', ') : project.category}
+                                                        {project.subtitle}
                                                     </p>
                                                 </div>
                                                 <span className="text-xs font-mono text-neutral-400 border border-neutral-200 rounded px-2 py-1">

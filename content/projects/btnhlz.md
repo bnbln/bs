@@ -3,6 +3,7 @@ id: 14
 title: Developing a Next.js-Portfolio for a Product Designer
 subtitle: A Frontend Developement Project opening Perspectives with three.js
 slug: btnhlz
+collaboration: [{Philippe Bietenholz, bietenholz.design}]
 category: Frontend-Developement
 published: '2024-05-21'
 image: assets/bt-3.jpg

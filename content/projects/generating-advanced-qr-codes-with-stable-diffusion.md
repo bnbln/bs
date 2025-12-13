@@ -4,6 +4,7 @@ title: Generating QR-Codes with Stable Diffusion
 subtitle: Ad-campaign leaveraging Generative AI in Design
 slug: generating-advanced-qr-codes-with-stable-diffusion
 category: Artificial Intelligence
+collaboration: [{Teoman Tonn}]
 excerpts: >-
   It was early 2023 when AI was just about to take center stage in the tech
   world. My initial foray into Generative Images began a few months earlier with

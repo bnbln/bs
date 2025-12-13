@@ -19,7 +19,7 @@ const Datenschutzerklaerung = () => {
          <main className="flex-grow pt-32 pb-20 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden">
            <div className="max-w-[800px] mx-auto relative z-10">
              <div className="prose prose-lg max-w-none prose-headings:font-space-grotesk prose-p:font-inter prose-a:text-black">
-               <h1 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mix-blend-exclusion mb-12 break-words hyphens-auto">Datenschutzerklärung</h1>
+               <h1 className="text-[15vw] sm:text-[8vw] md:text-[6vw] lg:text-[5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mix-blend-exclusion mb-12 break-words hyphens-auto">Datenschutzerklärung</h1>
 
                <section className="mb-8">
                  <h2 className="text-xl font-semibold text-black mb-4">1. Verantwortliche Stelle</h2>

@@ -52,7 +52,7 @@ const About = () => {
               animate={isInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h3 className="text-2xl md:text-3xl font-space-grotesk font-medium mb-5">
+              <h3 className="text-2xl md:text-3xl font-medium mb-5">
                 Building digital experiences that matter.
               </h3>
               <div className="space-y-6 text-lg md:text-xl text-neutral-700 font-inter leading-relaxed max-w-2xl">
@@ -67,6 +67,50 @@ const About = () => {
                 </p> */}
               </div>
             </motion.div>
+
+            {/* Mobile: Services & Stats */}
+            <div className="lg:hidden flex flex-col gap-6 my-8">
+               {/* Services List */}
+              {/* <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={isInView ? { y: 0, opacity: 1 } : {}}
+                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-3 font-inter">
+                  Expertise
+                </h4>
+                <ul className="space-y-1">
+                  {services.map((service, index) => (
+                    <li key={index} className="text-xl md:text-2xl font-space-grotesk text-black">
+                      {service}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div> */}
+
+              {/* Stats */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={isInView ? { y: 0, opacity: 1 } : {}}
+                transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <h4 className="text-sm font-semibold uppercase tracking-widest text-neutral-400 mb-3 font-inter">
+                  Impact
+                </h4>
+                <div className="grid grid-cols-2 gap-y-4 gap-x-2">
+                  {stats.map((stat, index) => (
+                    <div key={index}>
+                      <div className="text-4xl md:text-5xl font-bold font-space-grotesk text-black mb-1">
+                        {stat.value}
+                      </div>
+                      <div className="text-sm text-neutral-500 font-inter">
+                        {stat.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
 
             {/* Buttons / Actions */}
             <motion.div 
@@ -105,10 +149,10 @@ const About = () => {
           </div>
 
           {/* Right Column: Services & Stats */}
-          <div className="lg:col-span-4 lg:col-start-9 flex flex-col gap-6">
+          <div className="hidden lg:flex lg:col-span-4 lg:col-start-9 flex-col gap-6">
             
             {/* Services List */}
-            <motion.div
+            {/* <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={isInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -123,7 +167,7 @@ const About = () => {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </motion.div> */}
 
             {/* Stats */}
             <motion.div
