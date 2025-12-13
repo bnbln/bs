@@ -9,7 +9,7 @@ published: '2024-07-01'
 description: Animated Banner for a TV-Channel
 bgColor: '#55C7FF'
 image: assets/change.jpg
-# video: assets/change_loop.mp4
+video: assets/change_loop.mp4
 hasAnimation: true
 featured: true
 type: Development

@@ -7,7 +7,7 @@ category: Award
 collaboration: [{Matthias Herrmann},{Hernan Gaete, hernangaete.com}, {Guy Raphael}]
 awards: [Eyes and Ears Award 2024]
 excerpts: Recognition for excellence in design and creativity
-published: '2025-02-01'
+published: '2025-12-12'
 image: assets/Eyes and Ears 1080x1528.jpg
 bgColor: '#f6396c'
 hasAnimation: false
