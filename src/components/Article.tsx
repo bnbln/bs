@@ -59,12 +59,14 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
   type RowGalleryItem = { url: string; caption?: string }
 
-  const DraggableRowGallery = ({ items }: { items: RowGalleryItem[] }) => {
+  const DraggableRowGallery = ({ items, className = '' }: { items: RowGalleryItem[]; className?: string }) => {
     const scrollerRef = useRef<HTMLDivElement | null>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
     const [canScrollRight, setCanScrollRight] = useState(false)
     const [activeIndex, setActiveIndex] = useState(0)
+
+    const [visibleDots, setVisibleDots] = useState(items.length)
 
     const isDownRef = useRef(false)
     const startXRef = useRef(0)
@@ -119,6 +121,12 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           setCanScrollLeft(left > 2)
           setCanScrollRight(left < maxScroll - 2)
           setActiveIndex(getNearestIndex(left))
+
+          // Smart Stepper: Hide dots for items that can never be reached (start-aligned) due to max scroll
+          // This keeps the stepper feeling "full" when at the end
+          const lastReachable = getNearestIndex(maxScroll)
+          const newVisible = lastReachable + 1
+          setVisibleDots(current => (current !== newVisible ? newVisible : current))
         })
       }
 
@@ -217,7 +225,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
     }
 
     return (
-      <div className={`${colFull} my-12`}>
+      <div className={`relative w-full ${className}`}>
         <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw]">
           <div
             ref={scrollerRef}
@@ -284,7 +292,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 </button>
 
                 <div className="flex items-center justify-center gap-2">
-                  {items.map((_, idx) => {
+                  {items.slice(0, visibleDots).map((_, idx) => {
                     const isActive = idx === activeIndex
                     return (
                       <button
@@ -294,7 +302,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                         aria-label={`Image ${idx + 1} of ${items.length}`}
                         aria-current={isActive ? 'true' : undefined}
                         className={[
-                          'h-2 rounded-full transition-[width,background-color,opacity] duration-300',
+                          'h-2 rounded-full transition-[width,background-color,opacity]',
+                          isDragging ? 'duration-75' : 'duration-300',
                           isActive ? 'w-8' : 'w-2.5 opacity-60 hover:opacity-90',
                         ].join(' ')}
                         style={{ backgroundColor: isActive ? accentColor : 'rgba(0,0,0,0.18)' }}
@@ -788,14 +797,16 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                     // Row Gallery is FULL WIDTH. Usually treating it as Block.
                     const margins = getBlockMargins(false, nextMeta === 'compact')
                     
-                    // Row Gallery usually handles its own vertical spacing via my-12?
-                    // We'll wrap it or style it. 
-                    // DraggableRowGallery comp has "my-12". I should probably pass className or wrap it.
-                    // Or just use wrapper div.
+                    // Row Gallery needs full control over its container width to do breakout logic.
+                    // The DraggableRowGallery component handles the breakout internally using w-screen etc.
+                    // But it must be placed in a container that allows it to "exist" in the grid flow properly.
+                    // We apply `colFull` here to the wrapper, and margins via the component prop.
                     elements.push(
-                      <div key={`gallery-row-${currentIndex++}`} className={margins}>
-                          <DraggableRowGallery items={mediaList} />
-                      </div>
+                        <DraggableRowGallery 
+                            key={`gallery-row-${currentIndex++}`} 
+                            items={mediaList} 
+                            className={`${colFull} ${margins}`} 
+                        />
                     )
                     lastElementType = 'block'
                   }
