@@ -10,25 +10,25 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>${baseUrl}</loc>
+        <loc>${baseUrl}/</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
       </url>
       <url>
-        <loc>${baseUrl}/about</loc>
+        <loc>${baseUrl}/about/</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
       </url>
       <url>
-        <loc>${baseUrl}/work</loc>
+        <loc>${baseUrl}/work/</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
       </url>
       <url>
-        <loc>${baseUrl}/contact</loc>
+        <loc>${baseUrl}/contact/</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
@@ -37,7 +37,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
         .map((project) => {
           return `
             <url>
-              <loc>${baseUrl}/project/${project.slug}</loc>
+              <loc>${baseUrl}/project/${project.slug}/</loc>
               <lastmod>${new Date(project.published).toISOString()}</lastmod>
               <changefreq>monthly</changefreq>
               <priority>0.8</priority>
