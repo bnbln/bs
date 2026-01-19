@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { DefaultSeo } from 'next-seo'
 import { defaultSEO } from '../config/seo'
 import '../index.css'
@@ -17,6 +18,7 @@ let globalAssetsLoaded = false;
 let globalProjects: any[] = [];
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false); // Disabled loading screen
   const [assetsInitialized, setAssetsInitialized] = useState(false);
 
@@ -49,10 +51,22 @@ export default function App({ Component, pageProps }: AppProps) {
     setIsLoading(false);
   };
 
+  // Construct canonical URL
+  // Remove query params and ensure trailing slash matches next.config.js
+  const path = router.asPath.split('?')[0];
+  const canonicalUrl = `https://benediktschnupp.com${path === '/' ? '/' : path.endsWith('/') ? path : path + '/'}`;
+
   // Skip loading screen entirely
   return (
     <main className={`${spaceGrotesk.variable} ${inter.variable}`}>
-      <DefaultSeo {...defaultSEO} />
+       <DefaultSeo 
+        {...defaultSEO} 
+        canonical={canonicalUrl}
+        openGraph={{
+          ...defaultSEO.openGraph,
+          url: canonicalUrl,
+        }}
+      />
       <Component {...pageProps} />
       <Analytics />
       <SpeedInsights />
