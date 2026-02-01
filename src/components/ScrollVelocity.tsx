@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect, useState } from "react";
+import React, { useRef, useLayoutEffect, useState, useEffect } from "react";
 import {
   motion,
   useScroll,
@@ -44,10 +44,12 @@ interface ScrollVelocityProps {
   scrollerStyle?: React.CSSProperties;
 }
 
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 function useElementWidth<T extends HTMLElement>(ref: React.RefObject<T | null>): number {
   const [width, setWidth] = useState(0);
 
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     function updateWidth() {
       if (ref.current) {
         setWidth(ref.current.offsetWidth);
