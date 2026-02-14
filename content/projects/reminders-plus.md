@@ -17,8 +17,8 @@ image: assets/reminders.png
 # video: assets/Eu Wahl Loop.mp4
 hasAnimation: true
 animationSequence:
-  videoPath: assets/reminders-3.mp4
-  frameCount: 1000
+  videoPath: assets/reminders-5.mp4
+  frameCount: 734
 featured: false
 type: [Design, Development]
 ---

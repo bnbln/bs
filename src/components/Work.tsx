@@ -59,6 +59,26 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     offset: ["start end", "end start"]
   });
 
+  // Remap raw scroll progress so the full animation (all frameCount frames)
+  // plays only while the card is meaningfully visible.
+  // With offset ["start end", "end start"]:
+  //   rawProgress = 0  → card top at viewport bottom (barely peeking in)
+  //   rawProgress = vh/(vh+h) → card top at viewport top (sticky position)
+  // We delay the animation start until the card is ~50% visible
+  // (card top at viewport center), so no frames are wasted offscreen.
+  const remapAnimationProgress = useCallback((rawProgress: number): number => {
+    const vh = window.innerHeight;
+    const cardHeight = containerRef.current?.offsetHeight || vh;
+    const totalDistance = vh + cardHeight;
+
+    // Start: card top at viewport center (card is ~50% visible from bottom)
+    const startPoint = (vh / 2) / totalDistance;
+    // End: card top at viewport top (card reaches sticky position)
+    const endPoint = vh / totalDistance;
+
+    return Math.min(1, Math.max(0, (rawProgress - startPoint) / (endPoint - startPoint)));
+  }, []);
+
   // ── Two-phase scroll animation ──
   // Phase 1 – Entrance (sectionProgress 0→0.35): cards settle into a tight stack
   //   gap: 100 → 16,  borderRadius: 20 → 12,  scale: 0.93 → 0.97
@@ -337,136 +357,37 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
   }, [project.hasAnimation, project.animationSequence, useVideoScrubbing]);
 
-  // Hybrid rendering: frame-perfect scrubbing for slow scroll, 60fps playback for fast scroll
+  // Pure scroll-driven video scrubbing – no auto-play, no hybrid modes.
+  // We seek the video to the target time and only draw once the browser
+  // fires the 'seeked' event, ensuring the decoded frame is ready.
   const updateVideoFrame = useCallback((scrollProgress: number) => {
     if (!videoRef.current || !canvasRef.current || !videoLoaded || !showAnimation) {
       return;
     }
 
     const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
 
-    if (!ctx || !video.duration || isNaN(video.duration)) {
+    if (!video.duration || isNaN(video.duration)) {
       return;
     }
 
-    const currentTime = performance.now();
-    const deltaTime = currentTime - lastScrollTime.current;
-
-    // Calculate scroll velocity (scroll progress change per ms)
     const totalFrames = project.animationSequence?.frameCount || 501;
-    const scrollDelta = Math.abs(scrollProgress - (lastRenderedFrame.current / (totalFrames - 1)));
-    scrollVelocity.current = deltaTime > 0 ? scrollDelta / deltaTime : 0;
+    const animProgress = remapAnimationProgress(scrollProgress);
+    const targetFrame = Math.round(animProgress * (totalFrames - 1));
+    const clampedFrame = Math.max(0, Math.min(targetFrame, totalFrames - 1));
 
-    // Fast scrolling threshold (adjust as needed)
-    const isFastScrolling = scrollVelocity.current > 0.01; // Adjust sensitivity here
+    // Only seek if frame actually changed
+    if (clampedFrame !== lastRenderedFrame.current) {
+      // Store the desired frame so the seeked handler can draw the latest
+      pendingFrame.current = clampedFrame;
+      lastRenderedFrame.current = clampedFrame;
+      setCurrentFrame(clampedFrame);
 
-    if (isFastScrolling && !isPlayingVideo.current) {
-      // Switch to smooth video playback for fast scrolling
-      startVideoPlayback(video, canvas, ctx, scrollProgress);
-    } else if (!isFastScrolling && isPlayingVideo.current) {
-      // Switch back to frame-perfect scrubbing for slow scrolling
-      stopVideoPlayback(video, canvas, ctx, scrollProgress);
-    } else if (!isFastScrolling && !isPlayingVideo.current) {
-      // Normal frame-perfect scrubbing for slow scrolling
-      updateFramePerfectly(video, canvas, ctx, scrollProgress, currentTime);
+      const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
+      video.currentTime = targetTime;
+      // Drawing happens in the 'seeked' event listener below
     }
-
-    lastScrollTime.current = currentTime;
-  }, [videoLoaded, showAnimation]);
-
-  // Frame-perfect scrubbing for slow scrolling (your preferred mode)
-  const updateFramePerfectly = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, scrollProgress: number, currentTime: number) => {
-    const deltaTime = currentTime - lastFrameTime.current;
-
-    if (deltaTime >= 16.67) { // 60fps = 16.67ms per frame
-      const totalFrames = project.animationSequence?.frameCount || 501;
-      const targetFrame = scrollProgress * (totalFrames - 1);
-      const newFrame = Math.round(targetFrame);
-      const clampedFrame = Math.max(0, Math.min(newFrame, totalFrames - 1));
-
-      // Only update if frame changed
-      if (clampedFrame !== lastRenderedFrame.current) {
-        const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
-        video.currentTime = targetTime;
-
-        requestAnimationFrame(() => {
-          drawVideoFrame(video, canvas, ctx);
-          lastRenderedFrame.current = clampedFrame;
-          setCurrentFrame(clampedFrame);
-        });
-      }
-
-      lastFrameTime.current = currentTime;
-    }
-  }, [project.animationSequence?.frameCount]);
-
-  // Start smooth 60fps video playback for fast scrolling (Safari compatible)
-  const startVideoPlayback = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, scrollProgress: number) => {
-    if (isPlayingVideo.current) return;
-
-    isPlayingVideo.current = true;
-
-    // Set video to correct position and play at 60fps
-    const targetTime = scrollProgress * video.duration;
-    video.currentTime = targetTime;
-    video.playbackRate = 1.0; // Normal speed
-
-    // Start continuous canvas updates during playback
-    const playbackLoop = () => {
-      if (isPlayingVideo.current && video && canvas && ctx) {
-        drawVideoFrame(video, canvas, ctx);
-
-        // Update frame counter based on video time
-        const totalFrames = project.animationSequence?.frameCount || 501;
-        const currentFrame = Math.round((video.currentTime / video.duration) * (totalFrames - 1));
-        lastRenderedFrame.current = currentFrame;
-        setCurrentFrame(currentFrame);
-
-        requestAnimationFrame(playbackLoop);
-      }
-    };
-
-    // Safari-compatible play with user interaction fallback
-    const playVideo = async () => {
-      try {
-        await video.play();
-        playbackLoop();
-      } catch (error) {
-        console.log('Video play failed, using frame-perfect mode instead');
-        // Fallback to frame-perfect mode if autoplay fails
-        isPlayingVideo.current = false;
-        // Force a frame update
-        if (video.readyState >= 2) {
-          drawVideoFrame(video, canvas, ctx);
-        }
-      }
-    };
-
-    playVideo();
-  }, []);
-
-  // Stop video playback and return to frame-perfect scrubbing
-  const stopVideoPlayback = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, scrollProgress: number) => {
-    if (!isPlayingVideo.current) return;
-
-    isPlayingVideo.current = false;
-    video.pause();
-
-    // Set to exact frame based on current scroll position
-    const targetTime = scrollProgress * video.duration;
-    video.currentTime = targetTime;
-
-    // Draw final frame
-    requestAnimationFrame(() => {
-      drawVideoFrame(video, canvas, ctx);
-      const totalFrames = project.animationSequence?.frameCount || 501;
-      const currentFrame = Math.round(scrollProgress * (totalFrames - 1));
-      lastRenderedFrame.current = currentFrame;
-      setCurrentFrame(currentFrame);
-    });
-  }, []);
+  }, [videoLoaded, showAnimation, project.animationSequence?.frameCount, remapAnimationProgress]);
 
   // Responsive canvas drawing function
   const drawVideoFrame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
@@ -480,10 +401,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     if (canvas.width !== newWidth || canvas.height !== newHeight) {
       canvas.width = newWidth;
       canvas.height = newHeight;
-      // Note: We deliberately do NOT set canvas.style.width/height here
-      // to allow CSS (w-full h-full) to handle the display size responsively.
-
-      // Reset context scale and apply new DPR
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
     }
@@ -511,6 +428,40 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
   }, []);
 
+  // Draw the video frame only after the browser has decoded it (seeked event)
+  useEffect(() => {
+    if (!useVideoScrubbing || !videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Safari: seeked event fires reliably when a frame is decoded after seek
+    const onSeeked = () => {
+      drawVideoFrame(video, canvas, ctx);
+    };
+    video.addEventListener('seeked', onSeeked);
+
+    // Chrome: requestVideoFrameCallback fires when a new frame is actually
+    // ready for display – much smoother than seeked for rapid seeking
+    let rvfcId: number | null = null;
+    if ('requestVideoFrameCallback' in video) {
+      const onVideoFrame = () => {
+        drawVideoFrame(video, canvas, ctx);
+        rvfcId = (video as any).requestVideoFrameCallback(onVideoFrame);
+      };
+      rvfcId = (video as any).requestVideoFrameCallback(onVideoFrame);
+    }
+
+    return () => {
+      video.removeEventListener('seeked', onSeeked);
+      if (rvfcId !== null && 'cancelVideoFrameCallback' in video) {
+        (video as any).cancelVideoFrameCallback(rvfcId);
+      }
+    };
+  }, [useVideoScrubbing, drawVideoFrame]);
+
   // Setup resize observer for responsive canvas
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -523,9 +474,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       if (useVideoScrubbing && videoRef.current && videoRef.current.readyState >= 2) {
         const ctx = canvas.getContext('2d');
         if (ctx) drawVideoFrame(videoRef.current, canvas, ctx);
-      } else if (!useVideoScrubbing && loadedImages.length > 0) {
-        // Re-render image sequence frame if applicable
-        // (Image rendering is usually handled by CSS object-fit, but if we used canvas for images, we'd redraw here)
       }
     };
 
@@ -549,13 +497,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
     // Calculate target frame with smooth interpolation
     const totalFrames = loadedImages.length;
-    const targetFrame = scrollProgress * (totalFrames - 1);
+    const animProgress = remapAnimationProgress(scrollProgress);
+    const targetFrame = animProgress * (totalFrames - 1);
 
     // Use 60fps interpolation for smoother animation
     const currentTime = performance.now();
     const deltaTime = currentTime - lastFrameTime.current;
 
-    if (deltaTime >= 0.5) { // 60fps = ~16.67ms per frame
+    if (deltaTime >= 0.5) {
       const newFrame = Math.round(targetFrame);
       const clampedFrame = Math.max(0, Math.min(newFrame, totalFrames - 1));
 
@@ -564,7 +513,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
   }, [loadedImages.length, showAnimation]);
 
-  // High-performance scroll handler for video scrubbing (book project)
+  // High-performance scroll handler for video scrubbing
   useEffect(() => {
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoLoaded && showAnimation) {
       const unsubscribe = scrollYProgress.on("change", (latest) => {
@@ -628,7 +577,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       // Clear frame queue and seeking state
       frameQueue.current = [];
       isSeekingRef.current = false;
-      isPlayingVideo.current = false;
 
       // Stop video if playing
       if (videoRef.current) {
