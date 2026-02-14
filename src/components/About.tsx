@@ -56,7 +56,7 @@ const About = () => {
               </h3>
               <div className="space-y-6 text-lg md:text-xl text-neutral-700 font-inter leading-relaxed max-w-2xl">
                 <p>
-                  I lead visual systems across brand, motion, and product - then bring them to life in React/Next.js for consistent, high-quality delivery.
+                  As a freelance motion designer and developer, I bridge the gap between brand identity and digital product. I craft visual systems that span brand, motion, and UX - then engineer them in React/Next.js to ensure pixel-perfect execution at scale.
                 </p>
                 {/* <p>
                   From branding to modern web development, I plan and build innovative visual concepts. Leveraging deep technical expertise in contemporary web technologies and generative AI tools, I deliver high-performance, scalable interfaces that elevate brand identity.

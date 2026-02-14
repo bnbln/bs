@@ -59,10 +59,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     offset: ["start end", "end start"]
   });
 
-  // ── All card transforms derive from a single sectionProgress MotionValue ──
-  // No React state for positions → no layout thrashing, clean reverse-scroll.
+  // ── Two-phase scroll animation ──
+  // Phase 1 – Entrance (sectionProgress 0→0.35): cards settle into a tight stack
+  //   gap: 100 → 16,  borderRadius: 20 → 12,  scale: 0.93 → 0.97
+  // Phase 2 – Expand  (sectionProgress 0.5→0.75): stack goes fullscreen
+  //   gap: 16 → 0,   borderRadius: 12 → 0,   scale: 0.97 → 1,  margins → 0
 
-  const CARD_STACK_GAP = 16;          // px each stacked card peeks out
   const STACK_SCALE_STEP = 0.015;     // each deeper card is 1.5 % smaller
   const stackScaleOffset = index * STACK_SCALE_STEP;
 
@@ -70,35 +72,47 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const pageMarginRef = useRef(pageMargin);
   pageMarginRef.current = pageMargin;
 
-  // t: 0 = stacked, 1 = expanded-to-fullscreen  (maps sectionProgress 0.5→0.75)
+  // Entrance: 0 → 1  (settling into stack)
+  const entranceT = useTransform(sectionProgress, [0, 0.35], [0, 1], { clamp: true });
+
+  // Expand: 0 → 1  (stack → fullscreen)
   const expandT = useTransform(sectionProgress, [0.5, 0.75], [0, 1], { clamp: true });
 
-  const cardBorderRadius = useTransform(expandT, [0, 1], [12, 0]);
+  // ── Derived values from both phases ──
 
-  // Sticky top: cascade when stacked, 0 when expanded
-  const stickyTop = useTransform(expandT, (t: number) => index * CARD_STACK_GAP * (1 - t));
+  // Gap per card:  100 → 16 (entrance)  → 0 (expand)
+  const GAP_INITIAL = 100;
+  const GAP_STACKED = 16;
+  const stickyTop = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
+    const entranceGap = GAP_INITIAL - (GAP_INITIAL - GAP_STACKED) * e; // 40→16
+    return index * entranceGap * (1 - t);                              // →0
+  });
 
-  // Scale: per-card shrink when stacked → uniform 1.0 when expanded
-  const cardScale = useTransform(expandT, (t: number) => {
-    const base = 0.97 + 0.03 * t;               // 0.97 → 1
-    const stackFactor = 1 - t;                    // 1 → 0
+  // Border radius:  20 → 12 (entrance)  → 0 (expand)
+  const cardBorderRadius = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
+    const entranceRadius = 20 - 8 * e; // 20→12
+    return entranceRadius * (1 - t);   // →0
+  });
+
+  // Scale:  0.93 → 0.97 (entrance)  → 1.0 (expand),  per-card offset fades out
+  const cardScale = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
+    const entranceBase = 0.93 + 0.04 * e;            // 0.93→0.97
+    const base = entranceBase + 0.03 * t;             // 0.97→1.0
+    const stackFactor = 1 - t;
     return base - stackScaleOffset * stackFactor;
   });
 
-  // Horizontal CSS margin that produces a *perceived* visual edge = pageMargin when
-  // stacked and 0 when expanded, compensating for the CSS `scale` transform.
-  const cardMargin = useTransform(expandT, (t: number) => {
-    const fraction = 1 - t;                       // 1 stacked, 0 expanded
+  // Horizontal margin: pageMargin (stacked) → 0 (fullscreen), with scale compensation
+  const cardMargin = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
+    const pm = pageMarginRef.current;
+    const fraction = 1 - t;
     if (fraction <= 0) return 0;
 
-    const base = 0.97 + 0.03 * t;
+    const entranceBase = 0.93 + 0.04 * e;
+    const base = entranceBase + 0.03 * t;
     const currentScale = base - stackScaleOffset * fraction;
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1440;
 
-    // Solve: visualMargin = pageMargin·fraction
-    //   visualMargin = (vw - (vw - 2·M)·S) / 2
-    //   → M = vw/2 - (vw - 2·pm·fraction) / (2·S)
-    const pm = pageMarginRef.current;
     const M = vw / 2 - (vw - 2 * pm * fraction) / (2 * currentScale);
     return Math.max(0, M);
   });
@@ -626,7 +640,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   return (
     <motion.div
       ref={containerRef}
-      className={`sticky w-full aspect-video shadow-xl cursor-pointer group`}
+      className={`sticky w-full aspect-[1/1] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
       style={{
         zIndex: index + 1,
         top: stickyTop,
