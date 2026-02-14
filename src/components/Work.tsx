@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, useScroll } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
@@ -7,9 +7,12 @@ import { Project } from '../lib/markdown';
 interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   project: Project;
   index: number;
+  sectionProgress: MotionValue<number>;
+  pageMargin: number;
+  totalCards: number;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgress, pageMargin, totalCards }) => {
   const router = useRouter();
   // Detect fine pointer (avoid hover / cursor logic on touch devices)
   const [hasFinePointer, setHasFinePointer] = useState(false);
@@ -47,13 +50,57 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   const isPlayingVideo = useRef<boolean>(false);
   const playbackTimeout = useRef<NodeJS.Timeout | null>(null);
   const resizeObserver = useRef<ResizeObserver | null>(null);
-  
+
   // Check if this project uses video scrubbing (has videoPath in animationSequence)
   const useVideoScrubbing = project.animationSequence?.videoPath !== undefined;
-  
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"]
+  });
+
+  // ── All card transforms derive from a single sectionProgress MotionValue ──
+  // No React state for positions → no layout thrashing, clean reverse-scroll.
+
+  const CARD_STACK_GAP = 16;          // px each stacked card peeks out
+  const STACK_SCALE_STEP = 0.015;     // each deeper card is 1.5 % smaller
+  const stackScaleOffset = index * STACK_SCALE_STEP;
+
+  // Keep a live ref so MotionValue callbacks always read the latest pageMargin
+  const pageMarginRef = useRef(pageMargin);
+  pageMarginRef.current = pageMargin;
+
+  // t: 0 = stacked, 1 = expanded-to-fullscreen  (maps sectionProgress 0.5→0.75)
+  const expandT = useTransform(sectionProgress, [0.5, 0.75], [0, 1], { clamp: true });
+
+  const cardBorderRadius = useTransform(expandT, [0, 1], [12, 0]);
+
+  // Sticky top: cascade when stacked, 0 when expanded
+  const stickyTop = useTransform(expandT, (t: number) => index * CARD_STACK_GAP * (1 - t));
+
+  // Scale: per-card shrink when stacked → uniform 1.0 when expanded
+  const cardScale = useTransform(expandT, (t: number) => {
+    const base = 0.97 + 0.03 * t;               // 0.97 → 1
+    const stackFactor = 1 - t;                    // 1 → 0
+    return base - stackScaleOffset * stackFactor;
+  });
+
+  // Horizontal CSS margin that produces a *perceived* visual edge = pageMargin when
+  // stacked and 0 when expanded, compensating for the CSS `scale` transform.
+  const cardMargin = useTransform(expandT, (t: number) => {
+    const fraction = 1 - t;                       // 1 stacked, 0 expanded
+    if (fraction <= 0) return 0;
+
+    const base = 0.97 + 0.03 * t;
+    const currentScale = base - stackScaleOffset * fraction;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1440;
+
+    // Solve: visualMargin = pageMargin·fraction
+    //   visualMargin = (vw - (vw - 2·M)·S) / 2
+    //   → M = vw/2 - (vw - 2·pm·fraction) / (2·S)
+    const pm = pageMarginRef.current;
+    const M = vw / 2 - (vw - 2 * pm * fraction) / (2 * currentScale);
+    return Math.max(0, M);
   });
 
   // Simple fast scroll detection - only hides tooltip during very fast scrolling
@@ -66,19 +113,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       const currentScrollY = window.scrollY;
       const deltaTime = currentTime - lastScrollTime;
       const deltaY = Math.abs(currentScrollY - lastScrollY);
-      
+
       // Calculate scroll velocity (pixels per millisecond)
       const scrollVelocity = deltaTime > 0 ? deltaY / deltaTime : 0;
-      
+
       // Hide tooltips during very fast scrolling (> 2 pixels per ms)
       if (scrollVelocity > 2) {
         setIsFastScrolling(true);
-        
+
         // Clear existing timeout
         if (scrollTimeoutRef.current) {
           clearTimeout(scrollTimeoutRef.current);
         }
-        
+
         // Re-enable after short delay and check if mouse is still inside
         scrollTimeoutRef.current = setTimeout(() => {
           setIsFastScrolling(false);
@@ -88,7 +135,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           }
         }, 50);
       }
-      
+
       lastScrollY = currentScrollY;
       lastScrollTime = currentTime;
     };
@@ -114,12 +161,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
     if (!hasFinePointer) return; // disable on touch
     // Only update position if mouse is actually inside this specific project
     if (!isMouseInsideThisProject) return;
-    
+
     // Throttle mouse updates to improve performance
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
     }
-    
+
     animationRef.current = requestAnimationFrame(() => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     });
@@ -173,22 +220,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   useEffect(() => {
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoRef.current) {
       const video = videoRef.current;
-      
+
       console.log('Setting up video for book project (Safari compatible)');
-      
+
       // Set up video properties for frame-by-frame scrubbing
       video.preload = 'auto'; // Safari needs 'auto' for better loading
       video.currentTime = 0;
-      
+
       // Safari-specific video setup
       video.muted = true;
       video.playsInline = true;
-      
+
       // Force load in Safari
       if (video.readyState === 0) {
         video.load();
       }
-      
+
       // Multiple event listeners for Safari compatibility
       const events = ['loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough'];
       const eventHandlers = events.map(event => {
@@ -201,7 +248,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         video.addEventListener(event, handler);
         return { event, handler };
       });
-      
+
       // Safari fallback: check if video loads after a delay
       const safariFallback = setTimeout(() => {
         if (!videoLoaded && video.readyState >= 2) {
@@ -209,7 +256,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           handleVideoLoad();
         }
       }, 2000);
-      
+
       return () => {
         events.forEach((event, index) => {
           video.removeEventListener(event, eventHandlers[index].handler);
@@ -224,27 +271,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
     if (project.hasAnimation && project.animationSequence && !useVideoScrubbing && project.animationSequence.basePath && project.animationSequence.startFrame !== undefined && project.animationSequence.endFrame !== undefined) {
       const images: string[] = [];
       const { startFrame, endFrame, basePath } = project.animationSequence;
-      
+
       // Generate all frame URLs
       for (let i = startFrame!; i <= endFrame!; i++) {
         const paddedNumber = i.toString().padStart(4, '0');
         const imageUrl = basePath! + `${paddedNumber}.webp`;
         images.push(imageUrl);
       }
-      
+
       setLoadedImages(images);
-      
+
       // Preload images with progress tracking
       let loadedCount = 0;
       const totalImages = images.length;
-      
+
       const preloadImage = (url: string, index: number) => {
         return new Promise<void>((resolve) => {
           const img = new Image();
           img.onload = () => {
             loadedCount++;
             loadedImageCount.current = loadedCount;
-            
+
             // Update loading state
             if (loadedCount === totalImages) {
               setImagesLoaded(true);
@@ -270,7 +317,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           img.src = url;
         });
       };
-      
+
       // Preload all images in parallel
       Promise.all(images.map((url, index) => preloadImage(url, index)));
     }
@@ -281,26 +328,26 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
     if (!videoRef.current || !canvasRef.current || !videoLoaded || !showAnimation) {
       return;
     }
-    
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
+
     if (!ctx || !video.duration || isNaN(video.duration)) {
       return;
     }
-    
+
     const currentTime = performance.now();
     const deltaTime = currentTime - lastScrollTime.current;
-    
+
     // Calculate scroll velocity (scroll progress change per ms)
     const totalFrames = project.animationSequence?.frameCount || 501;
     const scrollDelta = Math.abs(scrollProgress - (lastRenderedFrame.current / (totalFrames - 1)));
     scrollVelocity.current = deltaTime > 0 ? scrollDelta / deltaTime : 0;
-    
+
     // Fast scrolling threshold (adjust as needed)
     const isFastScrolling = scrollVelocity.current > 0.01; // Adjust sensitivity here
-    
+
     if (isFastScrolling && !isPlayingVideo.current) {
       // Switch to smooth video playback for fast scrolling
       startVideoPlayback(video, canvas, ctx, scrollProgress);
@@ -311,32 +358,32 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       // Normal frame-perfect scrubbing for slow scrolling
       updateFramePerfectly(video, canvas, ctx, scrollProgress, currentTime);
     }
-    
+
     lastScrollTime.current = currentTime;
   }, [videoLoaded, showAnimation]);
 
   // Frame-perfect scrubbing for slow scrolling (your preferred mode)
   const updateFramePerfectly = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, scrollProgress: number, currentTime: number) => {
     const deltaTime = currentTime - lastFrameTime.current;
-    
+
     if (deltaTime >= 16.67) { // 60fps = 16.67ms per frame
       const totalFrames = project.animationSequence?.frameCount || 501;
       const targetFrame = scrollProgress * (totalFrames - 1);
       const newFrame = Math.round(targetFrame);
       const clampedFrame = Math.max(0, Math.min(newFrame, totalFrames - 1));
-      
+
       // Only update if frame changed
       if (clampedFrame !== lastRenderedFrame.current) {
         const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
         video.currentTime = targetTime;
-        
+
         requestAnimationFrame(() => {
           drawVideoFrame(video, canvas, ctx);
           lastRenderedFrame.current = clampedFrame;
           setCurrentFrame(clampedFrame);
         });
       }
-      
+
       lastFrameTime.current = currentTime;
     }
   }, [project.animationSequence?.frameCount]);
@@ -344,29 +391,29 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   // Start smooth 60fps video playback for fast scrolling (Safari compatible)
   const startVideoPlayback = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, scrollProgress: number) => {
     if (isPlayingVideo.current) return;
-    
+
     isPlayingVideo.current = true;
-    
+
     // Set video to correct position and play at 60fps
     const targetTime = scrollProgress * video.duration;
     video.currentTime = targetTime;
     video.playbackRate = 1.0; // Normal speed
-    
+
     // Start continuous canvas updates during playback
     const playbackLoop = () => {
       if (isPlayingVideo.current && video && canvas && ctx) {
         drawVideoFrame(video, canvas, ctx);
-        
+
         // Update frame counter based on video time
         const totalFrames = project.animationSequence?.frameCount || 501;
         const currentFrame = Math.round((video.currentTime / video.duration) * (totalFrames - 1));
         lastRenderedFrame.current = currentFrame;
         setCurrentFrame(currentFrame);
-        
+
         requestAnimationFrame(playbackLoop);
       }
     };
-    
+
     // Safari-compatible play with user interaction fallback
     const playVideo = async () => {
       try {
@@ -382,21 +429,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         }
       }
     };
-    
+
     playVideo();
   }, []);
 
   // Stop video playback and return to frame-perfect scrubbing
   const stopVideoPlayback = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, scrollProgress: number) => {
     if (!isPlayingVideo.current) return;
-    
+
     isPlayingVideo.current = false;
     video.pause();
-    
+
     // Set to exact frame based on current scroll position
     const targetTime = scrollProgress * video.duration;
     video.currentTime = targetTime;
-    
+
     // Draw final frame
     requestAnimationFrame(() => {
       drawVideoFrame(video, canvas, ctx);
@@ -411,30 +458,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
   const drawVideoFrame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Always update canvas size for responsiveness
     const newWidth = rect.width * dpr;
     const newHeight = rect.height * dpr;
-    
+
     if (canvas.width !== newWidth || canvas.height !== newHeight) {
       canvas.width = newWidth;
       canvas.height = newHeight;
       // Note: We deliberately do NOT set canvas.style.width/height here
       // to allow CSS (w-full h-full) to handle the display size responsively.
-      
+
       // Reset context scale and apply new DPR
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
     }
-    
+
     // Clear and draw video frame with object-cover behavior
     ctx.clearRect(0, 0, rect.width, rect.height);
-    
+
     const videoAspect = video.videoWidth / video.videoHeight;
     const canvasAspect = rect.width / rect.height;
-    
+
     let drawWidth, drawHeight, drawX, drawY;
-    
+
     if (videoAspect > canvasAspect) {
       drawHeight = rect.height;
       drawWidth = drawHeight * videoAspect;
@@ -446,58 +493,58 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       drawX = 0;
       drawY = (rect.height - drawHeight) / 2;
     }
-    
+
     ctx.drawImage(video, drawX, drawY, drawWidth, drawHeight);
   }, []);
 
   // Setup resize observer for responsive canvas
   useEffect(() => {
     if (!canvasRef.current) return;
-    
-    const handleResize = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
 
-        // Force immediate redraw on resize
-        if (useVideoScrubbing && videoRef.current && videoRef.current.readyState >= 2) {
-             const ctx = canvas.getContext('2d');
-             if (ctx) drawVideoFrame(videoRef.current, canvas, ctx);
-        } else if (!useVideoScrubbing && loadedImages.length > 0) {
-            // Re-render image sequence frame if applicable
-            // (Image rendering is usually handled by CSS object-fit, but if we used canvas for images, we'd redraw here)
-        }
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      // Force immediate redraw on resize
+      if (useVideoScrubbing && videoRef.current && videoRef.current.readyState >= 2) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) drawVideoFrame(videoRef.current, canvas, ctx);
+      } else if (!useVideoScrubbing && loadedImages.length > 0) {
+        // Re-render image sequence frame if applicable
+        // (Image rendering is usually handled by CSS object-fit, but if we used canvas for images, we'd redraw here)
+      }
     };
 
     window.addEventListener('resize', handleResize);
-    
+
     // Also use ResizeObserver for container size changes
     const resizeObserver = new ResizeObserver(() => {
-        requestAnimationFrame(handleResize);
+      requestAnimationFrame(handleResize);
     });
     resizeObserver.observe(canvasRef.current);
 
     return () => {
-        window.removeEventListener('resize', handleResize);
-        resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
     };
   }, [useVideoScrubbing, drawVideoFrame, loadedImages.length]);
 
   // High-performance frame update using requestAnimationFrame (for image sequences)
   const updateImageFrame = useCallback((scrollProgress: number) => {
     if (!loadedImages.length || !showAnimation) return;
-    
+
     // Calculate target frame with smooth interpolation
     const totalFrames = loadedImages.length;
     const targetFrame = scrollProgress * (totalFrames - 1);
-    
+
     // Use 60fps interpolation for smoother animation
     const currentTime = performance.now();
     const deltaTime = currentTime - lastFrameTime.current;
-    
+
     if (deltaTime >= 0.5) { // 60fps = ~16.67ms per frame
       const newFrame = Math.round(targetFrame);
       const clampedFrame = Math.max(0, Math.min(newFrame, totalFrames - 1));
-      
+
       setCurrentFrame(clampedFrame);
       lastFrameTime.current = currentTime;
     }
@@ -511,12 +558,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current);
         }
-        
+
         animationRef.current = requestAnimationFrame(() => {
           updateVideoFrame(latest);
         });
       });
-      
+
       return () => {
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current);
@@ -534,12 +581,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current);
         }
-        
+
         animationRef.current = requestAnimationFrame(() => {
           updateImageFrame(latest);
         });
       });
-      
+
       return () => {
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current);
@@ -568,7 +615,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       frameQueue.current = [];
       isSeekingRef.current = false;
       isPlayingVideo.current = false;
-      
+
       // Stop video if playing
       if (videoRef.current) {
         videoRef.current.pause();
@@ -582,11 +629,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       className={`sticky w-full aspect-video shadow-xl cursor-pointer group`}
       style={{
         zIndex: index + 1,
-        top: 0
+        top: stickyTop,
+        borderRadius: cardBorderRadius,
+        marginLeft: cardMargin,
+        marginRight: cardMargin,
+        scale: cardScale,
+        overflow: 'hidden',
+        width: 'auto',
+        willChange: 'transform',
       }}
       initial={{ y: 0, opacity: 1 }}
       whileInView={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8}}
+      transition={{ duration: 0.8 }}
       viewport={{ once: true }}
       onMouseMove={hasFinePointer ? handleMouseMove : undefined}
       onMouseEnter={hasFinePointer ? handleMouseEnter : undefined}
@@ -594,9 +648,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
       onClick={handleProjectClick}
     >
       {/* Static Background Image (Fallback) */}
-      <div 
+      <div
         className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
-        style={{ 
+        style={{
           backgroundImage: `url('${project.image}')`,
           opacity: showAnimation ? 0 : 1,
           transition: 'opacity 0.5s ease-in-out'
@@ -605,14 +659,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
 
       {/* Video Animation Sequence (Book Project Only) */}
       {project.hasAnimation && project.animationSequence && useVideoScrubbing && (
-        <div 
+        <div
           className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             opacity: showAnimation ? 1 : 0,
             transition: 'opacity 0.5s ease-in-out'
           }}
         >
-                    {/* Hidden video for frame extraction (Safari compatible) */}
+          {/* Hidden video for frame extraction (Safari compatible) */}
           <video
             ref={videoRef}
             className="hidden"
@@ -638,7 +692,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
             <source src={project.animationSequence?.videoPath} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-          
+
           {/* Canvas for smooth frame rendering (same smoothness as your original images) */}
           <canvas
             ref={canvasRef}
@@ -651,13 +705,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
               imageRendering: 'pixelated', // Crisp pixel rendering
               objectFit: 'cover',
             }}
-           />
+          />
         </div>
       )}
 
       {/* Image Animation Sequence (Other Projects) */}
       {project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && (
-        <div 
+        <div
           className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             opacity: showAnimation ? 1 : 0,
@@ -697,7 +751,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           Your browser does not support the video tag.
         </video>
       )}
-      
+
       {/* Loading indicator for animations */}
       {project.hasAnimation && project.animationSequence && !showAnimation && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -720,13 +774,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
           top: mousePosition.y,
         }}
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ 
+        animate={{
           opacity: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0,
           scale: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0.9,
           x: 24, // Offset from cursor
           y: 24
         }}
-        transition={{ 
+        transition={{
           type: "spring",
           stiffness: 400,
           damping: 28,
@@ -743,7 +797,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        transition={{ 
+        transition={{
           duration: 0.1,
           ease: "easeOut"
         }}
@@ -759,7 +813,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index }) => {
         <img
           src={arrowSvg}
           alt="View project"
-          className="w-4 h-4" 
+          className="w-4 h-4"
           style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
         />
       </motion.button>
@@ -772,10 +826,36 @@ interface WorkProps {
 }
 
 const Work: React.FC<WorkProps> = ({ data }) => {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Responsive page margin matching the site layout:
+  // px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]
+  const [pageMargin, setPageMargin] = useState(16);
+  useEffect(() => {
+    const updateMargin = () => {
+      const w = window.innerWidth;
+      if (w >= 1280) setPageMargin(140);
+      else if (w >= 1024) setPageMargin(100);
+      else if (w >= 768) setPageMargin(48);
+      else if (w >= 640) setPageMargin(32);
+      else setPageMargin(16);
+    };
+    updateMargin();
+    window.addEventListener('resize', updateMargin);
+    return () => window.removeEventListener('resize', updateMargin);
+  }, []);
+
+  // Track the Work section entering viewport
+  // progress 0 → section top at viewport bottom, 1 → section top at viewport top
+  const { scrollYProgress: sectionProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "start start"]
+  });
+
   return (
-    <section className="bg-[#f0f0f0] w-full relative" id="work">
+    <section ref={sectionRef} className="bg-white w-full relative" id="work">
       {data.map((project, index) => (
-        <ProjectCard key={project.id} project={project} index={index} />
+        <ProjectCard key={project.id} project={project} index={index} sectionProgress={sectionProgress} pageMargin={pageMargin} totalCards={data.length} />
       ))}
     </section>
   );

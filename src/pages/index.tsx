@@ -60,16 +60,14 @@ export default function Home({ data }: HomeProps) {
           <Navigation />
           <Hero />
           <About />
-          <div className="featured-projects">
-            <FeaturedProjects data={data.featuredProjects} />
-          </div>
           <Work data={data.projects} />
           <Create />
           <Contact />
+          <FeaturedProjects data={data.featuredProjects} />
         </div>
-        
+
         {/* Footer - Relative on Mobile, Fixed Reveal on Desktop */}
-        <Footer /> 
+        <Footer />
       </div>
     </>
   )
@@ -77,7 +75,7 @@ export default function Home({ data }: HomeProps) {
 
 export const getStaticProps: GetStaticProps = async () => {
   const data = getProjectsData()
-  
+
   return {
     props: {
       data

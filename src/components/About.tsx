@@ -13,7 +13,7 @@ const About = () => {
     "UI/UX Architecture",
     "Generative AI"
   ]
- // TODO: add "Awards: 4+"
+  // TODO: add "Awards: 4+"
   const stats = [
     { label: "Years Experience", value: "10+" },
     { label: "Projects Delivered", value: "400+" },
@@ -21,30 +21,29 @@ const About = () => {
   ]
 
   return (
-    <section 
-      id="about" 
+    <section
+      id="about"
       ref={containerRef}
       className="bg-white py-12 md:py-24 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto relative z-10">
-        
+
         {/* Top Headline Section */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={isInView ? { y: 0, opacity: 1 } : {}}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="mb-10 md:mb-12"
         >
-          <h2 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mix-blend-exclusion">
-            <div>Crafting Connections</div>
-            <div>through Code &</div>
-            <div>Creativity</div>
+          <h2 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[4vw] leading-[1.2] tracking-tight font-bold text-black mix-blend-exclusion">
+            <div>Moving Pixels with</div>
+            <div>Code & Creativity</div>
           </h2>
         </motion.div>
 
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-6">
-          
+
           {/* Left Column: Bio & CTA */}
           <div className="lg:col-span-7 flex flex-col justify-between">
             <motion.div
@@ -53,11 +52,11 @@ const About = () => {
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               <h3 className="text-2xl md:text-3xl font-medium mb-5">
-                Building digital experiences that matter.
+                I build brands in motion & ship them in code.
               </h3>
               <div className="space-y-6 text-lg md:text-xl text-neutral-700 font-inter leading-relaxed max-w-2xl">
                 <p>
-                  I'm a creative, tech-savvy <span className="text-black font-semibold">Motion Designer & Front-End Developer</span> with a passion for blending storytelling with cutting-edge code.
+                  I lead visual systems across brand, motion, and product - then bring them to life in React/Next.js for consistent, high-quality delivery.
                 </p>
                 {/* <p>
                   From branding to modern web development, I plan and build innovative visual concepts. Leveraging deep technical expertise in contemporary web technologies and generative AI tools, I deliver high-performance, scalable interfaces that elevate brand identity.
@@ -70,7 +69,7 @@ const About = () => {
 
             {/* Mobile: Services & Stats */}
             <div className="lg:hidden flex flex-col gap-6 my-8">
-               {/* Services List */}
+              {/* Services List */}
               {/* <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={isInView ? { y: 0, opacity: 1 } : {}}
@@ -113,31 +112,31 @@ const About = () => {
             </div>
 
             {/* Buttons / Actions */}
-            <motion.div 
+            <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={isInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-6 flex flex-wrap gap-4 items-center"
+              className="mt-6 md:mt-40 flex flex-wrap gap-4 items-center"
             >
-              <Link 
+              <Link
                 href="/contact"
                 className="group relative inline-flex items-center justify-center px-8 py-3.5 bg-black text-white rounded-full overflow-hidden transition-all hover:bg-neutral-800"
               >
                 <span className="relative z-10 font-medium text-lg mr-2 font-inter">Let's Work Together</span>
                 <ArrowUpRight className="w-5 h-5 relative z-10 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </Link>
-              
+
               <div className="flex gap-2">
-                <a 
-                  href="https://linkedin.com/in/benedikt-schnupp-928112116" 
-                  target="_blank" 
+                <a
+                  href="https://linkedin.com/in/benedikt-schnupp-928112116"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-300 transition-colors text-black"
                   aria-label="LinkedIn"
                 >
                   <Linkedin className="w-5 h-5" />
                 </a>
-                <a 
+                <a
                   href="mailto:mail@benediktschnupp.com"
                   className="w-12 h-12 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-300 transition-colors text-black"
                   aria-label="Email"
@@ -150,7 +149,7 @@ const About = () => {
 
           {/* Right Column: Services & Stats */}
           <div className="hidden lg:flex lg:col-span-4 lg:col-start-9 flex-col gap-6">
-            
+
             {/* Services List */}
             {/* <motion.div
               initial={{ y: 20, opacity: 0 }}

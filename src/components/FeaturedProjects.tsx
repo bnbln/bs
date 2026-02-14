@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Project } from '../lib/markdown'
 
 const FeaturedProjects = ({ data }: { data: Project[] }) => {
-  
+
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -78,7 +78,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const [startX, setStartX] = React.useState(0)
   const [scrollLeftStart, setScrollLeftStart] = React.useState(0)
   const dragMovedRef = React.useRef(0)
-  
+
   // Physics refs
   const velocityRef = React.useRef(0)
   const lastXRef = React.useRef(0)
@@ -90,7 +90,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
     dragMovedRef.current = 0
     setStartX(e.pageX - scrollContainerRef.current.offsetLeft)
     setScrollLeftStart(scrollContainerRef.current.scrollLeft)
-    
+
     // Init physics
     velocityRef.current = 0
     lastXRef.current = e.pageX
@@ -99,23 +99,23 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
 
   const handleDragEnd = () => {
     if (scrollContainerRef.current && isDragging) {
-        setIsDragging(false)
-        
-        const container = scrollContainerRef.current
-        const currentScroll = container.scrollLeft
-        
-        // Calculate projection based on velocity
-        // A velocity of 2 means we moved 2px per ms. 
-        // Let's project where we'd land in ~300ms
-        const velocity = velocityRef.current
-        const inertia = Math.abs(velocity) > 0.5 ? 300 : 0 // Only apply inertia if decent swipe
-        const projectedScroll = currentScroll - (velocity * inertia)
-        
-        // Snap auf die nächste Karte basierend auf echten DOM-Positionen (variable Breiten)
-        const nearestIndex = getNearestIndex(projectedScroll)
-        scrollToIndex(nearestIndex)
+      setIsDragging(false)
+
+      const container = scrollContainerRef.current
+      const currentScroll = container.scrollLeft
+
+      // Calculate projection based on velocity
+      // A velocity of 2 means we moved 2px per ms. 
+      // Let's project where we'd land in ~300ms
+      const velocity = velocityRef.current
+      const inertia = Math.abs(velocity) > 0.5 ? 300 : 0 // Only apply inertia if decent swipe
+      const projectedScroll = currentScroll - (velocity * inertia)
+
+      // Snap auf die nächste Karte basierend auf echten DOM-Positionen (variable Breiten)
+      const nearestIndex = getNearestIndex(projectedScroll)
+      scrollToIndex(nearestIndex)
     } else {
-        setIsDragging(false)
+      setIsDragging(false)
     }
   }
 
@@ -125,18 +125,18 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const onMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !scrollContainerRef.current) return
     e.preventDefault()
-    
+
     // Calculate Velocity
     const now = performance.now()
     const dt = now - lastTimeRef.current
     const dx = e.pageX - lastXRef.current
-    
+
     if (dt > 0) {
-        velocityRef.current = dx / dt
-        lastXRef.current = e.pageX
-        lastTimeRef.current = now
+      velocityRef.current = dx / dt
+      lastXRef.current = e.pageX
+      lastTimeRef.current = now
     }
-    
+
     const x = e.pageX - scrollContainerRef.current.offsetLeft
     const walk = (x - startX) * 1.0 // 1:1 movement
     scrollContainerRef.current.scrollLeft = scrollLeftStart - walk
@@ -145,18 +145,18 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
 
   // Check for mobile to disable scrolling animations
   const [isMobile, setIsMobile] = React.useState(false) // Default: Desktop; wird clientseitig gemessen
-  
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
-    
+
     // Initial check
     checkMobile()
-    
+
     // Add listener
     window.addEventListener('resize', checkMobile)
-    
+
     // Cleanup
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
@@ -193,7 +193,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   return (
     <section className="bg-white my-[60px] relative w-full" id="work">
       {/* Section Title with Navigation */}
-      <motion.div 
+      <motion.div
         className="w-full top-[60px] px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
         initial={{ x: 0, opacity: 1 }}
         whileInView={{ x: 0, opacity: 1 }}
@@ -204,7 +204,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
           <h2 className="text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] whitespace-pre">
             The Latest
           </h2>
-          
+
           <div className="flex gap-3">
             <motion.button
               onClick={scrollLeft}
@@ -214,10 +214,10 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
               aria-label="Scroll to previous project"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </motion.button>
-            
+
             <motion.button
               onClick={scrollRight}
               className="w-12 h-12 rounded-full border border-neutral-300 bg-transparent hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group"
@@ -226,7 +226,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
               aria-label="Scroll to next project"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </motion.button>
           </div>
@@ -234,16 +234,16 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
       </motion.div>
 
       {/* Projects Container */}
-      <div 
+      <div
         ref={scrollContainerRef}
-        className={`relative mt-[20px] w-full overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab active:cursor-grabbing select-none scroll-pl-4 sm:scroll-pl-8 md:scroll-pl-12 lg:scroll-pl-[100px] xl:scroll-pl-[140px] ${isDragging ? '' : 'snap-x snap-mandatory'}`}
+        className={`relative mt-[20px] pb-500 w-full overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab active:cursor-grabbing select-none scroll-pl-4 sm:scroll-pl-8 md:scroll-pl-12 lg:scroll-pl-[100px] xl:scroll-pl-[140px] ${isDragging ? '' : 'snap-x snap-mandatory'}`}
         onMouseDown={onMouseDown}
         onMouseLeave={onMouseLeave}
         onMouseUp={onMouseUp}
         onMouseMove={onMouseMove}
       >
-        <motion.div 
-            className="inline-flex min-w-full items-start gap-5 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
+        <motion.div
+          className="inline-flex min-w-full items-start gap-5 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
         >
           {items.map((item, index) => {
             if (item.kind === 'more-projects') {
@@ -282,7 +282,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                     }}
                   >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </motion.button>
                   <div className="mt-5 text-center">
@@ -306,75 +306,75 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
               : '(max-width: 640px) 300px, 354px'
 
             return (
-            // In horizontalen Scroller-Layouts kann ein x-Entrance die In-View-Erkennung
-            // (IntersectionObserver) „flattern“ lassen. Daher: y/opacity Entrance.
-            // Auf Mobile/ungeklärten Breakpoints kein Entrance-Anim, um Remount/Jank zu vermeiden.
-            <motion.div
-              key={project.id}
-              className={[
-                'project-card',
-                project.bgColor,
-                // gleiche Höhe für alle Cards, damit eine saubere Row entsteht
-                'h-[424px] sm:h-[471.55px]',
-                // Portrait Cards: fixe Breite wie bisher
-                isLandscapeCard ? 'aspect-[4/3]' : 'w-[300px] sm:w-[353.66px]',
-                'flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start flex flex-col p-4 sm:p-6',
-              ].join(' ')}
-              data-carousel-item="true"
-              initial={isMobile ? false : { y: 12, opacity: 0 }}
-              whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
-              // Mobile-Safety: erzwingt Sichtbarkeit, falls whileInView durch State-Flip nicht feuert
-              animate={isMobile ? { y: 0, opacity: 1 } : undefined}
-              transition={
-                isMobile
-                  ? undefined
-                  : { duration: 0.6, ease: 'easeOut', delay: index * 0.08 }
-              }
-              viewport={isMobile ? undefined : { once: true, amount: 0.6 }}
-              onClick={() => handleProjectClick(project.slug)}
-              whileHover="hover"
-            >
-              {/* Background Image */}
-              <div className="absolute inset-0 rounded-xl overflow-hidden">
-                <Image
-                  src={project.image}
-                  alt={project.title}
-                  fill
-                  sizes={imageSizes}
-                  className="object-cover object-center"
-                  draggable={false}
-                />
-              </div>
-              {/* leichte Abdunklung unten für Text-Lesbarkeit */}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/35 pointer-events-none" />
-              
-              {/* Category */}
-              <motion.div 
-                className="relative z-10"
-                initial="initial"
-                animate="initial"
+              // In horizontalen Scroller-Layouts kann ein x-Entrance die In-View-Erkennung
+              // (IntersectionObserver) „flattern“ lassen. Daher: y/opacity Entrance.
+              // Auf Mobile/ungeklärten Breakpoints kein Entrance-Anim, um Remount/Jank zu vermeiden.
+              <motion.div
+                key={project.id}
+                className={[
+                  'project-card',
+                  project.bgColor,
+                  // gleiche Höhe für alle Cards, damit eine saubere Row entsteht
+                  'h-[424px] sm:h-[471.55px]',
+                  // Portrait Cards: fixe Breite wie bisher
+                  isLandscapeCard ? 'aspect-[4/3]' : 'w-[300px] sm:w-[353.66px]',
+                  'flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start flex flex-col p-4 sm:p-6',
+                ].join(' ')}
+                data-carousel-item="true"
+                initial={isMobile ? false : { y: 12, opacity: 0 }}
+                whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
+                // Mobile-Safety: erzwingt Sichtbarkeit, falls whileInView durch State-Flip nicht feuert
+                animate={isMobile ? { y: 0, opacity: 1 } : undefined}
+                transition={
+                  isMobile
+                    ? undefined
+                    : { duration: 0.6, ease: 'easeOut', delay: index * 0.08 }
+                }
+                viewport={isMobile ? undefined : { once: true, amount: 0.6 }}
+                onClick={() => handleProjectClick(project.slug)}
                 whileHover="hover"
-                variants={{
-                  initial: { y: -20, opacity: 0 },
-                  hover: { y: 0, opacity: 1 }
-                }}
-                transition={{ 
-                  duration: 0.3, 
-                  ease: "easeOut"
-                }}
               >
-                <p className="text-white font-inter font-normal text-[16px] leading-[24px] whitespace-pre">
-                  {project.category}
-                </p>
+                {/* Background Image */}
+                <div className="absolute inset-0 rounded-xl overflow-hidden">
+                  <Image
+                    src={project.image}
+                    alt={project.title}
+                    fill
+                    sizes={imageSizes}
+                    className="object-cover object-center"
+                    draggable={false}
+                  />
+                </div>
+                {/* leichte Abdunklung unten für Text-Lesbarkeit */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/35 pointer-events-none" />
+
+                {/* Category */}
+                <motion.div
+                  className="relative z-10"
+                  initial="initial"
+                  animate="initial"
+                  whileHover="hover"
+                  variants={{
+                    initial: { y: -20, opacity: 0 },
+                    hover: { y: 0, opacity: 1 }
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    ease: "easeOut"
+                  }}
+                >
+                  <p className="text-white font-inter font-normal text-[16px] leading-[24px] whitespace-pre">
+                    {project.category}
+                  </p>
+                </motion.div>
+
+                {/* Title */}
+                <div className="relative z-10 mt-auto">
+                  <h3 className="text-white font-helvetica font-bold text-[19.844px] leading-[24px]">
+                    {project.title}
+                  </h3>
+                </div>
               </motion.div>
-              
-              {/* Title */}
-              <div className="relative z-10 mt-auto">
-                <h3 className="text-white font-helvetica font-bold text-[19.844px] leading-[24px]">
-                  {project.title}
-                </h3>
-              </div>
-            </motion.div>
             )
           })}
         </motion.div>
