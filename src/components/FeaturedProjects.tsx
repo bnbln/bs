@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
@@ -143,26 +143,6 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
     dragMovedRef.current += Math.abs(walk)
   }
 
-  // Check for mobile to disable scrolling animations
-  const [isMobile, setIsMobile] = React.useState(false) // Default: Desktop; wird clientseitig gemessen
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    // Initial check
-    checkMobile()
-
-    // Add listener
-    window.addEventListener('resize', checkMobile)
-
-    // Cleanup
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  // ... rest of component logic ...
-
   // Handle project click - Prevent click if dragged
   const handleProjectClick = useCallback((slug: string) => {
     if (dragMovedRef.current > 5) return // Threshold for click vs drag
@@ -261,13 +241,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                     'flex flex-col items-center justify-center p-6',
                   ].join(' ')}
                   data-carousel-item="true"
-                  initial={isMobile ? false : { y: 12, opacity: 0 }}
-                  whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
-                  // Wichtig für Mobile: isMobile flippt erst nach dem ersten Render auf true.
-                  // Ohne explizites animate kann opacity:0 vom initial hängen bleiben.
-                  animate={isMobile ? { y: 0, opacity: 1 } : undefined}
-                  transition={isMobile ? undefined : { duration: 0.6, ease: 'easeOut', delay: index * 0.08 }}
-                  viewport={isMobile ? undefined : { once: true, amount: 0.6 }}
+                  // Entrance animation disabled for now: keep cards visible from first paint.
                   onClick={handleMoreProjectsClick}
                 >
                   <motion.button
@@ -321,16 +295,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                   'flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start flex flex-col p-4 sm:p-6',
                 ].join(' ')}
                 data-carousel-item="true"
-                initial={isMobile ? false : { y: 12, opacity: 0 }}
-                whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
-                // Mobile-Safety: erzwingt Sichtbarkeit, falls whileInView durch State-Flip nicht feuert
-                animate={isMobile ? { y: 0, opacity: 1 } : undefined}
-                transition={
-                  isMobile
-                    ? undefined
-                    : { duration: 0.6, ease: 'easeOut', delay: index * 0.08 }
-                }
-                viewport={isMobile ? undefined : { once: true, amount: 0.6 }}
+                // Entrance animation disabled for now: keep cards visible from first paint.
                 onClick={() => handleProjectClick(project.slug)}
                 whileHover="hover"
               >

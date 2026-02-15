@@ -54,7 +54,10 @@ iOS-Blue #007EFF rgb(0,126,255) usage=Primary
 Off-White #F5F7FA rgb(245,247,250) usage=Background
 Ink #0B1220 rgb(11,18,32) usage=Text
 ```
-
+```animationSequence
+videoPath: assets/reminders-8.mp4
+frameCount: 5607
+```
 ## Development: React Native, local-first by design
 
 From day one, we wanted the app to feel instant — and to be something you can trust with personal planning.

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/router'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Project } from '../lib/markdown'
 import { resolveAssetPath } from '../lib/assets'
@@ -9,7 +8,7 @@ import CodeBlock from './CodeBlock'
 import ColorPalette from './ColorPalette'
 import Callout, { CalloutVariant } from './Callout'
 import Navigation from './Navigation'
-import { ArrowLeft } from 'lucide-react'
+import ScrollScrubVideo from './ScrollScrubVideo'
 
 interface ArticleProps {
   project: Project
@@ -21,14 +20,6 @@ interface ArticleProps {
 const isVideoFile = (url: string): boolean => {
   const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v', '.3gp']
   return videoExtensions.some(ext => url.toLowerCase().endsWith(ext))
-}
-
-// Helper function to format date from YYYY-MM-DD to "Year" or full date
-const formatYear = (dateString: string): string => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return '' 
-  return date.getFullYear().toString()
 }
 
 // Attribute parser for fenced code blocks
@@ -47,11 +38,57 @@ const parseFenceAttributes = (attr: string): Record<string, string> => {
   return attrs
 }
 
+const ANIMATION_SEQUENCE_FENCE_TYPES = new Set([
+  'animationsequence',
+  'animation-sequence',
+  'scrollanimation',
+  'scroll-animation',
+  'scrollvideo',
+  'scroll-video',
+])
+
+const parseOptionalNumber = (value?: string): number | undefined => {
+  if (!value) return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return undefined
+  return parsed
+}
+
+const parseAnimationSequenceFence = (body: string): { videoPath?: string; frameCount?: number } => {
+  const result: { videoPath?: string; frameCount?: number } = {}
+  const lines = body
+    .split(/\n|;/)
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  lines.forEach(line => {
+    const match = line.match(/^([A-Za-z][\w-]*)\s*[:=]\s*(.+)$/)
+    if (!match) return
+
+    const rawKey = match[1].toLowerCase()
+    const value = match[2].trim().replace(/^['"]|['"]$/g, '')
+
+    if (['videopath', 'video', 'path'].includes(rawKey)) {
+      result.videoPath = value
+      return
+    }
+
+    if (['framecount', 'frames', 'frame'].includes(rawKey)) {
+      const parsed = parseOptionalNumber(value)
+      if (parsed !== undefined) {
+        result.frameCount = parsed
+      }
+    }
+  })
+
+  return result
+}
+
 // Custom markdown components with "Apple-like" Grid Layout
 const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { content: string; project: Project; accentColor: string; allProjects?: Project[] }) => {
   
-  // Layout Classes - Apple Style: highly tailored, centralized text, wide media
-  const colText = "col-span-1 md:col-start-4 md:col-span-6" // 6 cols centered (approx 680-700px on large screens)
+  // Layout Classes: clean center text flow + wide media breakouts
+  const colText = "col-span-1 md:col-start-3 md:col-span-8 xl:col-start-4 xl:col-span-6 w-full max-w-[52rem] justify-self-center"
   const colWide = "col-span-1 md:col-start-2 md:col-span-10" // Wider breakout
   const colFull = "col-span-1 md:col-span-12" // Full width
   
@@ -231,7 +268,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             ref={scrollerRef}
             className={[
               'scrollbar-hide flex gap-4 sm:gap-6 overflow-x-auto pb-2',
-              'snap-x snap-mandatory scroll-px-4 sm:scroll-px-8 md:scroll-px-12 lg:scroll-px-[100px] xl:scroll-px-[140px]',
+              'snap-x snap-mandatory scroll-px-4 sm:scroll-px-8 md:scroll-px-10 lg:scroll-px-16 xl:scroll-px-20 2xl:scroll-px-24',
               '[scroll-snap-stop:always] [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch]',
               'cursor-grab select-none',
               isDragging ? 'cursor-grabbing' : '',
@@ -249,7 +286,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 <figure
                   key={idx}
                   data-row-gallery-item="1"
-                  className="snap-start snap-always shrink-0 first:ml-4 sm:first:ml-8 md:first:ml-12 lg:first:ml-[100px] xl:first:ml-[140px] last:mr-4 sm:last:mr-8 md:last:mr-12 lg:last:mr-[100px] xl:last:mr-[140px]"
+                  className="snap-start snap-always shrink-0 first:ml-4 sm:first:ml-8 md:first:ml-10 lg:first:ml-16 xl:first:ml-20 2xl:first:ml-24 last:mr-4 sm:last:mr-8 md:last:mr-10 lg:last:mr-16 xl:last:mr-20 2xl:last:mr-24"
                 >
                   <div className="rounded-2xl overflow-hidden bg-neutral-50 shadow-sm border border-black/5 ring-1 ring-black/5">
                     {isV ? (
@@ -277,7 +314,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
           {/* Minimal controls under gallery: small buttons + center stepper */}
           {items.length > 1 && (
-            <div className="mt-4 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]">
+            <div className="mt-4 px-4 sm:px-8 md:px-10 lg:px-16 xl:px-20 2xl:px-24">
               <div className="flex items-center justify-between gap-4">
                 <button
                   type="button"
@@ -455,7 +492,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             if (l.trim() === '') {
                 if (buffer.length) {
                     elements.push(
-                        <p key={`p-${currentIndex++}`} className={`${colText} text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em] mb-6`}>
+                        <p key={`p-${currentIndex++}`} className={`${colText} text-[17px] sm:text-[18px] leading-[1.72] text-[#1D1D1F] font-inter font-normal tracking-[-0.005em] mb-6`}>
                             {parseInlineElements(buffer.join(' '))}
                         </p>
                     )
@@ -467,7 +504,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         })
         if (buffer.length) {
             elements.push(
-                <p key={`p-${currentIndex++}`} className={`${colText} text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em] mb-6`}>
+                <p key={`p-${currentIndex++}`} className={`${colText} text-[17px] sm:text-[18px] leading-[1.72] text-[#1D1D1F] font-inter font-normal tracking-[-0.005em] mb-6`}>
                     {parseInlineElements(buffer.join(' '))}
                 </p>
             )
@@ -617,7 +654,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         elements.push(
             <ul key={`list-${currentIndex++}`} className={`${colText} space-y-3 mb-10 mt-2`}>
                 {listItems.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-4 text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter">
+                    <li key={idx} className="flex items-start gap-4 text-[17px] sm:text-[18px] leading-[1.72] text-[#1D1D1F] font-inter">
                         <span className="shrink-0 mt-2.5 w-1.5 h-1.5 rounded-full bg-neutral-300 transform" style={{ backgroundColor: accentColor }} />
                         <span>{parseInlineElements(item)}</span>
                     </li>
@@ -638,6 +675,12 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const bodyLines: string[] = []
         while (i < lines.length && !lines[i].trim().startsWith('```')) { bodyLines.push(lines[i]); i++ }
         const body = bodyLines.join('\n')
+        const sequenceBodyConfig = parseAnimationSequenceFence(body)
+        const sequenceVideoPath = attrs.videoPath || attrs.video || attrs.path || sequenceBodyConfig.videoPath || project.animationSequence?.videoPath
+        const sequenceFrameCount =
+          parseOptionalNumber(attrs.frameCount || attrs.frames || attrs.frame) ??
+          sequenceBodyConfig.frameCount ??
+          project.animationSequence?.frameCount
 
         const calloutVariant = normalizeCalloutVariant(typeLower, attrs.type)
         if (calloutVariant) {
@@ -659,6 +702,36 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
               </Callout>
             </div>
           )
+          lastElementType = 'block'
+        }
+        else if (ANIMATION_SEQUENCE_FENCE_TYPES.has(typeLower)) {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          if (sequenceVideoPath) {
+            elements.push(
+              <div key={`anim-seq-${currentIndex++}`} className={`${colWide} ${margins}`}>
+                <ScrollScrubVideo
+                  videoPath={sequenceVideoPath}
+                  frameCount={sequenceFrameCount}
+                  accentColor={accentColor}
+                />
+              </div>
+            )
+          } else {
+            elements.push(
+              <div key={`anim-seq-missing-${currentIndex++}`} className={`${colText} ${margins}`}>
+                <Callout variant="warning" title="Animation block missing videoPath" accentColor={accentColor}>
+                  <p>
+                    Add <code>videoPath: assets/your-animation.mp4</code> to this block or define
+                    <code> animationSequence.videoPath </code>
+                    in the project frontmatter.
+                  </p>
+                </Callout>
+              </div>
+            )
+          }
+
           lastElementType = 'block'
         }
         else if (typeLower === 'palette') {
@@ -851,7 +924,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
   }
 
   return (
-      <div className="w-full max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-x-6">
+      <div className="w-full max-w-[1680px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-x-6 xl:gap-x-8">
         {parseMarkdown(content)}
       </div>
   )
@@ -870,14 +943,11 @@ import Footer from './Footer'
 // ... existing imports
 
 export default function Article({ project, allProjects, heroPriority = false }: ArticleProps) {
-  const router = useRouter()
-  
   if (!project) return <div className="min-h-screen bg-white" />
 
   const accentColor = project.bgColor || '#0066CC' 
   
   const date = formatDate(project.published)
-  const tags = ((project.category || '') + ',' + (project.title || '')).split(',').slice(0, 3) 
   
   // Helper for category (string or array)
   const getCategories = (cat: string | string[]) => {
@@ -1123,7 +1193,7 @@ export default function Article({ project, allProjects, heroPriority = false }: 
             )}
     
             {/* Markdown Content */}
-            <section className="px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative z-10 pb-32">
+            <section className="px-4 sm:px-8 md:px-10 lg:px-16 xl:px-20 2xl:px-24 relative z-10 pb-32">
                  {project.content && <MarkdownRenderer content={project.content} project={project} accentColor={accentColor} allProjects={allProjects} />}
 
                  {(newerProject || olderProject) && (
