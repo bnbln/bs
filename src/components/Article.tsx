@@ -56,30 +56,24 @@ const parseOptionalNumber = (value?: string): number | undefined => {
 
 const parseAnimationSequenceFence = (body: string): { videoPath?: string; frameCount?: number } => {
   const result: { videoPath?: string; frameCount?: number } = {}
-  const lines = body
-    .split(/\n|;/)
-    .map(line => line.trim())
-    .filter(Boolean)
+  const source = ` ${body} `
 
-  lines.forEach(line => {
-    const match = line.match(/^([A-Za-z][\w-]*)\s*[:=]\s*(.+)$/)
-    if (!match) return
+  const videoMatch = source.match(
+    /(?:^|[\s;\n\r])(videopath|video|path)\s*[:=]\s*("[^"]+"|'[^']+'|[^\s;\n\r]+)/i
+  )
+  if (videoMatch?.[2]) {
+    result.videoPath = videoMatch[2].trim().replace(/^['"]|['"]$/g, '')
+  }
 
-    const rawKey = match[1].toLowerCase()
-    const value = match[2].trim().replace(/^['"]|['"]$/g, '')
-
-    if (['videopath', 'video', 'path'].includes(rawKey)) {
-      result.videoPath = value
-      return
+  const frameMatch = source.match(
+    /(?:^|[\s;\n\r])(framecount|frames|frame)\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)/i
+  )
+  if (frameMatch?.[2]) {
+    const parsed = parseOptionalNumber(frameMatch[2])
+    if (parsed !== undefined) {
+      result.frameCount = parsed
     }
-
-    if (['framecount', 'frames', 'frame'].includes(rawKey)) {
-      const parsed = parseOptionalNumber(value)
-      if (parsed !== undefined) {
-        result.frameCount = parsed
-      }
-    }
-  })
+  }
 
   return result
 }

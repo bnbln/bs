@@ -1,10 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useScroll } from 'framer-motion'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { resolveAssetPath } from '../lib/assets'
 
 const SCRUB_FPS_CAP = 60
-const VIDEO_SCROLL_START_OFFSET = '99%'
+const VIDEO_SCROLL_START_OFFSET = '92%'
 const VIDEO_SCROLL_END_OFFSET = '-120%'
+const INTRO_END_PROGRESS = 0.16
+const PLAYBACK_END_PROGRESS = 0.5
+const OUTRO_START_PROGRESS = 0.6
+const OUTRO_END_PROGRESS = 0.9
 
 interface ScrollScrubVideoProps {
   videoPath: string
@@ -32,13 +36,114 @@ export default function ScrollScrubVideo({
 
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [showAnimation, setShowAnimation] = useState(false)
+  const [viewportSize, setViewportSize] = useState({ width: 1440, height: 900 })
+  const [entryFrame, setEntryFrame] = useState({ width: 1080, height: 608 })
+  const [stickyTopOffset, setStickyTopOffset] = useState(48)
 
   const resolvedVideoPath = resolveAssetPath(videoPath)
+  const scrollSpanVh = useMemo(() => {
+    const base = frameCount || 1400
+    return Math.max(170, Math.min(320, Math.round(base / 18)))
+  }, [frameCount])
 
   const { scrollYProgress } = useScroll({
     target: scrollTrackRef,
     offset: [`start ${VIDEO_SCROLL_START_OFFSET}`, `end ${VIDEO_SCROLL_END_OFFSET}`]
   })
+  const fullscreenPhase = useTransform(scrollYProgress, value => {
+    const progress = Math.max(0, Math.min(1, value))
+
+    if (progress <= INTRO_END_PROGRESS) {
+      const t = progress / INTRO_END_PROGRESS
+      return 1 - Math.pow(1 - t, 3)
+    }
+
+    if (progress < OUTRO_START_PROGRESS) {
+      return 1
+    }
+
+    if (progress <= OUTRO_END_PROGRESS) {
+      const t = (progress - OUTRO_START_PROGRESS) / (OUTRO_END_PROGRESS - OUTRO_START_PROGRESS)
+      return 1 - Math.pow(t, 0.58)
+    }
+
+    return 0
+  })
+  const frameWidth = useTransform(fullscreenPhase, value => {
+    return entryFrame.width + (viewportSize.width - entryFrame.width) * value
+  })
+  const frameHeight = useTransform(fullscreenPhase, value => {
+    return entryFrame.height + (viewportSize.height - entryFrame.height) * value
+  })
+  const frameX = useTransform(frameWidth, value => -value / 2)
+  const frameRadius = useTransform(fullscreenPhase, value => 22 - 22 * value)
+  const frameY = useTransform(scrollYProgress, value => {
+    const progress = Math.max(0, Math.min(1, value))
+
+    // Keep intro behavior exactly as before.
+    if (progress <= INTRO_END_PROGRESS) {
+      const t = progress / INTRO_END_PROGRESS
+      const intro = 1 - Math.pow(1 - t, 3)
+      return -stickyTopOffset * intro
+    }
+
+    if (progress < OUTRO_START_PROGRESS) {
+      return -stickyTopOffset
+    }
+
+    if (progress <= OUTRO_END_PROGRESS) {
+      const t = (progress - OUTRO_START_PROGRESS) / (OUTRO_END_PROGRESS - OUTRO_START_PROGRESS)
+      const release = Math.pow(t, 1.25)
+      return -stickyTopOffset * (1 - release)
+    }
+
+    return 0
+  })
+  const frameShadow = useTransform(fullscreenPhase, value => {
+    const blur = 32 + 58 * value
+    const spread = -18 - 20 * value
+    const opacity = 0.22 + 0.36 * value
+    return `0 26px ${blur}px ${spread}px rgba(0,0,0,${opacity.toFixed(3)})`
+  })
+  const stickyShellHeight = useTransform(fullscreenPhase, value => {
+    const fullHeight = viewportSize.height - stickyTopOffset
+    const compactHeight = entryFrame.height
+    return compactHeight + (fullHeight - compactHeight) * value
+  })
+
+  const recomputeLayout = useCallback(() => {
+    if (typeof window === 'undefined') return
+
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const compact = vw < 768
+    const topOffset = compact ? 32 : 48
+    const aspectRatio = compact ? 4 / 3 : 16 / 9
+    const measuredWidth = scrollTrackRef.current?.clientWidth || vw
+    const usableWidth = Math.min(measuredWidth, vw - (compact ? 24 : 48))
+    const usableHeight = usableWidth / aspectRatio
+
+    setViewportSize(prev => {
+      if (prev.width === vw && prev.height === vh) return prev
+      return { width: vw, height: vh }
+    })
+
+    setStickyTopOffset(prev => (prev === topOffset ? prev : topOffset))
+
+    setEntryFrame(prev => {
+      if (
+        Math.round(prev.width) === Math.round(usableWidth) &&
+        Math.round(prev.height) === Math.round(usableHeight)
+      ) {
+        return prev
+      }
+
+      return {
+        width: usableWidth,
+        height: usableHeight,
+      }
+    })
+  }, [])
 
   useEffect(() => {
     if (typeof navigator === 'undefined') return
@@ -50,6 +155,24 @@ export default function ScrollScrubVideo({
 
     isSafariRef.current = detectedSafari
   }, [])
+
+  useEffect(() => {
+    recomputeLayout()
+
+    window.addEventListener('resize', recomputeLayout)
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(recomputeLayout)
+    })
+
+    if (scrollTrackRef.current) {
+      resizeObserver.observe(scrollTrackRef.current)
+    }
+
+    return () => {
+      window.removeEventListener('resize', recomputeLayout)
+      resizeObserver.disconnect()
+    }
+  }, [recomputeLayout])
 
   const handleVideoReady = useCallback(() => {
     setVideoLoaded(true)
@@ -145,7 +268,10 @@ export default function ScrollScrubVideo({
     }
 
     const totalFrames = getEffectiveVideoFrameCount(video)
-    const targetFrame = Math.round(Math.max(0, Math.min(1, scrollProgress)) * (totalFrames - 1))
+    const clampedScroll = Math.max(0, Math.min(1, scrollProgress))
+    const playbackProgress =
+      clampedScroll >= PLAYBACK_END_PROGRESS ? 1 : clampedScroll / PLAYBACK_END_PROGRESS
+    const targetFrame = Math.round(playbackProgress * (totalFrames - 1))
     const clampedFrame = Math.max(0, Math.min(targetFrame, totalFrames - 1))
 
     if (isSafariRef.current) {
@@ -276,6 +402,7 @@ export default function ScrollScrubVideo({
         updateVideoFrame(latest)
       })
     })
+    updateVideoFrame(scrollYProgress.get())
 
     return () => {
       if (scrollAnimationRef.current) {
@@ -307,9 +434,26 @@ export default function ScrollScrubVideo({
   }, [])
 
   return (
-    <div ref={scrollTrackRef} className={`relative min-h-[115vh] md:min-h-[140vh] ${className}`}>
-      <div className="sticky top-8 md:top-12">
-        <div className="relative w-full aspect-[4/3] md:aspect-video overflow-hidden rounded-2xl bg-[#0D0E11] shadow-[0_24px_80px_-30px_rgba(0,0,0,0.6)] ring-1 ring-black/10">
+    <div
+      ref={scrollTrackRef}
+      className={`relative ${className}`}
+      style={{ height: `${scrollSpanVh}vh` }}
+    >
+      <motion.div
+        className="sticky overflow-visible"
+        style={{ top: stickyTopOffset, height: stickyShellHeight }}
+      >
+        <motion.div
+          className="relative left-1/2 overflow-hidden bg-[#0D0E11] ring-1 ring-black/10"
+          style={{
+            width: frameWidth,
+            height: frameHeight,
+            x: frameX,
+            y: frameY,
+            borderRadius: frameRadius,
+            boxShadow: frameShadow,
+          }}
+        >
           <video
             ref={videoRef}
             className="hidden"
@@ -330,7 +474,7 @@ export default function ScrollScrubVideo({
               willChange: 'contents',
               transform: 'translateZ(0)',
               backfaceVisibility: 'hidden',
-              imageRendering: 'pixelated',
+              imageRendering: 'auto',
               objectFit: 'cover',
             }}
           />
@@ -345,8 +489,8 @@ export default function ScrollScrubVideo({
             className="pointer-events-none absolute inset-x-0 top-0 h-32"
             style={{ background: `linear-gradient(180deg, ${accentColor}1F 0%, transparent 90%)` }}
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }
