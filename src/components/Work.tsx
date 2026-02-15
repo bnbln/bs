@@ -5,6 +5,7 @@ const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
 
 const SCRUB_FPS_CAP = 60;
+const VIDEO_SCROLL_START_OFFSET = '99%'; // start when card is about 1% visible
 const VIDEO_SCROLL_END_OFFSET = '-120%'; // continue scrubbing after the card starts transitioning away
 
 interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -60,7 +61,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   });
   const { scrollYProgress: videoScrollYProgress } = useScroll({
     target: scrollTrackRef,
-    offset: ["start center", `end ${VIDEO_SCROLL_END_OFFSET}`]
+    offset: [`start ${VIDEO_SCROLL_START_OFFSET}`, `end ${VIDEO_SCROLL_END_OFFSET}`]
   });
 
   useEffect(() => {
