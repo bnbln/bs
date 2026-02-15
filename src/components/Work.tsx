@@ -37,19 +37,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | null>(null);
+  const hoverAnimationRef = useRef<number | null>(null);
+  const scrollAnimationRef = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadedImageCount = useRef<number>(0);
   const lastRenderedFrame = useRef<number>(-1);
   const pendingFrame = useRef<number>(-1);
   const isSeekingRef = useRef<boolean>(false);
-  const frameQueue = useRef<number[]>([]);
-  const lastScrollTime = useRef<number>(0);
-  const scrollVelocity = useRef<number>(0);
-  const isPlayingVideo = useRef<boolean>(false);
-  const playbackTimeout = useRef<NodeJS.Timeout | null>(null);
-  const resizeObserver = useRef<ResizeObserver | null>(null);
 
   // Check if this project uses video scrubbing (has videoPath in animationSequence)
   const useVideoScrubbing = project.animationSequence?.videoPath !== undefined;
@@ -197,11 +192,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     if (!isMouseInsideThisProject) return;
 
     // Throttle mouse updates to improve performance
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+    if (hoverAnimationRef.current) {
+      cancelAnimationFrame(hoverAnimationRef.current);
     }
 
-    animationRef.current = requestAnimationFrame(() => {
+    hoverAnimationRef.current = requestAnimationFrame(() => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     });
   }, [isMouseInsideThisProject, hasFinePointer]);
@@ -221,8 +216,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     setIsMouseInsideThisProject(false);
     setIsHovered(false);
     // Clear any pending mouse position updates
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+    if (hoverAnimationRef.current) {
+      cancelAnimationFrame(hoverAnimationRef.current);
     }
   }, [hasFinePointer]);
 
@@ -357,17 +352,43 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
   }, [project.hasAnimation, project.animationSequence, useVideoScrubbing]);
 
-  // Pure scroll-driven video scrubbing – no auto-play, no hybrid modes.
-  // We seek the video to the target time and only draw once the browser
-  // fires the 'seeked' event, ensuring the decoded frame is ready.
+  const seekToFrame = useCallback((frame: number) => {
+    const video = videoRef.current;
+    if (!video || !video.duration || isNaN(video.duration)) {
+      return;
+    }
+
+    const totalFrames = project.animationSequence?.frameCount || 501;
+    const clampedFrame = Math.max(0, Math.min(frame, totalFrames - 1));
+    const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
+
+    // If we're effectively already at the requested time, don't trigger another seek.
+    if (Math.abs(video.currentTime - targetTime) < 0.001) {
+      lastRenderedFrame.current = clampedFrame;
+      isSeekingRef.current = false;
+      return;
+    }
+
+    isSeekingRef.current = true;
+    if ('fastSeek' in video && typeof (video as any).fastSeek === 'function') {
+      try {
+        (video as any).fastSeek(targetTime);
+        return;
+      } catch (error) {
+        // Ignore and fall back to currentTime assignment.
+      }
+    }
+    video.currentTime = targetTime;
+  }, [project.animationSequence?.frameCount]);
+
+  // Scroll-driven video scrubbing with seek queueing:
+  // keep only the latest requested frame while one seek is in flight.
   const updateVideoFrame = useCallback((scrollProgress: number) => {
     if (!videoRef.current || !canvasRef.current || !videoLoaded || !showAnimation) {
       return;
     }
 
-    const video = videoRef.current;
-
-    if (!video.duration || isNaN(video.duration)) {
+    if (!videoRef.current.duration || isNaN(videoRef.current.duration)) {
       return;
     }
 
@@ -376,18 +397,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     const targetFrame = Math.round(animProgress * (totalFrames - 1));
     const clampedFrame = Math.max(0, Math.min(targetFrame, totalFrames - 1));
 
-    // Only seek if frame actually changed
-    if (clampedFrame !== lastRenderedFrame.current) {
-      // Store the desired frame so the seeked handler can draw the latest
-      pendingFrame.current = clampedFrame;
-      lastRenderedFrame.current = clampedFrame;
-      setCurrentFrame(clampedFrame);
-
-      const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
-      video.currentTime = targetTime;
-      // Drawing happens in the 'seeked' event listener below
+    // Skip if this frame is already pending and being processed.
+    if (clampedFrame === pendingFrame.current) {
+      return;
     }
-  }, [videoLoaded, showAnimation, project.animationSequence?.frameCount, remapAnimationProgress]);
+
+    pendingFrame.current = clampedFrame;
+    setCurrentFrame(clampedFrame);
+
+    if (!isSeekingRef.current) {
+      seekToFrame(clampedFrame);
+    }
+  }, [videoLoaded, showAnimation, project.animationSequence?.frameCount, remapAnimationProgress, seekToFrame]);
 
   // Responsive canvas drawing function
   const drawVideoFrame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
@@ -437,30 +458,29 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Safari: seeked event fires reliably when a frame is decoded after seek
+    const totalFrames = project.animationSequence?.frameCount || 501;
     const onSeeked = () => {
       drawVideoFrame(video, canvas, ctx);
+
+      const renderedFrame = Math.round((video.currentTime / video.duration) * (totalFrames - 1));
+      lastRenderedFrame.current = Math.max(0, Math.min(renderedFrame, totalFrames - 1));
+      isSeekingRef.current = false;
+
+      // If scroll moved further while we were seeking, immediately seek to newest frame.
+      if (pendingFrame.current !== lastRenderedFrame.current) {
+        requestAnimationFrame(() => {
+          if (!isSeekingRef.current && pendingFrame.current >= 0) {
+            seekToFrame(pendingFrame.current);
+          }
+        });
+      }
     };
     video.addEventListener('seeked', onSeeked);
 
-    // Chrome: requestVideoFrameCallback fires when a new frame is actually
-    // ready for display – much smoother than seeked for rapid seeking
-    let rvfcId: number | null = null;
-    if ('requestVideoFrameCallback' in video) {
-      const onVideoFrame = () => {
-        drawVideoFrame(video, canvas, ctx);
-        rvfcId = (video as any).requestVideoFrameCallback(onVideoFrame);
-      };
-      rvfcId = (video as any).requestVideoFrameCallback(onVideoFrame);
-    }
-
     return () => {
       video.removeEventListener('seeked', onSeeked);
-      if (rvfcId !== null && 'cancelVideoFrameCallback' in video) {
-        (video as any).cancelVideoFrameCallback(rvfcId);
-      }
     };
-  }, [useVideoScrubbing, drawVideoFrame]);
+  }, [useVideoScrubbing, drawVideoFrame, project.animationSequence?.frameCount, seekToFrame]);
 
   // Setup resize observer for responsive canvas
   useEffect(() => {
@@ -518,18 +538,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoLoaded && showAnimation) {
       const unsubscribe = scrollYProgress.on("change", (latest) => {
         // Use requestAnimationFrame for smooth updates
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
+        if (scrollAnimationRef.current) {
+          cancelAnimationFrame(scrollAnimationRef.current);
         }
 
-        animationRef.current = requestAnimationFrame(() => {
+        scrollAnimationRef.current = requestAnimationFrame(() => {
           updateVideoFrame(latest);
         });
       });
 
       return () => {
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
+        if (scrollAnimationRef.current) {
+          cancelAnimationFrame(scrollAnimationRef.current);
         }
         unsubscribe();
       };
@@ -541,18 +561,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     if (project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && showAnimation) {
       const unsubscribe = scrollYProgress.on("change", (latest) => {
         // Use requestAnimationFrame for smooth updates
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
+        if (scrollAnimationRef.current) {
+          cancelAnimationFrame(scrollAnimationRef.current);
         }
 
-        animationRef.current = requestAnimationFrame(() => {
+        scrollAnimationRef.current = requestAnimationFrame(() => {
           updateImageFrame(latest);
         });
       });
 
       return () => {
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
+        if (scrollAnimationRef.current) {
+          cancelAnimationFrame(scrollAnimationRef.current);
         }
         unsubscribe();
       };
@@ -562,21 +582,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+      if (hoverAnimationRef.current) {
+        cancelAnimationFrame(hoverAnimationRef.current);
+      }
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current);
       }
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
-      if (playbackTimeout.current) {
-        clearTimeout(playbackTimeout.current);
-      }
-      if (resizeObserver.current) {
-        resizeObserver.current.disconnect();
-      }
-      // Clear frame queue and seeking state
-      frameQueue.current = [];
+      pendingFrame.current = -1;
       isSeekingRef.current = false;
+      lastRenderedFrame.current = -1;
 
       // Stop video if playing
       if (videoRef.current) {
