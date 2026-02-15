@@ -10,6 +10,7 @@ image: assets/book.avif
 hasAnimation: true
 animationSequence:
   videoPath: assets/book-2.mp4
+  mobileVideoPath: assets/book-2-mobile-scrub.mp4
   frameCount: 1000
 featured: false
 type: Design

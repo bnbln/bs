@@ -54,8 +54,8 @@ const parseOptionalNumber = (value?: string): number | undefined => {
   return parsed
 }
 
-const parseAnimationSequenceFence = (body: string): { videoPath?: string; frameCount?: number } => {
-  const result: { videoPath?: string; frameCount?: number } = {}
+const parseAnimationSequenceFence = (body: string): { videoPath?: string; mobileVideoPath?: string; frameCount?: number } => {
+  const result: { videoPath?: string; mobileVideoPath?: string; frameCount?: number } = {}
   const source = ` ${body} `
 
   const videoMatch = source.match(
@@ -63,6 +63,13 @@ const parseAnimationSequenceFence = (body: string): { videoPath?: string; frameC
   )
   if (videoMatch?.[2]) {
     result.videoPath = videoMatch[2].trim().replace(/^['"]|['"]$/g, '')
+  }
+
+  const mobileVideoMatch = source.match(
+    /(?:^|[\s;\n\r])(mobilevideopath|mobilevideo|mobile)\s*[:=]\s*("[^"]+"|'[^']+'|[^\s;\n\r]+)/i
+  )
+  if (mobileVideoMatch?.[2]) {
+    result.mobileVideoPath = mobileVideoMatch[2].trim().replace(/^['"]|['"]$/g, '')
   }
 
   const frameMatch = source.match(
@@ -671,6 +678,14 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const body = bodyLines.join('\n')
         const sequenceBodyConfig = parseAnimationSequenceFence(body)
         const sequenceVideoPath = attrs.videoPath || attrs.video || attrs.path || sequenceBodyConfig.videoPath || project.animationSequence?.videoPath
+        const sequenceMobileVideoPath =
+          attrs.mobileVideoPath ||
+          attrs.mobileVideo ||
+          attrs.mobilevideopath ||
+          attrs.mobilevideo ||
+          attrs.mobile ||
+          sequenceBodyConfig.mobileVideoPath ||
+          project.animationSequence?.mobileVideoPath
         const sequenceFrameCount =
           parseOptionalNumber(attrs.frameCount || attrs.frames || attrs.frame) ??
           sequenceBodyConfig.frameCount ??
@@ -707,6 +722,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
               <div key={`anim-seq-${currentIndex++}`} className={`${colWide} ${margins}`}>
                 <ScrollScrubVideo
                   videoPath={sequenceVideoPath}
+                  mobileVideoPath={sequenceMobileVideoPath}
                   frameCount={sequenceFrameCount}
                   accentColor={accentColor}
                 />

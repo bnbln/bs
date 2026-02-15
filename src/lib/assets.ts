@@ -33,6 +33,7 @@ export function resolveProjectAssets<T extends {
   animationSequence?: { 
     basePath?: string;
     videoPath?: string;
+    mobileVideoPath?: string;
     startFrame?: number;
     endFrame?: number;
     frameCount?: number;
@@ -72,6 +73,11 @@ export function resolveProjectAssets<T extends {
     // Resolve new video sequence path
     if (animation.videoPath) {
       animation.videoPath = resolveAssetPath(animation.videoPath)
+    }
+
+    // Resolve optional mobile-optimized scrub video path
+    if (animation.mobileVideoPath) {
+      animation.mobileVideoPath = resolveAssetPath(animation.mobileVideoPath)
     }
     
     resolved.animationSequence = animation

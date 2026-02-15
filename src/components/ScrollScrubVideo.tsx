@@ -3,15 +3,31 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { resolveAssetPath } from '../lib/assets'
 
 const SCRUB_FPS_CAP = 60
+const MOBILE_SCRUB_FPS_CAP = 30
 const VIDEO_SCROLL_START_OFFSET = '92%'
 const VIDEO_SCROLL_END_OFFSET = '-120%'
+
 const INTRO_END_PROGRESS = 0.16
 const PLAYBACK_END_PROGRESS = 0.5
 const OUTRO_START_PROGRESS = 0.6
 const OUTRO_END_PROGRESS = 0.9
 
+const MOBILE_INTRO_END_PROGRESS = 0.14
+const MOBILE_PLAYBACK_END_PROGRESS = 0.45
+const MOBILE_OUTRO_START_PROGRESS = 0.58
+const MOBILE_OUTRO_END_PROGRESS = 0.72
+
+const MOBILE_SCRUB_SEEK_INTERVAL_MS = 33
+const MOBILE_SCRUB_SMOOTHING = 0.28
+const MOBILE_SCRUB_PROGRESS_EPSILON = 0.0012
+const MOBILE_SCRUB_TIME_EPSILON = 1 / 90
+const MOBILE_FAST_SEEK_THRESHOLD_SECONDS = 0.35
+
+const CANVAS_MAX_DPR = 2
+
 interface ScrollScrubVideoProps {
   videoPath: string
+  mobileVideoPath?: string
   frameCount?: number
   accentColor?: string
   className?: string
@@ -19,6 +35,7 @@ interface ScrollScrubVideoProps {
 
 export default function ScrollScrubVideo({
   videoPath,
+  mobileVideoPath,
   frameCount,
   accentColor = '#0066CC',
   className = ''
@@ -26,85 +43,124 @@ export default function ScrollScrubVideo({
   const scrollTrackRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
   const scrollAnimationRef = useRef<number | null>(null)
+  const mobileScrubLoopRef = useRef<number | null>(null)
+  const revealTimeoutRef = useRef<number | null>(null)
+
   const pendingFrame = useRef<number>(-1)
   const isSeekingRef = useRef<boolean>(false)
   const lastRenderedFrame = useRef<number>(-1)
-  const isSafariRef = useRef<boolean>(false)
-  const revealTimeoutRef = useRef<number | null>(null)
+
+  const hasLoadedRef = useRef<boolean>(false)
   const hasRevealedRef = useRef<boolean>(false)
+  const isMobileRef = useRef<boolean>(false)
+
+  const mobileTargetProgressRef = useRef<number>(0)
+  const mobileSmoothedProgressRef = useRef<number>(0)
+  const mobileLastSeekAtRef = useRef<number>(0)
 
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [showAnimation, setShowAnimation] = useState(false)
+  const [preferNativeVideoScrub, setPreferNativeVideoScrub] = useState(false)
   const [viewportSize, setViewportSize] = useState({ width: 1440, height: 900 })
   const [entryFrame, setEntryFrame] = useState({ width: 1080, height: 608 })
   const [stickyTopOffset, setStickyTopOffset] = useState(48)
 
-  const resolvedVideoPath = resolveAssetPath(videoPath)
+  const selectedSourcePath = useMemo(() => {
+    if (preferNativeVideoScrub && mobileVideoPath) {
+      return mobileVideoPath
+    }
+
+    return videoPath
+  }, [mobileVideoPath, preferNativeVideoScrub, videoPath])
+
+  const resolvedVideoPath = useMemo(() => resolveAssetPath(selectedSourcePath), [selectedSourcePath])
+
   const scrollSpanVh = useMemo(() => {
     const base = frameCount || 1400
+    if (preferNativeVideoScrub) {
+      return Math.max(150, Math.min(240, Math.round(base / 24)))
+    }
+
     return Math.max(170, Math.min(320, Math.round(base / 18)))
-  }, [frameCount])
+  }, [frameCount, preferNativeVideoScrub])
+
+  const introEndProgress = preferNativeVideoScrub ? MOBILE_INTRO_END_PROGRESS : INTRO_END_PROGRESS
+  const playbackEndProgress = preferNativeVideoScrub ? MOBILE_PLAYBACK_END_PROGRESS : PLAYBACK_END_PROGRESS
+  const outroStartProgress = preferNativeVideoScrub ? MOBILE_OUTRO_START_PROGRESS : OUTRO_START_PROGRESS
+  const outroEndProgress = preferNativeVideoScrub ? MOBILE_OUTRO_END_PROGRESS : OUTRO_END_PROGRESS
 
   const { scrollYProgress } = useScroll({
     target: scrollTrackRef,
     offset: [`start ${VIDEO_SCROLL_START_OFFSET}`, `end ${VIDEO_SCROLL_END_OFFSET}`]
   })
+
   const fullscreenPhase = useTransform(scrollYProgress, value => {
     const progress = Math.max(0, Math.min(1, value))
 
-    if (progress <= INTRO_END_PROGRESS) {
-      const t = progress / INTRO_END_PROGRESS
+    if (progress <= introEndProgress) {
+      const t = progress / introEndProgress
       return 1 - Math.pow(1 - t, 3)
     }
 
-    if (progress < OUTRO_START_PROGRESS) {
+    if (progress < outroStartProgress) {
       return 1
     }
 
-    if (progress <= OUTRO_END_PROGRESS) {
-      const t = (progress - OUTRO_START_PROGRESS) / (OUTRO_END_PROGRESS - OUTRO_START_PROGRESS)
+    if (progress <= outroEndProgress) {
+      const t = (progress - outroStartProgress) / (outroEndProgress - outroStartProgress)
       return 1 - Math.pow(t, 0.58)
     }
 
     return 0
   })
+
   const frameWidth = useTransform(fullscreenPhase, value => {
     return entryFrame.width + (viewportSize.width - entryFrame.width) * value
   })
+
   const frameHeight = useTransform(fullscreenPhase, value => {
     return entryFrame.height + (viewportSize.height - entryFrame.height) * value
   })
+
   const frameX = useTransform(frameWidth, value => -value / 2)
   const frameRadius = useTransform(fullscreenPhase, value => 22 - 22 * value)
+
   const frameY = useTransform(scrollYProgress, value => {
     const progress = Math.max(0, Math.min(1, value))
 
-    // Keep intro behavior exactly as before.
-    if (progress <= INTRO_END_PROGRESS) {
-      const t = progress / INTRO_END_PROGRESS
+    if (progress <= introEndProgress) {
+      const t = progress / introEndProgress
       const intro = 1 - Math.pow(1 - t, 3)
       return -stickyTopOffset * intro
     }
 
-    if (progress < OUTRO_START_PROGRESS) {
+    if (progress < outroStartProgress) {
       return -stickyTopOffset
     }
 
-    if (progress <= OUTRO_END_PROGRESS) {
-      const t = (progress - OUTRO_START_PROGRESS) / (OUTRO_END_PROGRESS - OUTRO_START_PROGRESS)
+    if (progress <= outroEndProgress) {
+      const t = (progress - outroStartProgress) / (outroEndProgress - outroStartProgress)
       const release = Math.pow(t, 1.25)
       return -stickyTopOffset * (1 - release)
     }
 
     return 0
   })
+
   const frameShadow = useTransform(fullscreenPhase, value => {
+    if (preferNativeVideoScrub) {
+      const opacity = 0.2 + 0.2 * value
+      return `0 18px 42px -22px rgba(0,0,0,${opacity.toFixed(3)})`
+    }
+
     const blur = 32 + 58 * value
     const spread = -18 - 20 * value
     const opacity = 0.22 + 0.36 * value
     return `0 26px ${blur}px ${spread}px rgba(0,0,0,${opacity.toFixed(3)})`
   })
+
   const stickyShellHeight = useTransform(fullscreenPhase, value => {
     const fullHeight = viewportSize.height - stickyTopOffset
     const compactHeight = entryFrame.height
@@ -117,10 +173,10 @@ export default function ScrollScrubVideo({
     const vw = window.innerWidth
     const vh = window.innerHeight
     const compact = vw < 768
-    const topOffset = compact ? 32 : 48
-    const aspectRatio = compact ? 4 / 3 : 16 / 9
+    const topOffset = compact ? 24 : 48
+    const aspectRatio = 16 / 9
     const measuredWidth = scrollTrackRef.current?.clientWidth || vw
-    const usableWidth = Math.min(measuredWidth, vw - (compact ? 24 : 48))
+    const usableWidth = Math.min(measuredWidth, vw - (compact ? 20 : 48))
     const usableHeight = usableWidth / aspectRatio
 
     setViewportSize(prev => {
@@ -146,14 +202,18 @@ export default function ScrollScrubVideo({
   }, [])
 
   useEffect(() => {
-    if (typeof navigator === 'undefined') return
+    if (typeof navigator === 'undefined' || typeof window === 'undefined') return
 
     const ua = navigator.userAgent
-    const detectedSafari =
-      /Safari/i.test(ua) &&
-      !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS|Firefox|SamsungBrowser|Android/i.test(ua)
+    const isIOSDevice =
+      /iPad|iPhone|iPod/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const isAndroidDevice = /Android/i.test(ua)
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+    const detectedMobile = coarsePointer || isIOSDevice || isAndroidDevice
 
-    isSafariRef.current = detectedSafari
+    isMobileRef.current = detectedMobile
+    setPreferNativeVideoScrub(detectedMobile)
   }, [])
 
   useEffect(() => {
@@ -174,16 +234,43 @@ export default function ScrollScrubVideo({
     }
   }, [recomputeLayout])
 
+  useEffect(() => {
+    hasLoadedRef.current = false
+    hasRevealedRef.current = false
+    pendingFrame.current = -1
+    lastRenderedFrame.current = -1
+    isSeekingRef.current = false
+    setVideoLoaded(false)
+    setShowAnimation(false)
+  }, [resolvedVideoPath])
+
   const handleVideoReady = useCallback(() => {
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
     setVideoLoaded(true)
 
     if (hasRevealedRef.current) return
     hasRevealedRef.current = true
 
+    const revealDelay = isMobileRef.current ? 0 : 120
     revealTimeoutRef.current = window.setTimeout(() => {
       setShowAnimation(true)
       revealTimeoutRef.current = null
-    }, 120)
+    }, revealDelay)
+
+    if (isMobileRef.current && videoRef.current) {
+      const video = videoRef.current
+      video.play()
+        .then(() => {
+          video.pause()
+          if (video.duration && !isNaN(video.duration)) {
+            video.currentTime = 0
+          }
+        })
+        .catch(() => {
+          // Autoplay policies can still block this; scrub works without priming.
+        })
+    }
   }, [])
 
   const getEffectiveVideoFrameCount = useCallback((video: HTMLVideoElement): number => {
@@ -192,7 +279,8 @@ export default function ScrollScrubVideo({
       return sourceFrameCount
     }
 
-    return Math.max(2, Math.round(video.duration * SCRUB_FPS_CAP))
+    const fpsCap = isMobileRef.current ? MOBILE_SCRUB_FPS_CAP : SCRUB_FPS_CAP
+    return Math.max(2, Math.round(video.duration * fpsCap))
   }, [frameCount])
 
   const seekToFrame = useCallback((frame: number, totalFrames: number) => {
@@ -203,8 +291,9 @@ export default function ScrollScrubVideo({
 
     const clampedFrame = Math.max(0, Math.min(frame, totalFrames - 1))
     const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration
+    const minSeekDelta = isMobileRef.current ? (1 / 90) : 0.001
 
-    if (Math.abs(video.currentTime - targetTime) < 0.001) {
+    if (Math.abs(video.currentTime - targetTime) < minSeekDelta) {
       lastRenderedFrame.current = clampedFrame
       isSeekingRef.current = false
       return
@@ -224,11 +313,20 @@ export default function ScrollScrubVideo({
     video.currentTime = targetTime
   }, [])
 
+  const normalizePlaybackProgress = useCallback((scrollProgress: number) => {
+    const clampedScroll = Math.max(0, Math.min(1, scrollProgress))
+    return clampedScroll >= playbackEndProgress
+      ? 1
+      : clampedScroll / Math.max(0.0001, playbackEndProgress)
+  }, [playbackEndProgress])
+
   const drawVideoFrame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
     const rect = canvas.getBoundingClientRect()
-    const dpr = window.devicePixelRatio || 1
-    const nextWidth = rect.width * dpr
-    const nextHeight = rect.height * dpr
+    if (rect.width <= 0 || rect.height <= 0) return
+
+    const dpr = Math.min(window.devicePixelRatio || 1, CANVAS_MAX_DPR)
+    const nextWidth = Math.max(1, Math.round(rect.width * dpr))
+    const nextHeight = Math.max(1, Math.round(rect.height * dpr))
 
     if (canvas.width !== nextWidth || canvas.height !== nextHeight) {
       canvas.width = nextWidth
@@ -261,6 +359,8 @@ export default function ScrollScrubVideo({
   }, [])
 
   const updateVideoFrame = useCallback((scrollProgress: number) => {
+    if (preferNativeVideoScrub) return
+
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video || !canvas || !videoLoaded || !showAnimation || !video.duration || isNaN(video.duration)) {
@@ -268,25 +368,9 @@ export default function ScrollScrubVideo({
     }
 
     const totalFrames = getEffectiveVideoFrameCount(video)
-    const clampedScroll = Math.max(0, Math.min(1, scrollProgress))
-    const playbackProgress =
-      clampedScroll >= PLAYBACK_END_PROGRESS ? 1 : clampedScroll / PLAYBACK_END_PROGRESS
+    const playbackProgress = normalizePlaybackProgress(scrollProgress)
     const targetFrame = Math.round(playbackProgress * (totalFrames - 1))
     const clampedFrame = Math.max(0, Math.min(targetFrame, totalFrames - 1))
-
-    if (isSafariRef.current) {
-      if (clampedFrame === lastRenderedFrame.current) {
-        return
-      }
-
-      pendingFrame.current = clampedFrame
-      lastRenderedFrame.current = clampedFrame
-      isSeekingRef.current = false
-
-      const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration
-      video.currentTime = targetTime
-      return
-    }
 
     if (clampedFrame === pendingFrame.current) {
       return
@@ -296,13 +380,13 @@ export default function ScrollScrubVideo({
     if (!isSeekingRef.current) {
       seekToFrame(clampedFrame, totalFrames)
     }
-  }, [getEffectiveVideoFrameCount, seekToFrame, showAnimation, videoLoaded])
+  }, [getEffectiveVideoFrameCount, normalizePlaybackProgress, preferNativeVideoScrub, seekToFrame, showAnimation, videoLoaded])
 
   useEffect(() => {
     const video = videoRef.current
     if (!video || !resolvedVideoPath) return
 
-    video.preload = 'auto'
+    video.preload = preferNativeVideoScrub ? 'metadata' : 'auto'
     video.muted = true
     video.playsInline = true
     video.currentTime = 0
@@ -312,7 +396,8 @@ export default function ScrollScrubVideo({
     }
 
     const onReady = () => {
-      if (video.readyState >= 2) {
+      const readyStateThreshold = preferNativeVideoScrub ? 1 : 2
+      if (video.readyState >= readyStateThreshold) {
         handleVideoReady()
       }
     }
@@ -320,15 +405,17 @@ export default function ScrollScrubVideo({
     const events: Array<keyof HTMLMediaElementEventMap> = ['loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough']
     events.forEach(event => video.addEventListener(event, onReady))
 
-    const fallbackTimeout = window.setTimeout(onReady, 1800)
+    const fallbackTimeout = window.setTimeout(onReady, 1400)
 
     return () => {
       events.forEach(event => video.removeEventListener(event, onReady))
       window.clearTimeout(fallbackTimeout)
     }
-  }, [handleVideoReady, resolvedVideoPath])
+  }, [handleVideoReady, preferNativeVideoScrub, resolvedVideoPath])
 
   useEffect(() => {
+    if (preferNativeVideoScrub) return
+
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video || !canvas) return
@@ -346,7 +433,7 @@ export default function ScrollScrubVideo({
       lastRenderedFrame.current = Math.max(0, Math.min(renderedFrame, totalFrames - 1))
       isSeekingRef.current = false
 
-      if (!isSafariRef.current && pendingFrame.current !== lastRenderedFrame.current) {
+      if (pendingFrame.current !== lastRenderedFrame.current) {
         requestAnimationFrame(() => {
           if (!isSeekingRef.current && pendingFrame.current >= 0) {
             seekToFrame(pendingFrame.current, totalFrames)
@@ -360,9 +447,11 @@ export default function ScrollScrubVideo({
     return () => {
       video.removeEventListener('seeked', onSeeked)
     }
-  }, [drawVideoFrame, getEffectiveVideoFrameCount, seekToFrame])
+  }, [drawVideoFrame, getEffectiveVideoFrameCount, preferNativeVideoScrub, seekToFrame])
 
   useEffect(() => {
+    if (preferNativeVideoScrub) return
+
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -388,10 +477,89 @@ export default function ScrollScrubVideo({
       window.removeEventListener('resize', onResize)
       resizeObserver.disconnect()
     }
-  }, [drawVideoFrame])
+  }, [drawVideoFrame, preferNativeVideoScrub])
 
   useEffect(() => {
     if (!videoLoaded || !showAnimation) return
+
+    if (preferNativeVideoScrub) {
+      const clampProgress = (value: number) => Math.max(0, Math.min(1, value))
+      const startProgress = clampProgress(scrollYProgress.get())
+      mobileTargetProgressRef.current = startProgress
+      mobileSmoothedProgressRef.current = startProgress
+
+      const runMobileTick = () => {
+        const video = videoRef.current
+        if (!video || !video.duration || isNaN(video.duration)) {
+          mobileScrubLoopRef.current = null
+          return
+        }
+
+        const targetProgress = mobileTargetProgressRef.current
+        const currentProgress = mobileSmoothedProgressRef.current
+        const diff = targetProgress - currentProgress
+        const nextProgress = Math.abs(diff) <= MOBILE_SCRUB_PROGRESS_EPSILON
+          ? targetProgress
+          : currentProgress + diff * MOBILE_SCRUB_SMOOTHING
+
+        const clampedProgress = clampProgress(nextProgress)
+        mobileSmoothedProgressRef.current = clampedProgress
+
+        const playbackProgress = normalizePlaybackProgress(clampedProgress)
+        const targetTime = playbackProgress * video.duration
+        const now = performance.now()
+        const timeDiff = targetTime - video.currentTime
+
+        if (
+          Math.abs(timeDiff) >= MOBILE_SCRUB_TIME_EPSILON &&
+          now - mobileLastSeekAtRef.current >= MOBILE_SCRUB_SEEK_INTERVAL_MS
+        ) {
+          mobileLastSeekAtRef.current = now
+
+          if (
+            'fastSeek' in video &&
+            typeof (video as any).fastSeek === 'function' &&
+            Math.abs(timeDiff) > MOBILE_FAST_SEEK_THRESHOLD_SECONDS
+          ) {
+            try {
+              ;(video as any).fastSeek(targetTime)
+            } catch {
+              video.currentTime = targetTime
+            }
+          } else {
+            video.currentTime = targetTime
+          }
+        }
+
+        const shouldContinue = Math.abs(targetProgress - mobileSmoothedProgressRef.current) > MOBILE_SCRUB_PROGRESS_EPSILON
+        if (shouldContinue) {
+          mobileScrubLoopRef.current = requestAnimationFrame(runMobileTick)
+        } else {
+          mobileScrubLoopRef.current = null
+        }
+      }
+
+      const ensureLoop = () => {
+        if (mobileScrubLoopRef.current === null) {
+          mobileScrubLoopRef.current = requestAnimationFrame(runMobileTick)
+        }
+      }
+
+      const unsubscribe = scrollYProgress.on('change', latest => {
+        mobileTargetProgressRef.current = clampProgress(latest)
+        ensureLoop()
+      })
+
+      ensureLoop()
+
+      return () => {
+        if (mobileScrubLoopRef.current) {
+          cancelAnimationFrame(mobileScrubLoopRef.current)
+          mobileScrubLoopRef.current = null
+        }
+        unsubscribe()
+      }
+    }
 
     const unsubscribe = scrollYProgress.on('change', latest => {
       if (scrollAnimationRef.current) {
@@ -402,6 +570,7 @@ export default function ScrollScrubVideo({
         updateVideoFrame(latest)
       })
     })
+
     updateVideoFrame(scrollYProgress.get())
 
     return () => {
@@ -410,12 +579,16 @@ export default function ScrollScrubVideo({
       }
       unsubscribe()
     }
-  }, [scrollYProgress, showAnimation, updateVideoFrame, videoLoaded])
+  }, [normalizePlaybackProgress, preferNativeVideoScrub, scrollYProgress, showAnimation, updateVideoFrame, videoLoaded])
 
   useEffect(() => {
     return () => {
       if (scrollAnimationRef.current) {
         cancelAnimationFrame(scrollAnimationRef.current)
+      }
+
+      if (mobileScrubLoopRef.current) {
+        cancelAnimationFrame(mobileScrubLoopRef.current)
       }
 
       if (revealTimeoutRef.current) {
@@ -456,10 +629,10 @@ export default function ScrollScrubVideo({
         >
           <video
             ref={videoRef}
-            className="hidden"
+            className={preferNativeVideoScrub ? 'h-full w-full object-cover pointer-events-none select-none' : 'hidden'}
             muted
             playsInline
-            preload="auto"
+            preload={preferNativeVideoScrub ? 'metadata' : 'auto'}
             webkit-playsinline="true"
             x-webkit-airplay="allow"
           >
@@ -467,19 +640,21 @@ export default function ScrollScrubVideo({
             Your browser does not support the video tag.
           </video>
 
-          <canvas
-            ref={canvasRef}
-            className={`h-full w-full transition-opacity duration-500 ${showAnimation ? 'opacity-100' : 'opacity-0'}`}
-            style={{
-              willChange: 'contents',
-              transform: 'translateZ(0)',
-              backfaceVisibility: 'hidden',
-              imageRendering: 'auto',
-              objectFit: 'cover',
-            }}
-          />
+          {!preferNativeVideoScrub && (
+            <canvas
+              ref={canvasRef}
+              className={`h-full w-full transition-opacity duration-500 ${showAnimation ? 'opacity-100' : 'opacity-0'}`}
+              style={{
+                willChange: 'contents',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                imageRendering: 'auto',
+                objectFit: 'cover',
+              }}
+            />
+          )}
 
-          {!showAnimation && (
+          {!showAnimation && !preferNativeVideoScrub && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#0D0E11]">
               <div className="h-10 w-10 rounded-full border-2 border-white/20 border-t-white/90 animate-spin" />
             </div>

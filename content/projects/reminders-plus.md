@@ -16,6 +16,7 @@ image: assets/reminders.jpg
 hasAnimation: true
 animationSequence:
   videoPath: assets/reminders-8.mp4
+  mobileVideoPath: assets/reminders-8-mobile-scrub.mp4
   frameCount: 3607
 featured: false
 type: [Design, Development]
@@ -83,4 +84,3 @@ We also expanded accessibility of the UI experience through broader language sup
 ![Reminders+ Landing Page](/assets/reminders-plus-landingpage.png)
 
 The landing page serves as a visual extension of the app's minimalist philosophy. It was designed to communicate the value of privacy and simplicity immediately, using clean layouts and interactive previews to demonstrate the fluid navigation and the "no-account-required" onboarding flow. [Visit the landing page](https://reminders-plus.vercel.app/)
-

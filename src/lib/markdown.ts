@@ -35,6 +35,7 @@ export interface Project {
     endFrame?: number
     // New video sequence support
     videoPath?: string
+    mobileVideoPath?: string
     frameCount?: number
   }
   featured: boolean

@@ -5,6 +5,15 @@ const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
 
 const SCRUB_FPS_CAP = 60;
+const MOBILE_SCRUB_FPS_CAP = 30;
+const IOS_SCRUB_FPS_CAP = 24;
+const MOBILE_CANVAS_MAX_DPR = 1.5;
+const IOS_CANVAS_MAX_DPR = 1.25;
+const MOBILE_SCRUB_SEEK_INTERVAL_MS = 33;
+const MOBILE_SCRUB_SMOOTHING = 0.28;
+const MOBILE_SCRUB_PROGRESS_EPSILON = 0.0012;
+const MOBILE_SCRUB_TIME_EPSILON = 1 / 90;
+const MOBILE_FAST_SEEK_THRESHOLD_SECONDS = 0.35;
 const VIDEO_SCROLL_START_OFFSET = '99%'; // start when card is about 1% visible
 const VIDEO_SCROLL_END_OFFSET = '-120%'; // continue scrubbing after the card starts transitioning away
 
@@ -39,6 +48,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
+  const [preferNativeVideoScrub, setPreferNativeVideoScrub] = useState(false);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -51,10 +61,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const lastRenderedFrame = useRef<number>(-1);
   const pendingFrame = useRef<number>(-1);
   const isSeekingRef = useRef<boolean>(false);
-  const isSafariRef = useRef<boolean>(false);
+  const revealTimeoutRef = useRef<number | null>(null);
+  const isMobileRef = useRef<boolean>(false);
+  const isIOSRef = useRef<boolean>(false);
+  const preferNativeVideoScrubRef = useRef<boolean>(false);
+  const mobileTargetProgressRef = useRef<number>(0);
+  const mobileSmoothedProgressRef = useRef<number>(0);
+  const mobileLastSeekAtRef = useRef<number>(0);
+  const mobileScrubLoopRef = useRef<number | null>(null);
 
   // Check if this project uses video scrubbing (has videoPath in animationSequence)
   const useVideoScrubbing = project.animationSequence?.videoPath !== undefined;
+  const selectedScrubVideoPath = (preferNativeVideoScrub && project.animationSequence?.mobileVideoPath)
+    ? project.animationSequence.mobileVideoPath
+    : project.animationSequence?.videoPath;
 
   const { scrollYProgress } = useScroll({
     target: scrollTrackRef,
@@ -68,11 +88,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   useEffect(() => {
     if (typeof navigator === 'undefined') return;
     const ua = navigator.userAgent;
+    const isIOSDevice =
+      /iPad|iPhone|iPod/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroidDevice = /Android/i.test(ua);
+    const coarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+    const detectedMobile = coarsePointer || isIOSDevice || isAndroidDevice;
     const detectedSafari =
       /Safari/i.test(ua) &&
       !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS|Firefox|SamsungBrowser|Android/i.test(ua);
-    isSafariRef.current = detectedSafari;
+
+    isIOSRef.current = isIOSDevice;
+    isMobileRef.current = detectedMobile;
+    preferNativeVideoScrubRef.current = detectedMobile;
     setIsSafari(detectedSafari);
+    setPreferNativeVideoScrub(detectedMobile);
   }, []);
 
   // For image sequences: start when card reaches ~50% visibility and complete
@@ -252,18 +282,37 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // Handle video loading for animation sequence
   const handleVideoLoad = useCallback(() => {
-    console.log('Video loaded successfully');
+    if (videoLoaded) return;
     setVideoLoaded(true);
-    // Small delay to ensure smooth transition
-    setTimeout(() => {
-      console.log('Showing animation');
+    const revealDelay = preferNativeVideoScrubRef.current ? 0 : 100;
+
+    if (revealTimeoutRef.current) {
+      window.clearTimeout(revealTimeoutRef.current);
+    }
+
+    revealTimeoutRef.current = window.setTimeout(() => {
       setShowAnimation(true);
-    }, 100);
-  }, []);
+      revealTimeoutRef.current = null;
+    }, revealDelay);
+
+    // Prime decoder once for touch devices to reduce first-scrub hitch.
+    if (preferNativeVideoScrubRef.current && videoRef.current) {
+      const video = videoRef.current;
+      video.play()
+        .then(() => {
+          video.pause();
+          if (video.duration && !isNaN(video.duration)) {
+            video.currentTime = 0;
+          }
+        })
+        .catch(() => {
+          // Autoplay policies can still block this; scrub works without priming.
+        });
+    }
+  }, [videoLoaded]);
 
   // Safari-compatible video loading with multiple fallbacks
   const handleVideoLoadSafari = useCallback(() => {
-    console.log('Safari video load triggered');
     if (!videoLoaded) {
       handleVideoLoad();
     }
@@ -274,10 +323,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoRef.current) {
       const video = videoRef.current;
 
-      console.log('Setting up video for book project (Safari compatible)');
-
       // Set up video properties for frame-by-frame scrubbing
-      video.preload = 'auto'; // Safari needs 'auto' for better loading
+      video.preload = preferNativeVideoScrubRef.current ? 'metadata' : 'auto';
       video.currentTime = 0;
 
       // Safari-specific video setup
@@ -293,8 +340,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       const events = ['loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough'];
       const eventHandlers = events.map(event => {
         const handler = () => {
-          console.log(`Video event: ${event}`);
-          if (!videoLoaded && video.readyState >= 2) {
+          const readyStateThreshold = preferNativeVideoScrubRef.current ? 1 : 2;
+          if (!videoLoaded && video.readyState >= readyStateThreshold) {
             handleVideoLoad();
           }
         };
@@ -304,11 +351,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
       // Safari fallback: check if video loads after a delay
       const safariFallback = setTimeout(() => {
-        if (!videoLoaded && video.readyState >= 2) {
-          console.log('Safari fallback: forcing video load');
+        const readyStateThreshold = preferNativeVideoScrubRef.current ? 1 : 2;
+        if (!videoLoaded && video.readyState >= readyStateThreshold) {
           handleVideoLoad();
         }
-      }, 2000);
+      }, 1200);
 
       return () => {
         events.forEach((event, index) => {
@@ -382,7 +429,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       return sourceFrameCount;
     }
 
-    const cappedFrameCount = Math.max(2, Math.round(video.duration * SCRUB_FPS_CAP));
+    const fpsCap = isMobileRef.current
+      ? (isIOSRef.current ? IOS_SCRUB_FPS_CAP : MOBILE_SCRUB_FPS_CAP)
+      : SCRUB_FPS_CAP;
+    const cappedFrameCount = Math.max(2, Math.round(video.duration * fpsCap));
     // Do not clamp to frontmatter frameCount so longer replaced videos don't stop early.
     return cappedFrameCount;
   }, [project.animationSequence?.frameCount]);
@@ -397,7 +447,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
 
     // If we're effectively already at the requested time, don't trigger another seek.
-    if (Math.abs(video.currentTime - targetTime) < 0.001) {
+    const minSeekDelta = isMobileRef.current ? (1 / 90) : 0.001;
+    if (Math.abs(video.currentTime - targetTime) < minSeekDelta) {
       lastRenderedFrame.current = clampedFrame;
       isSeekingRef.current = false;
       return;
@@ -418,7 +469,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // Scroll-driven video scrubbing with seek queueing:
   // keep only the latest requested frame while one seek is in flight.
   const updateVideoFrame = useCallback((scrollProgress: number) => {
-    if (!videoRef.current || !canvasRef.current || !videoLoaded || !showAnimation) {
+    if (!videoRef.current || !videoLoaded || !showAnimation) {
+      return;
+    }
+
+    if (!preferNativeVideoScrubRef.current && !canvasRef.current) {
       return;
     }
 
@@ -432,29 +487,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     const targetFrame = Math.round(animProgress * (totalFrames - 1));
     const clampedFrame = Math.max(0, Math.min(targetFrame, totalFrames - 1));
 
-    // Safari fallback: legacy direct scrubbing works more reliably than queued seeking.
-    if (isSafariRef.current) {
-      if (clampedFrame === lastRenderedFrame.current) {
-        return;
-      }
-
-      pendingFrame.current = clampedFrame;
-      lastRenderedFrame.current = clampedFrame;
-      isSeekingRef.current = false;
-      setCurrentFrame(clampedFrame);
-
-      const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
-      video.currentTime = targetTime;
-      return;
-    }
-
     // Skip if this frame is already pending and being processed.
     if (clampedFrame === pendingFrame.current) {
       return;
     }
 
     pendingFrame.current = clampedFrame;
-    setCurrentFrame(clampedFrame);
 
     if (!isSeekingRef.current) {
       seekToFrame(clampedFrame, totalFrames);
@@ -464,11 +502,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // Responsive canvas drawing function
   const drawVideoFrame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+
+    const deviceDpr = window.devicePixelRatio || 1;
+    const dpr = isMobileRef.current
+      ? Math.min(deviceDpr, isIOSRef.current ? IOS_CANVAS_MAX_DPR : MOBILE_CANVAS_MAX_DPR)
+      : Math.min(deviceDpr, 2);
 
     // Always update canvas size for responsiveness
-    const newWidth = rect.width * dpr;
-    const newHeight = rect.height * dpr;
+    const newWidth = Math.max(1, Math.round(rect.width * dpr));
+    const newHeight = Math.max(1, Math.round(rect.height * dpr));
 
     if (canvas.width !== newWidth || canvas.height !== newHeight) {
       canvas.width = newWidth;
@@ -502,15 +547,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // Draw the video frame only after the browser has decoded it (seeked event)
   useEffect(() => {
-    if (!useVideoScrubbing || !videoRef.current || !canvasRef.current) return;
+    if (!useVideoScrubbing || !videoRef.current || preferNativeVideoScrub) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas ? canvas.getContext('2d') : null;
 
     const onSeeked = () => {
-      drawVideoFrame(video, canvas, ctx);
+      if (!video.duration || isNaN(video.duration)) return;
+
+      if (canvas && ctx) {
+        drawVideoFrame(video, canvas, ctx);
+      }
 
       const totalFrames = getEffectiveVideoFrameCount(video);
       const renderedFrame = Math.round((video.currentTime / video.duration) * (totalFrames - 1));
@@ -518,7 +566,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       isSeekingRef.current = false;
 
       // If scroll moved further while we were seeking, immediately seek to newest frame.
-      if (!isSafariRef.current && pendingFrame.current !== lastRenderedFrame.current) {
+      if (pendingFrame.current !== lastRenderedFrame.current) {
         requestAnimationFrame(() => {
           if (!isSeekingRef.current && pendingFrame.current >= 0) {
             seekToFrame(pendingFrame.current, totalFrames);
@@ -531,11 +579,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     return () => {
       video.removeEventListener('seeked', onSeeked);
     };
-  }, [useVideoScrubbing, drawVideoFrame, seekToFrame, getEffectiveVideoFrameCount]);
+  }, [preferNativeVideoScrub, useVideoScrubbing, drawVideoFrame, seekToFrame, getEffectiveVideoFrameCount]);
 
   // Setup resize observer for responsive canvas
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (preferNativeVideoScrub || !canvasRef.current) return;
 
     const handleResize = () => {
       const canvas = canvasRef.current;
@@ -560,7 +608,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       window.removeEventListener('resize', handleResize);
       resizeObserver.disconnect();
     };
-  }, [useVideoScrubbing, drawVideoFrame, loadedImages.length]);
+  }, [preferNativeVideoScrub, useVideoScrubbing, drawVideoFrame, loadedImages.length]);
 
   // High-performance frame update using requestAnimationFrame (for image sequences)
   const updateImageFrame = useCallback((scrollProgress: number) => {
@@ -587,6 +635,84 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // High-performance scroll handler for video scrubbing
   useEffect(() => {
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoLoaded && showAnimation) {
+      if (preferNativeVideoScrub) {
+        const clampProgress = (value: number) => Math.max(0, Math.min(1, value));
+
+        const startProgress = clampProgress(videoScrollYProgress.get());
+        mobileTargetProgressRef.current = startProgress;
+        mobileSmoothedProgressRef.current = startProgress;
+
+        const runMobileTick = () => {
+          const video = videoRef.current;
+          if (!video || !video.duration || isNaN(video.duration)) {
+            mobileScrubLoopRef.current = null;
+            return;
+          }
+
+          const targetProgress = mobileTargetProgressRef.current;
+          const currentProgress = mobileSmoothedProgressRef.current;
+          const diff = targetProgress - currentProgress;
+          const nextProgress = Math.abs(diff) <= MOBILE_SCRUB_PROGRESS_EPSILON
+            ? targetProgress
+            : currentProgress + diff * MOBILE_SCRUB_SMOOTHING;
+          const clampedProgress = clampProgress(nextProgress);
+          mobileSmoothedProgressRef.current = clampedProgress;
+
+          const targetTime = clampedProgress * video.duration;
+          const now = performance.now();
+          const timeDiff = targetTime - video.currentTime;
+
+          if (
+            Math.abs(timeDiff) >= MOBILE_SCRUB_TIME_EPSILON &&
+            now - mobileLastSeekAtRef.current >= MOBILE_SCRUB_SEEK_INTERVAL_MS
+          ) {
+            mobileLastSeekAtRef.current = now;
+
+            if (
+              'fastSeek' in video &&
+              typeof (video as any).fastSeek === 'function' &&
+              Math.abs(timeDiff) > MOBILE_FAST_SEEK_THRESHOLD_SECONDS
+            ) {
+              try {
+                (video as any).fastSeek(targetTime);
+              } catch (error) {
+                video.currentTime = targetTime;
+              }
+            } else {
+              video.currentTime = targetTime;
+            }
+          }
+
+          const shouldContinue = Math.abs(targetProgress - mobileSmoothedProgressRef.current) > MOBILE_SCRUB_PROGRESS_EPSILON;
+          if (shouldContinue) {
+            mobileScrubLoopRef.current = requestAnimationFrame(runMobileTick);
+          } else {
+            mobileScrubLoopRef.current = null;
+          }
+        };
+
+        const ensureLoop = () => {
+          if (mobileScrubLoopRef.current === null) {
+            mobileScrubLoopRef.current = requestAnimationFrame(runMobileTick);
+          }
+        };
+
+        const unsubscribe = videoScrollYProgress.on("change", (latest) => {
+          mobileTargetProgressRef.current = clampProgress(latest);
+          ensureLoop();
+        });
+
+        ensureLoop();
+
+        return () => {
+          if (mobileScrubLoopRef.current) {
+            cancelAnimationFrame(mobileScrubLoopRef.current);
+            mobileScrubLoopRef.current = null;
+          }
+          unsubscribe();
+        };
+      }
+
       const unsubscribe = videoScrollYProgress.on("change", (latest) => {
         // Use requestAnimationFrame for smooth updates
         if (scrollAnimationRef.current) {
@@ -598,6 +724,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         });
       });
 
+      updateVideoFrame(videoScrollYProgress.get());
+
       return () => {
         if (scrollAnimationRef.current) {
           cancelAnimationFrame(scrollAnimationRef.current);
@@ -605,7 +733,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         unsubscribe();
       };
     }
-  }, [videoScrollYProgress, project.hasAnimation, project.animationSequence, useVideoScrubbing, videoLoaded, showAnimation, updateVideoFrame]);
+  }, [videoScrollYProgress, project.hasAnimation, project.animationSequence, preferNativeVideoScrub, useVideoScrubbing, videoLoaded, showAnimation, updateVideoFrame]);
 
   // High-performance scroll handler for image sequences (other projects)
   useEffect(() => {
@@ -639,8 +767,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       if (scrollAnimationRef.current) {
         cancelAnimationFrame(scrollAnimationRef.current);
       }
+      if (mobileScrubLoopRef.current) {
+        cancelAnimationFrame(mobileScrubLoopRef.current);
+      }
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
+      }
+      if (revealTimeoutRef.current) {
+        clearTimeout(revealTimeoutRef.current);
       }
       pendingFrame.current = -1;
       isSeekingRef.current = false;
@@ -691,56 +825,52 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       />
 
       {/* Video Animation Sequence (Book Project Only) */}
-      {project.hasAnimation && project.animationSequence && useVideoScrubbing && (
-        <div
-          className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
+	      {project.hasAnimation && project.animationSequence && useVideoScrubbing && (
+	        <div
+	          className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             opacity: showAnimation ? 1 : 0,
             transition: 'opacity 0.5s ease-in-out'
           }}
         >
-          {/* Hidden video for frame extraction (Safari compatible) */}
-          <video
-            ref={videoRef}
-            className="hidden"
-            muted
-            playsInline
-            preload="auto"
-            webkit-playsinline="true"
-            x-webkit-airplay="allow"
-            onLoadedMetadata={handleVideoLoad}
-            onLoadedData={handleVideoLoadSafari}
-            onCanPlay={handleVideoLoadSafari}
-            onCanPlayThrough={handleVideoLoadSafari}
-            onProgress={() => {
-              console.log('Video progress');
-              if (!videoLoaded && videoRef.current && videoRef.current.readyState >= 2) {
-                handleVideoLoad();
-              }
-            }}
-            onError={(e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
-              console.error('Video loading error:', e);
-            }}
-          >
-            <source src={project.animationSequence?.videoPath} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+		          <video
+		            ref={videoRef}
+		            className={preferNativeVideoScrub ? "w-full h-full object-cover pointer-events-none select-none" : "absolute top-0 left-0 w-px h-px opacity-0 pointer-events-none"}
+		            muted
+		            playsInline
+		            preload={preferNativeVideoScrub ? "metadata" : "auto"}
+		            poster={project.image}
+		            webkit-playsinline="true"
+		            x-webkit-airplay="allow"
+		            onLoadedMetadata={handleVideoLoad}
+		            onLoadedData={handleVideoLoadSafari}
+		            onCanPlay={handleVideoLoadSafari}
+		            onCanPlayThrough={handleVideoLoadSafari}
+		            style={{
+		              transform: 'translateZ(0)',
+		              backfaceVisibility: 'hidden',
+		              willChange: 'transform',
+		            }}
+		          >
+		            <source src={selectedScrubVideoPath} type="video/mp4" />
+		            Your browser does not support the video tag.
+		          </video>
 
-          {/* Canvas for smooth frame rendering (same smoothness as your original images) */}
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full"
-            style={{
-              // Maximum smoothness optimizations
-              willChange: 'contents',
-              transform: 'translateZ(0)',
-              backfaceVisibility: 'hidden',
-              imageRendering: 'pixelated', // Crisp pixel rendering
-              objectFit: 'cover',
-            }}
-          />
-        </div>
-      )}
+	          {!preferNativeVideoScrub && (
+	            <canvas
+	              ref={canvasRef}
+	              className="w-full h-full"
+	              style={{
+	                willChange: 'contents',
+	                transform: 'translateZ(0)',
+	                backfaceVisibility: 'hidden',
+	                imageRendering: 'auto',
+	                objectFit: 'cover',
+	              }}
+	            />
+	          )}
+	        </div>
+	      )}
 
       {/* Image Animation Sequence (Other Projects) */}
       {project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && (
@@ -786,7 +916,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       )}
 
       {/* Loading indicator for animations */}
-      {project.hasAnimation && project.animationSequence && !showAnimation && (
+      {project.hasAnimation && project.animationSequence && !showAnimation && !(useVideoScrubbing && preferNativeVideoScrub) && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
           <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
             <div className="flex items-center gap-2">
