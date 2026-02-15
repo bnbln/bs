@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
 
+const SCRUB_FPS_CAP = 30;
+
 interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   project: Project;
   index: number;
@@ -351,13 +353,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
   }, [project.hasAnimation, project.animationSequence, useVideoScrubbing]);
 
-  const seekToFrame = useCallback((frame: number) => {
+  const getEffectiveVideoFrameCount = useCallback((video: HTMLVideoElement): number => {
+    const sourceFrameCount = project.animationSequence?.frameCount || 501;
+    if (!video.duration || isNaN(video.duration)) {
+      return sourceFrameCount;
+    }
+
+    const cappedFrameCount = Math.max(2, Math.round(video.duration * SCRUB_FPS_CAP));
+    return Math.max(2, Math.min(sourceFrameCount, cappedFrameCount));
+  }, [project.animationSequence?.frameCount]);
+
+  const seekToFrame = useCallback((frame: number, totalFrames: number) => {
     const video = videoRef.current;
     if (!video || !video.duration || isNaN(video.duration)) {
       return;
     }
 
-    const totalFrames = project.animationSequence?.frameCount || 501;
     const clampedFrame = Math.max(0, Math.min(frame, totalFrames - 1));
     const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
 
@@ -378,7 +389,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       }
     }
     video.currentTime = targetTime;
-  }, [project.animationSequence?.frameCount]);
+  }, []);
 
   // Scroll-driven video scrubbing with seek queueing:
   // keep only the latest requested frame while one seek is in flight.
@@ -391,7 +402,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       return;
     }
 
-    const totalFrames = project.animationSequence?.frameCount || 501;
+    const totalFrames = getEffectiveVideoFrameCount(videoRef.current);
     const animProgress = remapAnimationProgress(scrollProgress);
     const targetFrame = Math.round(animProgress * (totalFrames - 1));
     const clampedFrame = Math.max(0, Math.min(targetFrame, totalFrames - 1));
@@ -405,9 +416,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     setCurrentFrame(clampedFrame);
 
     if (!isSeekingRef.current) {
-      seekToFrame(clampedFrame);
+      seekToFrame(clampedFrame, totalFrames);
     }
-  }, [videoLoaded, showAnimation, project.animationSequence?.frameCount, remapAnimationProgress, seekToFrame]);
+  }, [videoLoaded, showAnimation, remapAnimationProgress, seekToFrame, getEffectiveVideoFrameCount]);
 
   // Responsive canvas drawing function
   const drawVideoFrame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
@@ -457,10 +468,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const totalFrames = project.animationSequence?.frameCount || 501;
     const onSeeked = () => {
       drawVideoFrame(video, canvas, ctx);
 
+      const totalFrames = getEffectiveVideoFrameCount(video);
       const renderedFrame = Math.round((video.currentTime / video.duration) * (totalFrames - 1));
       lastRenderedFrame.current = Math.max(0, Math.min(renderedFrame, totalFrames - 1));
       isSeekingRef.current = false;
@@ -469,7 +480,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       if (pendingFrame.current !== lastRenderedFrame.current) {
         requestAnimationFrame(() => {
           if (!isSeekingRef.current && pendingFrame.current >= 0) {
-            seekToFrame(pendingFrame.current);
+            seekToFrame(pendingFrame.current, totalFrames);
           }
         });
       }
@@ -479,7 +490,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     return () => {
       video.removeEventListener('seeked', onSeeked);
     };
-  }, [useVideoScrubbing, drawVideoFrame, project.animationSequence?.frameCount, seekToFrame]);
+  }, [useVideoScrubbing, drawVideoFrame, seekToFrame, getEffectiveVideoFrameCount]);
 
   // Setup resize observer for responsive canvas
   useEffect(() => {
