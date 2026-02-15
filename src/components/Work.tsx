@@ -59,14 +59,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // With offset ["start end", "end start"]:
   //   rawProgress = 0  → card top at viewport bottom (barely peeking in)
   //   rawProgress = vh/(vh+h) → card top at viewport top (sticky position)
-  // We delay the animation start until the card is ~50% visible
-  // (card top at viewport center), so no frames are wasted offscreen.
+  // Start animating as soon as the card starts to become visible.
   const remapAnimationProgress = useCallback((rawProgress: number): number => {
     const vh = window.innerHeight;
     const cardHeight = containerRef.current?.offsetHeight || vh;
     const totalDistance = vh + cardHeight;
 
-    // Start: card top at viewport center (card is ~50% visible from bottom)
+    // Start: card just enters the viewport.
     const startPoint = (vh / 2) / totalDistance;
     // End: card top at viewport top (card reaches sticky position)
     const endPoint = vh / totalDistance;

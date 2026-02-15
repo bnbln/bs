@@ -12,13 +12,13 @@ excerpts: >-
   colors, the project was even nominated for a 2024 Eyes & Ears Award.
 published: '2025-12-01'
 description: Trailer for EU election campaign
-bgColor: '#E6A105'
-image: assets/reminders.png
+bgColor: '#007EFF'
+image: assets/reminders.jpg
 # video: assets/Eu Wahl Loop.mp4
 hasAnimation: true
 animationSequence:
-  videoPath: assets/reminders-6.mp4
-  frameCount: 824
+  videoPath: assets/reminders-7.mp4
+  frameCount: 1035
 featured: false
 type: [Design, Development]
 ---
