@@ -38,6 +38,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -67,9 +68,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   useEffect(() => {
     if (typeof navigator === 'undefined') return;
     const ua = navigator.userAgent;
-    isSafariRef.current =
+    const detectedSafari =
       /Safari/i.test(ua) &&
       !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS|Firefox|SamsungBrowser|Android/i.test(ua);
+    isSafariRef.current = detectedSafari;
+    setIsSafari(detectedSafari);
   }, []);
 
   // For image sequences: start when card reaches ~50% visibility and complete
@@ -143,6 +146,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
     const M = vw / 2 - (vw - 2 * pm * fraction) / (2 * currentScale);
     return Math.max(0, M);
+  });
+
+  // Safari: animate crop via clip-path instead of margins/border radius to avoid
+  // layout-heavy repaints during the intro stack transition.
+  const safariCardClipPath = useTransform([cardMargin, cardBorderRadius] as any, ([m, r]: number[]) => {
+    const inset = Math.max(0, m);
+    const radius = Math.max(0, r);
+    return `inset(0px ${inset}px 0px ${inset}px round ${radius}px)`;
   });
 
   // Simple fast scroll detection - only hides tooltip during very fast scrolling
@@ -650,13 +661,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         style={{
           zIndex: index + 1,
           top: stickyTop,
-          borderRadius: cardBorderRadius,
-          marginLeft: cardMargin,
-          marginRight: cardMargin,
+          borderRadius: isSafari ? 0 : cardBorderRadius,
+          marginLeft: isSafari ? 0 : cardMargin,
+          marginRight: isSafari ? 0 : cardMargin,
+          clipPath: isSafari ? (safariCardClipPath as any) : undefined,
+          WebkitClipPath: isSafari ? (safariCardClipPath as any) : undefined,
           scale: cardScale,
           overflow: 'hidden',
           width: 'auto',
-          willChange: 'transform',
+          willChange: isSafari ? 'transform, clip-path' : 'transform',
         }}
         initial={{ y: 0, opacity: 1 }}
         whileInView={{ y: 0, opacity: 1 }}

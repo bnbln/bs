@@ -10,6 +10,6 @@ bgColor: '#EE7514'
 image: assets/doku_banner.jpg
 video: assets/doku_banner.mp4
 hasAnimation: true
-featured: false
+featured: true
 type: [Design, Development]
 ---

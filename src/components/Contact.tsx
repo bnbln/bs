@@ -17,7 +17,7 @@ const Contact = () => {
     <section 
       id="contact" 
       ref={containerRef}
-      className="bg-white py-24 md:py-40 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
+      className="bg-white pt-24 md:pt-40 pb-12 md:pb-20 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto relative z-10">
         

@@ -56,7 +56,7 @@ export default function Home({ data }: HomeProps) {
       />
       <div className="min-h-screen bg-[#1C1D20] w-full">
         {/* Main Content - Slides over the footer on desktop, sits above it on mobile */}
-        <div className="relative z-10 bg-white shadow-2xl mb-0 md:mb-[500px]">
+        <div className="relative z-10 bg-white shadow-2xl mb-0 md:mb-[500px] pb-24 md:pb-40">
           <Navigation />
           <Hero />
           <About />
