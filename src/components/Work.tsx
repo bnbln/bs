@@ -4,7 +4,8 @@ import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
 
-const SCRUB_FPS_CAP = 30;
+const SCRUB_FPS_CAP = 60;
+const VIDEO_SCROLL_END_OFFSET = '-120%'; // continue scrubbing after the card starts transitioning away
 
 interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   project: Project;
@@ -36,6 +37,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
+  const scrollTrackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -47,32 +49,41 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const lastRenderedFrame = useRef<number>(-1);
   const pendingFrame = useRef<number>(-1);
   const isSeekingRef = useRef<boolean>(false);
+  const isSafariRef = useRef<boolean>(false);
 
   // Check if this project uses video scrubbing (has videoPath in animationSequence)
   const useVideoScrubbing = project.animationSequence?.videoPath !== undefined;
 
   const { scrollYProgress } = useScroll({
-    target: containerRef,
+    target: scrollTrackRef,
     offset: ["start end", "end start"]
   });
+  const { scrollYProgress: videoScrollYProgress } = useScroll({
+    target: scrollTrackRef,
+    offset: ["start center", `end ${VIDEO_SCROLL_END_OFFSET}`]
+  });
 
-  // Remap raw scroll progress so the full animation (all frameCount frames)
-  // plays only while the card is meaningfully visible.
-  // With offset ["start end", "end start"]:
-  //   rawProgress = 0  → card top at viewport bottom (barely peeking in)
-  //   rawProgress = vh/(vh+h) → card top at viewport top (sticky position)
-  // Start animating as soon as the card starts to become visible.
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent;
+    isSafariRef.current =
+      /Safari/i.test(ua) &&
+      !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS|Firefox|SamsungBrowser|Android/i.test(ua);
+  }, []);
+
+  // For image sequences: start when card reaches ~50% visibility and complete
+  // at the sticky top position.
   const remapAnimationProgress = useCallback((rawProgress: number): number => {
     const vh = window.innerHeight;
     const cardHeight = containerRef.current?.offsetHeight || vh;
     const totalDistance = vh + cardHeight;
 
-    // Start: card just enters the viewport.
+    // Start: card top reaches viewport center (~50% visible).
     const startPoint = (vh / 2) / totalDistance;
-    // End: card top at viewport top (card reaches sticky position)
+    // End: card top at viewport top.
     const endPoint = vh / totalDistance;
 
-    return Math.min(1, Math.max(0, (rawProgress - startPoint) / (endPoint - startPoint)));
+    return Math.min(1, Math.max(0, (rawProgress - startPoint) / Math.max(0.0001, endPoint - startPoint)));
   }, []);
 
   // ── Two-phase scroll animation ──
@@ -360,7 +371,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
 
     const cappedFrameCount = Math.max(2, Math.round(video.duration * SCRUB_FPS_CAP));
-    return Math.max(2, Math.min(sourceFrameCount, cappedFrameCount));
+    // Do not clamp to frontmatter frameCount so longer replaced videos don't stop early.
+    return cappedFrameCount;
   }, [project.animationSequence?.frameCount]);
 
   const seekToFrame = useCallback((frame: number, totalFrames: number) => {
@@ -398,14 +410,31 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       return;
     }
 
-    if (!videoRef.current.duration || isNaN(videoRef.current.duration)) {
+    const video = videoRef.current;
+    if (!video.duration || isNaN(video.duration)) {
       return;
     }
 
-    const totalFrames = getEffectiveVideoFrameCount(videoRef.current);
-    const animProgress = remapAnimationProgress(scrollProgress);
+    const totalFrames = getEffectiveVideoFrameCount(video);
+    const animProgress = Math.min(1, Math.max(0, scrollProgress));
     const targetFrame = Math.round(animProgress * (totalFrames - 1));
     const clampedFrame = Math.max(0, Math.min(targetFrame, totalFrames - 1));
+
+    // Safari fallback: legacy direct scrubbing works more reliably than queued seeking.
+    if (isSafariRef.current) {
+      if (clampedFrame === lastRenderedFrame.current) {
+        return;
+      }
+
+      pendingFrame.current = clampedFrame;
+      lastRenderedFrame.current = clampedFrame;
+      isSeekingRef.current = false;
+      setCurrentFrame(clampedFrame);
+
+      const targetTime = (clampedFrame / (totalFrames - 1)) * video.duration;
+      video.currentTime = targetTime;
+      return;
+    }
 
     // Skip if this frame is already pending and being processed.
     if (clampedFrame === pendingFrame.current) {
@@ -418,7 +447,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     if (!isSeekingRef.current) {
       seekToFrame(clampedFrame, totalFrames);
     }
-  }, [videoLoaded, showAnimation, remapAnimationProgress, seekToFrame, getEffectiveVideoFrameCount]);
+  }, [videoLoaded, showAnimation, seekToFrame, getEffectiveVideoFrameCount]);
 
   // Responsive canvas drawing function
   const drawVideoFrame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
@@ -477,7 +506,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       isSeekingRef.current = false;
 
       // If scroll moved further while we were seeking, immediately seek to newest frame.
-      if (pendingFrame.current !== lastRenderedFrame.current) {
+      if (!isSafariRef.current && pendingFrame.current !== lastRenderedFrame.current) {
         requestAnimationFrame(() => {
           if (!isSeekingRef.current && pendingFrame.current >= 0) {
             seekToFrame(pendingFrame.current, totalFrames);
@@ -546,7 +575,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // High-performance scroll handler for video scrubbing
   useEffect(() => {
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoLoaded && showAnimation) {
-      const unsubscribe = scrollYProgress.on("change", (latest) => {
+      const unsubscribe = videoScrollYProgress.on("change", (latest) => {
         // Use requestAnimationFrame for smooth updates
         if (scrollAnimationRef.current) {
           cancelAnimationFrame(scrollAnimationRef.current);
@@ -564,7 +593,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         unsubscribe();
       };
     }
-  }, [scrollYProgress, project.hasAnimation, project.animationSequence, useVideoScrubbing, videoLoaded, showAnimation, updateVideoFrame]);
+  }, [videoScrollYProgress, project.hasAnimation, project.animationSequence, useVideoScrubbing, videoLoaded, showAnimation, updateVideoFrame]);
 
   // High-performance scroll handler for image sequences (other projects)
   useEffect(() => {
@@ -613,29 +642,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   }, []);
 
   return (
-    <motion.div
-      ref={containerRef}
-      className={`sticky w-full aspect-[1/1] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
-      style={{
-        zIndex: index + 1,
-        top: stickyTop,
-        borderRadius: cardBorderRadius,
-        marginLeft: cardMargin,
-        marginRight: cardMargin,
-        scale: cardScale,
-        overflow: 'hidden',
-        width: 'auto',
-        willChange: 'transform',
-      }}
-      initial={{ y: 0, opacity: 1 }}
-      whileInView={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8 }}
-      viewport={{ once: true }}
-      onMouseMove={hasFinePointer ? handleMouseMove : undefined}
-      onMouseEnter={hasFinePointer ? handleMouseEnter : undefined}
-      onMouseLeave={hasFinePointer ? handleMouseLeave : undefined}
-      onClick={handleProjectClick}
-    >
+    <div ref={scrollTrackRef} className="relative">
+      <motion.div
+        ref={containerRef}
+        className={`sticky w-full aspect-[1/1] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
+        style={{
+          zIndex: index + 1,
+          top: stickyTop,
+          borderRadius: cardBorderRadius,
+          marginLeft: cardMargin,
+          marginRight: cardMargin,
+          scale: cardScale,
+          overflow: 'hidden',
+          width: 'auto',
+          willChange: 'transform',
+        }}
+        initial={{ y: 0, opacity: 1 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+        onMouseMove={hasFinePointer ? handleMouseMove : undefined}
+        onMouseEnter={hasFinePointer ? handleMouseEnter : undefined}
+        onMouseLeave={hasFinePointer ? handleMouseLeave : undefined}
+        onClick={handleProjectClick}
+      >
       {/* Static Background Image (Fallback) */}
       <div
         className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
@@ -806,7 +836,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
         />
       </motion.button>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
 

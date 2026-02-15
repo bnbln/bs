@@ -18,40 +18,7 @@ image: assets/reminders.jpg
 hasAnimation: true
 animationSequence:
   videoPath: assets/reminders-8.mp4
-  frameCount: 2158
+  frameCount: 3607
 featured: false
 type: [Design, Development]
 ---
-
-For the 2024 EU election campaign, I created a trailer that frames Europe as a vibrant, forward-looking idea. The color palette is rooted in the EU flag: a deep blue with a turquoise twist and that unmistakable golden yellow.
-
-![assets/Europawahl Trailer Frame 182.jpg]
-
-```palette title="EU Color Palette" description="Primäre Trailer-Farben (Blau, Türkis & Gold)"
-Deep-Navy #003a5a rgb(0,58,90) usage=Brand Color
-Turquoise #00728f rgb(0,114,143) usage=Brand Color
-EU-Gold #E6A105 rgb(230,161,5) usage=Sterne/Highlight
-```
-
-One standout detail: the twelve stars. They rotate in opposition to the overall scene while staying perfectly horizontal within the viewport. It's a subtle effect powered by After Effects expressions – but visually, it makes all the difference.
-
-```javascript title="After Effects Expression"
--thisComp.layer("EU FLAG ROTATION").transform.rotation
-```
-
-## The trailer also includes:
-
-- the packshot
-- an animated bar chart showing political stats
-- visuals of EU buildings in Brussels  
-- a ticker of European cities, countries and flags
-- stylish split screens for pace and variety
-- a cinematic color grade to tie it all together
-
-![assets/Europawahl Trailer Frame 290.jpg]
-
-
-The result? A motion-driven trailer full of structure, rhythm and European energy – and yes, it got nominated for the **2024 Eyes & Ears Award**.
-
-# The Trailer
-[video](assets/TR000X5A.mp4|assets/EU_wahl.webp)
