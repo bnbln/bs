@@ -10,6 +10,7 @@ import Work from '../components/Work'
 import Contact from '../components/Contact'
 import Footer from '../components/Footer'
 import Create from '../components/Create'
+import Skills from '../components/Skills'
 
 interface HomeProps {
   data: {
@@ -62,6 +63,7 @@ export default function Home({ data }: HomeProps) {
           <About />
           <Work data={data.projects} />
           <Create />
+          <Skills />
           <Contact />
           <FeaturedProjects data={data.featuredProjects} />
         </div>

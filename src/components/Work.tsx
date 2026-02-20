@@ -950,172 +950,172 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         onMouseLeave={hasFinePointer ? handleMouseLeave : undefined}
         onClick={handleProjectClick}
       >
-      {/* Static Background Image (Fallback) */}
-      <div
-        className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('${project.image}')`,
-          opacity: showAnimation ? 0 : 1,
-          transition: 'opacity 0.5s ease-in-out'
-        }}
-      />
-
-      {/* Video Animation Sequence (Book Project Only) */}
-	      {project.hasAnimation && project.animationSequence && useVideoScrubbing && (
-	        <div
-	          className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
-          style={{
-            opacity: showAnimation ? 1 : 0,
-            transition: 'opacity 0.5s ease-in-out'
-          }}
-        >
-		          <video
-		            ref={videoRef}
-		            className={preferNativeVideoScrub ? "w-full h-full object-cover pointer-events-none select-none" : "absolute top-0 left-0 w-px h-px opacity-0 pointer-events-none"}
-		            muted
-		            playsInline
-		            preload="auto"
-		            poster={project.image}
-		            webkit-playsinline="true"
-		            x-webkit-airplay="allow"
-		            onLoadedMetadata={handleVideoLoad}
-		            onLoadedData={handleVideoLoadSafari}
-		            onCanPlay={handleVideoLoadSafari}
-		            onCanPlayThrough={handleVideoLoadSafari}
-		            style={{
-		              transform: 'translateZ(0)',
-		              backfaceVisibility: 'hidden',
-		              willChange: 'transform',
-		            }}
-		          >
-		            <source src={selectedScrubVideoPath} type="video/mp4" />
-		            Your browser does not support the video tag.
-		          </video>
-
-	          {!preferNativeVideoScrub && (
-	            <canvas
-	              ref={canvasRef}
-	              className="w-full h-full"
-	              style={{
-	                willChange: 'contents',
-	                transform: 'translateZ(0)',
-	                backfaceVisibility: 'hidden',
-	                imageRendering: 'auto',
-	                objectFit: 'cover',
-	              }}
-	            />
-	          )}
-	        </div>
-	      )}
-
-      {/* Image Animation Sequence (Other Projects) */}
-      {project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && (
+        {/* Static Background Image (Fallback) */}
         <div
           className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            opacity: showAnimation ? 1 : 0,
+            backgroundImage: `url('${project.image}')`,
+            opacity: showAnimation ? 0 : 1,
             transition: 'opacity 0.5s ease-in-out'
           }}
-        >
-          {showAnimation && (
-            <img
-              src={loadedImages[currentFrame]}
-              alt={`Animation frame ${currentFrame + 1}`}
-              className="w-full h-full object-cover"
+        />
+
+        {/* Video Animation Sequence (Book Project Only) */}
+        {project.hasAnimation && project.animationSequence && useVideoScrubbing && (
+          <div
+            className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{
+              opacity: showAnimation ? 1 : 0,
+              transition: 'opacity 0.5s ease-in-out'
+            }}
+          >
+            <video
+              ref={videoRef}
+              className={preferNativeVideoScrub ? "w-full h-full object-cover pointer-events-none select-none" : "absolute top-0 left-0 w-px h-px opacity-0 pointer-events-none"}
+              muted
+              playsInline
+              preload="auto"
+              poster={project.image}
+              webkit-playsinline="true"
+              x-webkit-airplay="allow"
+              onLoadedMetadata={handleVideoLoad}
+              onLoadedData={handleVideoLoadSafari}
+              onCanPlay={handleVideoLoadSafari}
+              onCanPlayThrough={handleVideoLoadSafari}
               style={{
-                // High-performance rendering optimizations
-                imageRendering: 'auto',
-                willChange: 'transform',
-                transform: 'translateZ(0)', // Force hardware acceleration
+                transform: 'translateZ(0)',
                 backfaceVisibility: 'hidden',
-                perspective: '1000px',
-                // Ensure smooth transitions
-                transition: 'none', // Disable CSS transitions for better performance
+                willChange: 'transform',
               }}
-            />
-          )}
-        </div>
-      )}
+            >
+              <source src={selectedScrubVideoPath} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
 
-      {/* Video Overlay - Only show if project has a video */}
-      {project.video && (
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-        >
-          <source src={project.video} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      )}
+            {!preferNativeVideoScrub && (
+              <canvas
+                ref={canvasRef}
+                className="w-full h-full"
+                style={{
+                  willChange: 'contents',
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden',
+                  imageRendering: 'auto',
+                  objectFit: 'cover',
+                }}
+              />
+            )}
+          </div>
+        )}
 
-      {/* Loading indicator for animations */}
-      {project.hasAnimation && project.animationSequence && !showAnimation && !(useVideoScrubbing && preferNativeVideoScrub) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-              <span className="text-sm text-gray-700">
-                {useVideoScrubbing ? 'Loading animation...' : `Loading animation... ${Math.round((loadedImageCount.current / (loadedImages.length || 1)) * 100)}%`}
-              </span>
+        {/* Image Animation Sequence (Other Projects) */}
+        {project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && (
+          <div
+            className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{
+              opacity: showAnimation ? 1 : 0,
+              transition: 'opacity 0.5s ease-in-out'
+            }}
+          >
+            {showAnimation && (
+              <img
+                src={loadedImages[currentFrame]}
+                alt={`Animation frame ${currentFrame + 1}`}
+                className="w-full h-full object-cover"
+                style={{
+                  // High-performance rendering optimizations
+                  imageRendering: 'auto',
+                  willChange: 'transform',
+                  transform: 'translateZ(0)', // Force hardware acceleration
+                  backfaceVisibility: 'hidden',
+                  perspective: '1000px',
+                  // Ensure smooth transitions
+                  transition: 'none', // Disable CSS transitions for better performance
+                }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Video Overlay - Only show if project has a video */}
+        {project.video && (
+          <video
+            className="absolute inset-0 w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src={project.video} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        )}
+
+        {/* Loading indicator for animations */}
+        {project.hasAnimation && project.animationSequence && !showAnimation && !(useVideoScrubbing && preferNativeVideoScrub) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-700">
+                  {useVideoScrubbing ? 'Loading animation...' : `Loading animation... ${Math.round((loadedImageCount.current / (loadedImages.length || 1)) * 100)}%`}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Floating Cursor Title (Desktop) */}
-      <motion.div
-        className="fixed pointer-events-none z-50 hidden md:flex flex-col items-start gap-1"
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{
-          opacity: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0,
-          scale: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0.9,
-          x: 24, // Offset from cursor
-          y: 24
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 28,
-          mass: 0.5
-        }}
-      >
-        <div className="bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full border border-white/10 shadow-2xl">
-          <span className="text-sm font-medium whitespace-nowrap font-space-grotesk tracking-wide">{project.title}</span>
-        </div>
-      </motion.div>
+        {/* Floating Cursor Title (Desktop) */}
+        <motion.div
+          className="fixed pointer-events-none z-50 hidden md:flex flex-col items-start gap-1"
+          style={{
+            left: mousePosition.x,
+            top: mousePosition.y,
+          }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{
+            opacity: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0,
+            scale: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0.9,
+            x: 24, // Offset from cursor
+            y: 24
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 28,
+            mass: 0.5
+          }}
+        >
+          <div className="bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full border border-white/10 shadow-2xl">
+            <span className="text-sm font-medium whitespace-nowrap font-space-grotesk tracking-wide">{project.title}</span>
+          </div>
+        </motion.div>
 
-      {/* Mobile arrow button (mobile only) */}
-      <motion.button
-        className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{
-          duration: 0.1,
-          ease: "easeOut"
-        }}
-        onClick={(e: React.MouseEvent) => {
-          e.stopPropagation();
-          handleProjectClick();
-        }}
-        style={{
-          transform: 'translateZ(0)', // Force hardware acceleration
-          willChange: 'transform', // Optimize for animations
-        }}
-      >
-        <img
-          src={arrowSvg}
-          alt="View project"
-          className="w-4 h-4"
-          style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
-        />
-      </motion.button>
+        {/* Mobile arrow button (mobile only) */}
+        <motion.button
+          className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{
+            duration: 0.1,
+            ease: "easeOut"
+          }}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            handleProjectClick();
+          }}
+          style={{
+            transform: 'translateZ(0)', // Force hardware acceleration
+            willChange: 'transform', // Optimize for animations
+          }}
+        >
+          <img
+            src={arrowSvg}
+            alt="View project"
+            className="w-4 h-4"
+            style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
+          />
+        </motion.button>
       </motion.div>
     </div>
   );
@@ -1155,7 +1155,7 @@ const Work: React.FC<WorkProps> = ({ data }) => {
   return (
     <section ref={sectionRef} className="bg-white w-full relative" id="work">
       {data.map((project, index) => (
-        <ProjectCard key={project.id} project={project} index={index} sectionProgress={sectionProgress} pageMargin={pageMargin} totalCards={data.length} />
+        <ProjectCard key={`${project.id}-${index}`} project={project} index={index} sectionProgress={sectionProgress} pageMargin={pageMargin} totalCards={data.length} />
       ))}
     </section>
   );
