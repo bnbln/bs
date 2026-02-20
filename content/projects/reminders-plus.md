@@ -12,11 +12,12 @@ excerpts: >-
 published: '2025-12-01'
 description: Habit-building task app for iOS, built with React Native
 bgColor: '#007EFF'
-image: assets/reminders.jpg
+image: assets/reminders+.png
 hasAnimation: true
 animationSequence:
   videoPath: assets/reminders-8.mp4
   mobileVideoPath: assets/reminders-8-mobile-scrub.mp4
+  safariVideoPath: assets/reminders-8-safari-scrub.mp4
   frameCount: 3607
 featured: false
 type: [Design, Development]
@@ -57,6 +58,7 @@ Ink #0B1220 rgb(11,18,32) usage=Text
 ```
 ```animationSequence
 videoPath: assets/reminders-8.mp4
+safariVideoPath: assets/reminders-8-safari-scrub.mp4
 frameCount: 5607
 ```
 ## Development: React Native, local-first by design

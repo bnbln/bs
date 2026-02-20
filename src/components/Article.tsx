@@ -54,8 +54,8 @@ const parseOptionalNumber = (value?: string): number | undefined => {
   return parsed
 }
 
-const parseAnimationSequenceFence = (body: string): { videoPath?: string; mobileVideoPath?: string; frameCount?: number } => {
-  const result: { videoPath?: string; mobileVideoPath?: string; frameCount?: number } = {}
+const parseAnimationSequenceFence = (body: string): { videoPath?: string; mobileVideoPath?: string; safariVideoPath?: string; frameCount?: number } => {
+  const result: { videoPath?: string; mobileVideoPath?: string; safariVideoPath?: string; frameCount?: number } = {}
   const source = ` ${body} `
 
   const videoMatch = source.match(
@@ -70,6 +70,13 @@ const parseAnimationSequenceFence = (body: string): { videoPath?: string; mobile
   )
   if (mobileVideoMatch?.[2]) {
     result.mobileVideoPath = mobileVideoMatch[2].trim().replace(/^['"]|['"]$/g, '')
+  }
+
+  const safariVideoMatch = source.match(
+    /(?:^|[\s;\n\r])(safarivideopath|safarivideo|safari)\s*[:=]\s*("[^"]+"|'[^']+'|[^\s;\n\r]+)/i
+  )
+  if (safariVideoMatch?.[2]) {
+    result.safariVideoPath = safariVideoMatch[2].trim().replace(/^['"]|['"]$/g, '')
   }
 
   const frameMatch = source.match(
@@ -686,6 +693,14 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           attrs.mobile ||
           sequenceBodyConfig.mobileVideoPath ||
           project.animationSequence?.mobileVideoPath
+        const sequenceSafariVideoPath =
+          attrs.safariVideoPath ||
+          attrs.safariVideo ||
+          attrs.safarivideopath ||
+          attrs.safarivideo ||
+          attrs.safari ||
+          sequenceBodyConfig.safariVideoPath ||
+          project.animationSequence?.safariVideoPath
         const sequenceFrameCount =
           parseOptionalNumber(attrs.frameCount || attrs.frames || attrs.frame) ??
           sequenceBodyConfig.frameCount ??
@@ -723,6 +738,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 <ScrollScrubVideo
                   videoPath={sequenceVideoPath}
                   mobileVideoPath={sequenceMobileVideoPath}
+                  safariVideoPath={sequenceSafariVideoPath}
                   frameCount={sequenceFrameCount}
                   accentColor={accentColor}
                 />

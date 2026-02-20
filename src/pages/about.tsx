@@ -1,7 +1,7 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { GetStaticProps } from 'next'
 import { NextSeo } from 'next-seo'
-import { motion, useScroll, useTransform, useInView } from 'framer-motion'
+import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
@@ -9,7 +9,7 @@ import FeaturedProjects from '../components/FeaturedProjects'
 
 const Shuffle = dynamic(() => import('../components/Shuffle'), { ssr: false })
 import { getProjectsData, Project } from '../lib/markdown'
-import { ArrowUpRight, Mail, Linkedin, Copy, Calendar, Award, Briefcase, GraduationCap } from 'lucide-react'
+import { ArrowUpRight, Linkedin, Copy, Calendar, Award, Briefcase, GraduationCap } from 'lucide-react'
 
 interface AboutPageProps {
   data: {
@@ -17,9 +17,17 @@ interface AboutPageProps {
   }
 }
 
+interface TimelineEvent {
+  year: string
+  title: string
+  description: string
+  icon: React.ReactNode
+  location?: string
+  subject?: string
+  track?: string
+}
+
 const AboutPage = ({ data }: AboutPageProps) => {
-  const containerRef = useRef(null)
-  const isInView = useInView(containerRef, { once: true, margin: "-10%" })
   const [copied, setCopied] = React.useState(false)
 
   const copyEmail = () => {
@@ -34,7 +42,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
     "Branding", "UI/UX Design", "After Effects"
   ]
 
-  const timelineEvents = [
+  const baseTimelineEvents: TimelineEvent[] = [
     {
       year: "1996 - 2014",
       title: "Born & Raised in Berlin",
@@ -55,14 +63,61 @@ const AboutPage = ({ data }: AboutPageProps) => {
       location: "Hochschule für Medien (SRH Berlin)",
       description: "Deep dive into the intersection of design, strategy, and technology.",
       icon: <GraduationCap className="w-5 h-5" />
-    },
-    {
-      year: "2019 - Present",
-      title: "Freelance Creative Developer",
-      description: "Working with Artists, Media Brands, and Ad Agencies on Brand, UX/UI, Motion, 3D, Frontend-Dev, and AI Projects.",
-      icon: <Briefcase className="w-5 h-5" />
     }
   ]
+
+  const agencyTrackEvents: TimelineEvent[] = [
+    {
+      year: "2019",
+      title: "Internship Brand Communication",
+      location: "Spring UG",
+      description: "My first professional role in brand communication.",
+      icon: <Briefcase className="w-5 h-5" />,
+      track: "Agency / Inhouse"
+    },
+    {
+      year: "2020 - 2022",
+      title: "Motion & Brand Designer",
+      location: "WELT-Gruppe",
+      description: "Built motion and brand assets for editorial and commercial formats.",
+      icon: <Briefcase className="w-5 h-5" />,
+      track: "Agency / Inhouse"
+    },
+    {
+      year: "2022 - 2026",
+      title: "Senior Motion & Brand Designer",
+      location: "PREMIUM-GRUPPE",
+      description: "Leading motion and brand work across campaigns, digital products, and new formats.",
+      icon: <Briefcase className="w-5 h-5" />,
+      track: "Agency / Inhouse"
+    }
+  ]
+
+  const freelanceTrackEvents: TimelineEvent[] = [
+    {
+      year: "2019",
+      title: "Launching my first Website",
+      description: "Started building and publishing my own web projects.",
+      icon: <Calendar className="w-5 h-5" />,
+      track: "Freelance / Studio"
+    },
+    {
+      year: "2020 - Now",
+      title: "Freelance Creative Developer",
+      description: "Working with Artists, Media Brands, and Ad Agencies on Brand, UX/UI, Motion, 3D, Frontend-Dev, and AI Projects.",
+      icon: <Briefcase className="w-5 h-5" />,
+      track: "Freelance / Studio"
+    },
+    {
+      year: "2025",
+      title: "Launching Creative Studio DUO",
+      description: "Publishing Apps and Websites for Clients.",
+      icon: <Calendar className="w-5 h-5" />,
+      track: "Freelance / Studio"
+    }
+  ]
+
+  const mobileBranchEvents = [...agencyTrackEvents, ...freelanceTrackEvents]
 
   return (
     <>
@@ -180,32 +235,189 @@ const AboutPage = ({ data }: AboutPageProps) => {
                     My Journey
                  </motion.h3>
 
-                 <div className="relative border-l-2 border-neutral-100 pl-8 ml-4 md:ml-0 md:pl-0 space-y-16">
-                    {timelineEvents.map((event, index) => (
-                       <motion.div 
-                          key={index}
-                          className="relative md:grid md:grid-cols-12 md:gap-8 items-center"
+                 <div className="hidden md:block">
+                    <div className="relative space-y-16">
+                       {baseTimelineEvents.map((event, index) => (
+                          <motion.div
+                             key={`${event.year}-${event.title}`}
+                             className="relative grid grid-cols-12 gap-8 items-center"
+                             initial={{ opacity: 0, x: -20 }}
+                             whileInView={{ opacity: 1, x: 0 }}
+                             viewport={{ once: true }}
+                             transition={{ duration: 0.6, delay: index * 0.1 }}
+                          >
+                             <div className="absolute left-1/2 -ml-[9px] top-1/2 -mt-4 w-5 h-5 rounded-full bg-black border-4 border-white z-10" />
+
+                             <div className="col-span-5 text-right">
+                                <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-sm font-mono font-medium text-neutral-600">
+                                   {event.year}
+                                </span>
+                             </div>
+
+                             <div className="col-span-2"></div>
+
+                             <div className="col-span-5">
+                                <div className="flex items-center gap-2 mb-1">
+                                   {event.icon}
+                                   <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
+                                </div>
+                                {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
+                                {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                <p className="text-neutral-600 leading-relaxed text-sm">
+                                   {event.description}
+                                </p>
+                             </div>
+                          </motion.div>
+                       ))}
+
+                       <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-neutral-100 -translate-x-1/2" />
+                    </div>
+
+                    <div className="relative mt-10">
+                       <div className="absolute left-1/2 top-0 h-6 w-[2px] bg-neutral-100 -translate-x-1/2" />
+                       <div className="absolute left-1/2 top-6 h-[2px] w-8 bg-neutral-100 -translate-x-full" />
+                       <div className="absolute left-1/2 top-6 h-[2px] w-8 bg-neutral-100" />
+
+                       <div className="grid grid-cols-2 gap-16 pt-8">
+                          <div className="relative pr-12 space-y-14">
+                             <div className="absolute right-0 top-10 bottom-0 w-[2px] bg-neutral-100" />
+                             <div className="mr-8 text-right">
+                                <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em]">
+                                   Agency / Inhouse
+                                </span>
+                             </div>
+
+                             {agencyTrackEvents.map((event, index) => (
+                                <motion.div
+                                   key={`${event.year}-${event.title}`}
+                                   className="relative text-right"
+                                   initial={{ opacity: 0, x: -20 }}
+                                   whileInView={{ opacity: 1, x: 0 }}
+                                   viewport={{ once: true }}
+                                   transition={{ duration: 0.6, delay: 0.1 + index * 0.1 }}
+                                >
+                                   <div className="absolute right-0 top-2 w-5 h-5 rounded-full bg-black border-4 border-white z-10 translate-x-1/2" />
+                                   <div className="mr-8">
+                                      <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-sm font-mono font-medium text-neutral-600 mb-3">
+                                         {event.year}
+                                      </span>
+                                      <div className="flex items-center justify-end gap-2 mb-1">
+                                         <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
+                                         {event.icon}
+                                      </div>
+                                      {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
+                                      {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                      <p className="text-neutral-600 leading-relaxed text-sm">
+                                         {event.description}
+                                      </p>
+                                   </div>
+                                </motion.div>
+                             ))}
+                          </div>
+
+                          <div className="relative pl-12 space-y-14">
+                             <div className="absolute left-0 top-10 bottom-0 w-[2px] bg-neutral-100" />
+                             <div className="ml-8">
+                                <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em]">
+                                   Freelance / Studio
+                                </span>
+                             </div>
+
+                             {freelanceTrackEvents.map((event, index) => (
+                                <motion.div
+                                   key={`${event.year}-${event.title}`}
+                                   className="relative"
+                                   initial={{ opacity: 0, x: 20 }}
+                                   whileInView={{ opacity: 1, x: 0 }}
+                                   viewport={{ once: true }}
+                                   transition={{ duration: 0.6, delay: 0.1 + index * 0.1 }}
+                                >
+                                   <div className="absolute left-0 top-2 w-5 h-5 rounded-full bg-black border-4 border-white z-10 -translate-x-1/2" />
+                                   <div className="ml-8">
+                                      <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-sm font-mono font-medium text-neutral-600 mb-3">
+                                         {event.year}
+                                      </span>
+                                      <div className="flex items-center gap-2 mb-1">
+                                         {event.icon}
+                                         <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
+                                      </div>
+                                      {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
+                                      {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                      <p className="text-neutral-600 leading-relaxed text-sm">
+                                         {event.description}
+                                      </p>
+                                   </div>
+                                </motion.div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="md:hidden relative border-l-2 border-neutral-100 pl-8 ml-4 space-y-12">
+                    {baseTimelineEvents.map((event, index) => (
+                       <motion.div
+                          key={`${event.year}-${event.title}`}
+                          className="relative"
                           initial={{ opacity: 0, x: -20 }}
                           whileInView={{ opacity: 1, x: 0 }}
                           viewport={{ once: true }}
-                          transition={{ duration: 0.6, delay: index * 0.1 }}
+                          transition={{ duration: 0.6, delay: index * 0.08 }}
                        >
-                          {/* Marker */}
-                           <div className="absolute -left-[41px] top-1 md:left-1/2 md:-ml-[9px] md:top-1/2 md:-mt-4 w-5 h-5 rounded-full bg-black border-4 border-white z-10 hidden md:block" />
-                           <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-black border-4 border-white z-10 md:hidden" />
+                          <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-black border-4 border-white z-10" />
 
-                          {/* Date (Left on Desktop) */}
-                          <div className="md:col-span-5 md:text-right mb-2 md:mb-0">
-                             <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-sm font-mono font-medium text-neutral-600">
+                          <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-sm font-mono font-medium text-neutral-600 mb-3">
+                             {event.year}
+                          </span>
+                          <div className="flex items-center gap-2 mb-1">
+                             {event.icon}
+                             <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
+                          </div>
+                          {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
+                          {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                          <p className="text-neutral-600 leading-relaxed text-sm">
+                             {event.description}
+                          </p>
+                       </motion.div>
+                    ))}
+
+                    <motion.div
+                       className="relative"
+                       initial={{ opacity: 0, x: -20 }}
+                       whileInView={{ opacity: 1, x: 0 }}
+                       viewport={{ once: true }}
+                       transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                       <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-black border-4 border-white z-10" />
+                       <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em]">
+                          Branching Paths
+                       </span>
+                       <p className="text-sm text-neutral-500 mt-2">
+                          After graduation, my journey continues on two parallel tracks.
+                       </p>
+                    </motion.div>
+
+                    {mobileBranchEvents.map((event, index) => (
+                       <motion.div
+                          key={`${event.track}-${event.year}-${event.title}`}
+                          className="relative"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.6, delay: 0.24 + index * 0.06 }}
+                       >
+                          <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-black border-4 border-white z-10" />
+
+                          {(index === 0 || event.track !== mobileBranchEvents[index - 1].track) && (
+                             <span className="inline-block text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em] mb-2">
+                                {event.track}
+                             </span>
+                          )}
+
+                          <div>
+                             <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-sm font-mono font-medium text-neutral-600 mb-3">
                                 {event.year}
                              </span>
-                          </div>
-
-                          {/* Empty Middle for Desktop Line */}
-                          <div className="md:col-span-2 hidden md:block"></div>
-
-                          {/* Content (Right on Desktop) */}
-                          <div className="md:col-span-5">
                              <div className="flex items-center gap-2 mb-1">
                                 {event.icon}
                                 <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
@@ -218,9 +430,6 @@ const AboutPage = ({ data }: AboutPageProps) => {
                           </div>
                        </motion.div>
                     ))}
-                    
-                    {/* Central Line for Desktop */}
-                    <div className="absolute left-[50%] top-0 bottom-0 w-[2px] bg-neutral-100 -ml-[1px] hidden md:block"></div>
                  </div>
               </div>
            </section>
