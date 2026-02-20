@@ -75,6 +75,9 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
 
   // Drag to scroll implementation
   const [isDragging, setIsDragging] = React.useState(false)
+  const [disableSnap, setDisableSnap] = React.useState(false)
+  const snapTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+
   const [startX, setStartX] = React.useState(0)
   const [scrollLeftStart, setScrollLeftStart] = React.useState(0)
   const dragMovedRef = React.useRef(0)
@@ -87,6 +90,9 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const onMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return
     setIsDragging(true)
+    setDisableSnap(true)
+    if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current)
+
     dragMovedRef.current = 0
     setStartX(e.pageX - scrollContainerRef.current.offsetLeft)
     setScrollLeftStart(scrollContainerRef.current.scrollLeft)
@@ -114,8 +120,15 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
       // Snap auf die nächste Karte basierend auf echten DOM-Positionen (variable Breiten)
       const nearestIndex = getNearestIndex(projectedScroll)
       scrollToIndex(nearestIndex)
+
+      // Allow the smooth scroll animation to physically finish before turning CSS snapping back on.
+      // Re-applying native CSS scroll-snap mid-animation causes the browser to instantly cut to the position.
+      snapTimeoutRef.current = setTimeout(() => {
+        setDisableSnap(false)
+      }, 600)
     } else {
       setIsDragging(false)
+      setDisableSnap(false)
     }
   }
 
@@ -171,24 +184,25 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const carouselLength = items.length
 
   return (
-    <section className="bg-white my-[60px] relative w-full" id="work">
+    <section className="bg-white py-24 relative w-full overflow-hidden" id="work">
+
       {/* Section Title with Navigation */}
       <motion.div
-        className="w-full top-[60px] px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]"
+        className="w-full px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] mb-12"
         initial={{ x: 0, opacity: 1 }}
         whileInView={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
       >
-        <div className="max-w-[1400px] mx-auto flex items-center gap-4">
-          <h2 className="text-black font-space-grotesk font-bold text-[20px] leading-[41.22px] whitespace-pre">
+        <div className="max-w-[1400px] mx-auto flex items-end justify-between gap-4">
+          <h2 className="text-neutral-800 text-[20px] font-space-grotesk font-bold tracking-tight">
             The Latest
           </h2>
 
           <div className="flex gap-3">
             <motion.button
               onClick={scrollLeft}
-              className="w-12 h-12 rounded-full border border-neutral-300 bg-transparent hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group"
+              className="w-12 h-12 rounded-full border border-neutral-200 bg-transparent hover:bg-neutral-800 hover:text-white hover:border-neutral-800 flex items-center justify-center transition-all group text-neutral-800 hover:text-white"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Scroll to previous project"
@@ -200,7 +214,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
 
             <motion.button
               onClick={scrollRight}
-              className="w-12 h-12 rounded-full border border-neutral-300 bg-transparent hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group"
+              className="w-12 h-12 rounded-full border border-neutral-200 bg-transparent hover:bg-neutral-800 hover:text-white hover:border-neutral-800 flex items-center justify-center transition-all group text-neutral-800 hover:text-white"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Scroll to next project"
@@ -216,7 +230,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
       {/* Projects Container */}
       <div
         ref={scrollContainerRef}
-        className={`relative mt-[20px] pb-500 w-full overflow-x-auto overflow-y-hidden scrollbar-hide cursor-grab active:cursor-grabbing select-none scroll-pl-4 sm:scroll-pl-8 md:scroll-pl-12 lg:scroll-pl-[100px] xl:scroll-pl-[140px] ${isDragging ? '' : 'snap-x snap-mandatory'}`}
+        className={`relative w-full overflow-x-auto overflow-y-hidden scrollbar-hide select-none scroll-pl-4 sm:scroll-pl-8 md:scroll-pl-12 lg:scroll-pl-[100px] xl:scroll-pl-[140px] ${disableSnap ? '' : 'snap-x snap-mandatory'}`}
         onMouseDown={onMouseDown}
         onMouseLeave={onMouseLeave}
         onMouseUp={onMouseUp}
@@ -231,13 +245,10 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                 <motion.div
                   key="more-projects"
                   className={[
-                    // gleiche Größe wie die anderen Karten im Carousel
-                    'w-[300px] sm:w-[353.66px] h-[424px] sm:h-[471.55px] flex-shrink-0 snap-start',
-                    // “Article-Card” Look & Feel (Border/Shadow/Rounded)
-                    'group rounded-2xl border border-black/10 bg-white hover:border-black/20 shadow-sm hover:shadow-xl',
-                    'transition-[border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(.16,1,.3,1)]',
-                    'relative overflow-hidden cursor-pointer',
-                    // Inhalt zentrieren
+                    'w-[300px] sm:w-[353.66px] h-[450px] sm:h-[500px] flex-shrink-0 snap-start',
+                    'group rounded-3xl border border-neutral-200 bg-neutral-100 hover:bg-neutral-200',
+                    'transition-[background-color,transform] duration-500 ease-[cubic-bezier(.16,1,.3,1)]',
+                    'relative overflow-hidden',
                     'flex flex-col items-center justify-center p-6',
                   ].join(' ')}
                   data-carousel-item="true"
@@ -247,7 +258,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                   <motion.button
                     type="button"
                     aria-label="More Projects"
-                    className="w-16 h-16 rounded-full border border-neutral-300 bg-transparent group-hover:bg-black group-hover:text-white group-hover:border-black flex items-center justify-center transition-all"
+                    className="w-16 h-16 rounded-full border border-neutral-300 bg-transparent group-hover:bg-black group-hover:text-white group-hover:border-black flex items-center justify-center transition-all text-black hover:text-white"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={(e) => {
@@ -259,13 +270,11 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                       <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </motion.button>
-                  <div className="mt-5 text-center">
-                    <div className="text-[14px] font-bold uppercase tracking-widest text-[#86868b] font-inter">
-                      More Projects
+                  <div className="mt-6 text-center">
+                    <div className="text-[14px] font-bold uppercase tracking-widest text-neutral-500 font-inter">
+                      View All Work
                     </div>
                   </div>
-
-                  <div className="absolute inset-0 rounded-2xl ring-2 ring-transparent group-hover:ring-black/10 transition-colors pointer-events-none" />
                 </motion.div>
               )
             }
@@ -287,57 +296,75 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                 key={project.id}
                 className={[
                   'project-card',
-                  project.bgColor,
-                  // gleiche Höhe für alle Cards, damit eine saubere Row entsteht
-                  'h-[424px] sm:h-[471.55px]',
-                  // Portrait Cards: fixe Breite wie bisher
+                  project.bgColor || 'bg-neutral-100',
+                  'h-[450px] sm:h-[500px]',
                   isLandscapeCard ? 'aspect-[4/3]' : 'w-[300px] sm:w-[353.66px]',
-                  'flex-shrink-0 cursor-pointer relative overflow-hidden rounded-xl snap-start flex flex-col p-4 sm:p-6',
+                  'flex-shrink-0 relative overflow-hidden rounded-3xl snap-start flex flex-col p-6 sm:p-8',
+                  'group transition-transform duration-500 shadow-sm hover:shadow-lg'
                 ].join(' ')}
                 data-carousel-item="true"
-                // Entrance animation disabled for now: keep cards visible from first paint.
                 onClick={() => handleProjectClick(project.slug)}
+                initial="initial"
                 whileHover="hover"
+                animate="initial"
               >
                 {/* Background Image */}
-                <div className="absolute inset-0 rounded-xl overflow-hidden">
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    sizes={imageSizes}
-                    className="object-cover object-center"
-                    draggable={false}
-                  />
+                <div className="absolute inset-0 overflow-hidden bg-neutral-100 border-none">
+                  <motion.div
+                    className="w-full h-full relative"
+                    variants={{
+                      initial: { scale: 1 },
+                      hover: { scale: 1.05 }
+                    }}
+                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Image
+                      src={project.image}
+                      alt={project.title}
+                      fill
+                      sizes={imageSizes}
+                      className="object-cover object-center"
+                      draggable={false}
+                    />
+                  </motion.div>
                 </div>
-                {/* leichte Abdunklung unten für Text-Lesbarkeit */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/35 pointer-events-none" />
-
-                {/* Category */}
+                {/* Dark overlay that intensifies on hover */}
                 <motion.div
-                  className="relative z-10"
-                  initial="initial"
-                  animate="initial"
-                  whileHover="hover"
+                  className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none"
                   variants={{
-                    initial: { y: -20, opacity: 0 },
-                    hover: { y: 0, opacity: 1 }
+                    initial: { opacity: 0.6 },
+                    hover: { opacity: 0.9 }
                   }}
-                  transition={{
-                    duration: 0.3,
-                    ease: "easeOut"
-                  }}
-                >
-                  <p className="text-white font-inter font-normal text-[16px] leading-[24px] whitespace-pre">
-                    {project.category}
-                  </p>
-                </motion.div>
+                  transition={{ duration: 0.5 }}
+                />
 
-                {/* Title */}
-                <div className="relative z-10 mt-auto">
-                  <h3 className="text-white font-helvetica font-bold text-[19.844px] leading-[24px]">
+                {/* Content Container */}
+                <div className="relative z-10 mt-auto flex flex-col">
+                  {/* Category - Slides Up on Hover */}
+                  <motion.div
+                    variants={{
+                      initial: { y: 10, opacity: 0, height: 0 },
+                      hover: { y: 0, opacity: 1, height: 'auto' }
+                    }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="mb-2"
+                  >
+                    <p className="text-neutral-200 font-inter text-sm uppercase tracking-widest font-semibold">
+                      {Array.isArray(project.category) ? project.category.join(", ") : project.category}
+                    </p>
+                  </motion.div>
+
+                  {/* Title */}
+                  <motion.h3
+                    className="text-white font-helvetica font-bold text-xl md:text-2xl leading-tight"
+                    variants={{
+                      initial: { y: 0 },
+                      hover: { y: -5 }
+                    }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  >
                     {project.title}
-                  </h3>
+                  </motion.h3>
                 </div>
               </motion.div>
             )

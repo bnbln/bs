@@ -62,7 +62,7 @@ export default function Home({ data }: HomeProps) {
           <Hero />
           <About />
           <Work data={data.projects} />
-          <Create />
+          {/* <Create /> */}
           <Skills />
           <Contact />
           <FeaturedProjects data={data.featuredProjects} />
