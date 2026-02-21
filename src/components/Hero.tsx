@@ -52,7 +52,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative h-[90vh] md:h-[100vh] w-full overflow-hidden bg-[#1C1D20]"
+      className="relative h-[90vh] min-h-[600px] md:h-[100vh] md:min-h-0 w-full overflow-hidden bg-[#1C1D20]"
     >
       {/* 1. LAYER 0: Background Image (Slight Parallax on Scroll) */}
       <motion.div
@@ -67,7 +67,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
           priority
           fetchPriority="high"
           sizes="100vw"
-          style={{ objectFit: 'cover', objectPosition: 'bottom center' }}
+          style={{ objectFit: 'cover', objectPosition: 'center 85%' }}
         />
       </motion.div>
 
@@ -127,7 +127,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
           fill
           priority
           sizes="100vw"
-          style={{ objectFit: 'cover', objectPosition: 'bottom center' }}
+          style={{ objectFit: 'cover', objectPosition: 'center 85%' }}
         />
       </motion.div>
 
