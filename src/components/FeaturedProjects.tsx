@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { Project } from '../lib/markdown'
+import MagneticButton from './MagneticButton'
 
 const FeaturedProjects = ({ data }: { data: Project[] }) => {
 
@@ -200,29 +201,33 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
           </h2>
 
           <div className="flex gap-3">
-            <motion.button
-              onClick={scrollLeft}
-              className="w-12 h-12 rounded-full border border-neutral-200 bg-transparent hover:bg-neutral-800 hover:text-white hover:border-neutral-800 flex items-center justify-center transition-all group text-neutral-800 hover:text-white"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Scroll to previous project"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </motion.button>
+            <MagneticButton>
+              <motion.button
+                onClick={scrollLeft}
+                className="w-12 h-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group text-black shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Scroll to previous project"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
+                  <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </motion.button>
+            </MagneticButton>
 
-            <motion.button
-              onClick={scrollRight}
-              className="w-12 h-12 rounded-full border border-neutral-200 bg-transparent hover:bg-neutral-800 hover:text-white hover:border-neutral-800 flex items-center justify-center transition-all group text-neutral-800 hover:text-white"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Scroll to next project"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </motion.button>
+            <MagneticButton>
+              <motion.button
+                onClick={scrollRight}
+                className="w-12 h-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group text-black shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Scroll to next project"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="transition-colors">
+                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </motion.button>
+            </MagneticButton>
           </div>
         </div>
       </motion.div>
@@ -255,21 +260,23 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                   // Entrance animation disabled for now: keep cards visible from first paint.
                   onClick={handleMoreProjectsClick}
                 >
-                  <motion.button
-                    type="button"
-                    aria-label="More Projects"
-                    className="w-16 h-16 rounded-full border border-neutral-300 bg-transparent group-hover:bg-black group-hover:text-white group-hover:border-black flex items-center justify-center transition-all text-black hover:text-white"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleMoreProjectsClick()
-                    }}
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </motion.button>
+                  <MagneticButton>
+                    <motion.button
+                      type="button"
+                      aria-label="More Projects"
+                      className="w-16 h-16 rounded-full border border-neutral-200/80 bg-white group-hover:bg-black group-hover:text-white group-hover:border-black flex items-center justify-center transition-all text-black hover:text-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleMoreProjectsClick()
+                      }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </motion.button>
+                  </MagneticButton>
                   <div className="mt-6 text-center">
                     <div className="text-[14px] font-bold uppercase tracking-widest text-neutral-500 font-inter">
                       View All Work

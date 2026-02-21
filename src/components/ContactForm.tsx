@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Loader2, AlertCircle } from 'lucide-react'
+import MagneticButton from './MagneticButton'
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -58,12 +59,14 @@ const ContactForm = () => {
             <p className="text-neutral-400 max-w-sm font-inter">
               Thanks for reaching out. I'll get back to you as soon as possible.
             </p>
-            <button
-              onClick={() => setStatus('idle')}
-              className="mt-6 px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-colors font-inter text-sm"
-            >
-              Send another message
-            </button>
+            <MagneticButton>
+              <button
+                onClick={() => setStatus('idle')}
+                className="mt-6 px-8 py-4 rounded-full border border-white/20 hover:bg-white/10 transition-colors font-inter font-medium text-sm group"
+              >
+                Send another message
+              </button>
+            </MagneticButton>
           </motion.div>
         ) : (
           <motion.form
@@ -100,7 +103,7 @@ const ContactForm = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <label htmlFor="message" className="text-sm font-inter text-neutral-600 uppercase tracking-widest font-semibold">Message</label>
                 <textarea
@@ -139,22 +142,24 @@ const ContactForm = () => {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={status === 'submitting' || !formData.privacy}
-              className="w-full bg-[#1C1D20] text-white py-4 rounded-xl font-space-grotesk font-bold text-lg hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
-            >
-              {status === 'submitting' ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  Send Message
-                </>
-              )}
-            </button>
+            <MagneticButton className="w-full">
+              <button
+                type="submit"
+                disabled={status === 'submitting' || !formData.privacy}
+                className="w-full bg-[#1C1D20] text-white py-4 rounded-full font-space-grotesk font-bold text-lg hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group shadow-lg hover:shadow-xl"
+              >
+                {status === 'submitting' ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    Send Message
+                  </>
+                )}
+              </button>
+            </MagneticButton>
           </motion.form>
         )}
       </AnimatePresence>

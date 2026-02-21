@@ -2,6 +2,7 @@ import React, { useRef } from 'react'
 import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
 import { Mail, Linkedin, Copy } from 'lucide-react'
+import MagneticButton from './MagneticButton'
 
 const Contact = () => {
   const containerRef = useRef(null)
@@ -14,28 +15,28 @@ const Contact = () => {
   ]
 
   return (
-    <section 
-      id="contact" 
+    <section
+      id="contact"
       ref={containerRef}
       className="bg-white pt-24 md:pt-40 pb-12 md:pb-20 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
     >
       <div className="max-w-[1400px] mx-auto relative z-10">
-        
+
         {/* Top Headline Section */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={isInView ? { y: 0, opacity: 1 } : {}}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="mb-16 md:mb-24"
         >
           <div className="flex items-center gap-4 md:gap-6 mb-4">
-             <motion.div 
+            <motion.div
               className="w-[40px] h-[40px] md:w-[70px] md:h-[70px] rounded-full bg-cover bg-center shrink-0"
               style={{ backgroundImage: `url('/assets/portrait.webp')` }}
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.3 }}
             />
-             <h2 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black">
+            <h2 className="text-[11vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black">
               Let's work
             </h2>
           </div>
@@ -46,7 +47,7 @@ const Contact = () => {
 
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
-          
+
           {/* Left Column: Context & Tags */}
           <div className="lg:col-span-7 flex flex-col justify-between">
             <motion.div
@@ -57,11 +58,11 @@ const Contact = () => {
               <p className="text-xl md:text-2xl font-inter text-neutral-800 mb-8 max-w-2xl leading-relaxed">
                 Available for freelance projects. I can help you with anything from video production to full-stack web development.
               </p>
-              
+
               <div className="flex flex-wrap gap-2 md:gap-3">
                 {offerings.map((item, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="px-4 py-2 rounded-full border border-neutral-200 text-sm md:text-base font-inter text-neutral-600 hover:border-black hover:text-black transition-colors cursor-default"
                   >
                     {item}
@@ -73,7 +74,7 @@ const Contact = () => {
 
           {/* Right Column: CTA Actions */}
           <div className="lg:col-span-4 lg:col-start-9 flex flex-col justify-end gap-6">
-            
+
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={isInView ? { y: 0, opacity: 1 } : {}}
@@ -84,42 +85,48 @@ const Contact = () => {
                 Get in touch
               </div>
 
-               <div className="flex flex-col gap-4">
-                 <Link href="/contact" className="group w-full flex items-center justify-between p-6 bg-[#1C1D20] text-white rounded-2xl hover:bg-black transition-all">
-                  <div className="flex flex-col items-start text-left">
-                    <span className="text-sm text-neutral-400 mb-1">Start a project</span>
-                    <span className="text-lg md:text-xl font-space-grotesk font-medium">Contact Me</span>
-                  </div>
-                  <div className="relative shrink-0 ml-4">
-                     <Mail className="w-6 h-6" />
-                  </div>
-                 </Link>
+              <div className="flex flex-col gap-4">
+                <MagneticButton>
+                  <Link href="/contact" className="group w-full flex items-center justify-between p-6 bg-[#1C1D20] text-white rounded-full hover:bg-black transition-all shadow-lg hover:shadow-xl">
+                    <div className="flex flex-col items-start text-left md:ml-4">
+                      <span className="text-sm text-neutral-400 mb-1">Start a project</span>
+                      <span className="text-lg md:text-xl font-space-grotesk font-medium">Contact Me</span>
+                    </div>
+                    <div className="relative shrink-0 ml-4 group-hover:scale-110 transition-transform duration-300 mr-2 md:mr-4">
+                      <Mail className="w-6 h-6" />
+                    </div>
+                  </Link>
+                </MagneticButton>
 
                 <div className="flex gap-4">
-                  <a 
-                    href="mailto:mail@benediktschnupp.com"
-                    className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-neutral-200 hover:bg-neutral-50 transition-colors font-inter font-medium text-black"
-                  >
-                    <Mail className="w-5 h-5" />
-                    Email
-                  </a>
-                  <a 
-                    href="https://linkedin.com/in/benedikt-schnupp-928112116"
-                    target="_blank"
-                    rel="noopener noreferrer" 
-                    className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-neutral-200 hover:bg-neutral-50 transition-colors font-inter font-medium text-black"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                    LinkedIn
-                  </a>
+                  <MagneticButton className="flex-1">
+                    <a
+                      href="mailto:mail@benediktschnupp.com"
+                      className="group w-full flex items-center justify-center gap-2 py-4 rounded-full border border-neutral-200/80 hover:bg-neutral-50 transition-colors font-inter font-medium text-black bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
+                    >
+                      <Mail className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                      Email
+                    </a>
+                  </MagneticButton>
+                  <MagneticButton className="flex-1">
+                    <a
+                      href="https://linkedin.com/in/benedikt-schnupp-928112116"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group w-full flex items-center justify-center gap-2 py-4 rounded-full border border-neutral-200/80 hover:bg-neutral-50 transition-colors font-inter font-medium text-black bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
+                    >
+                      <Linkedin className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                      LinkedIn
+                    </a>
+                  </MagneticButton>
                 </div>
-               </div>
+              </div>
 
             </motion.div>
 
           </div>
         </div>
-        
+
       </div>
     </section>
   )
