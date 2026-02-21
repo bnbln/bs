@@ -72,12 +72,12 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
       </motion.div>
 
       {/* 2. LAYER 1: Interactive Floating Elements (Deep Mouse Parallax) */}
-      <motion.div
+      {/* <motion.div
         className="absolute inset-0 z-[5] pointer-events-none flex items-center justify-center p-32"
         style={{ x: floatingElementX, y: floatingElementY }}
-      >
-        {/* Decorative Graphic Element behind the subject */}
-        <motion.div
+      > */}
+      {/* Decorative Graphic Element behind the subject */}
+      {/* <motion.div
           className="w-48 h-48 rounded-full border border-white/10 bg-white/5 backdrop-blur-md absolute top-1/4 left-1/4 hidden md:block"
           style={{ y: floatingY }}
           animate={{ rotate: 360 }}
@@ -87,7 +87,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
           className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent absolute top-1/2 -ml-32 hidden md:block"
           style={{ y: floatingY, rotate: -15 }}
         />
-      </motion.div>
+      </motion.div> */}
 
       {/* 3. LAYER 2: Title - ScrollVelocity text */}
       <motion.div
@@ -146,7 +146,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             className="w-5 h-5 opacity-80"
           />
           <p className="text-white/90 font-space-grotesk tracking-wide font-medium text-sm">
-            Based in {location}
+            From {location}
           </p>
         </div>
 
