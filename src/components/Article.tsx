@@ -24,13 +24,12 @@ const ScrubParagraph = ({ children, className = '' }: { children: React.ReactNod
     offset: ["start 90%", "start 40%"]
   })
 
-  const opacity = useTransform(scrollYProgress, [0, 1], [0.15, 1])
-  const y = useTransform(scrollYProgress, [0, 1], [20, 0])
+  const opacity = useTransform(scrollYProgress, [0, 1], [0.2, 1])
 
   return (
     <motion.p
       ref={ref}
-      style={{ opacity, y }}
+      style={{ opacity }}
       className={className}
     >
       {children}
@@ -151,7 +150,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
   // Layout Classes: Flex-based for senior typography layout
   const colText = "w-full max-w-[48rem]" // slightly wider text column for large type
-  const colWide = "w-full max-w-[72rem]"
+  const colWide = "w-full max-w-[1400px]" // Match hero image max width
   const colFull = "w-full"
 
   let currentIndex = 0
@@ -568,7 +567,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           if (l.trim() === '') {
             if (buffer.length) {
               currentElements.push(
-                <ScrubParagraph key={`p-${currentIndex++}`} className={`${colText} text-[20px] md:text-[24px] lg:text-[28px] leading-[1.4] md:leading-[1.4] text-[#1D1D1F] font-inter tracking-[-0.015em] mb-8`}>
+                <ScrubParagraph key={`p-${currentIndex++}`} className={`${colText} text-[19px] md:text-[24px] lg:text-[28px] leading-[1.5] md:leading-[1.4] text-[#1D1D1F] font-inter tracking-[-0.015em] mb-4 md:mb-8`}>
                   {parseInlineElements(buffer.join(' '))}
                 </ScrubParagraph>
               )
@@ -580,7 +579,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         })
         if (buffer.length) {
           currentElements.push(
-            <ScrubParagraph key={`p-${currentIndex++}`} className={`${colText} text-[20px] md:text-[24px] lg:text-[28px] leading-[1.4] md:leading-[1.4] text-[#1D1D1F] font-inter tracking-[-0.015em] mb-8`}>
+            <ScrubParagraph key={`p-${currentIndex++}`} className={`${colText} text-[19px] md:text-[24px] lg:text-[28px] leading-[1.5] md:leading-[1.4] text-[#1D1D1F] font-inter tracking-[-0.015em] mb-4 md:mb-8`}>
               {parseInlineElements(buffer.join(' '))}
             </ScrubParagraph>
           )
@@ -697,9 +696,9 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const level = match ? match[0].length : 1
         const text = line.replace(/^#+\s*/, '')
         const sizes = {
-          1: "text-5xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-tighter font-bold text-black mt-24 mb-12",
-          2: "text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-16 mb-6 text-[#1D1D1F]",
-          3: "text-[24px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-10 mb-4 text-[#1D1D1F]"
+          1: "text-4xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-tighter font-bold text-black mt-16 md:mt-24 mb-8 md:mb-12",
+          2: "text-[28px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-12 md:mt-16 mb-4 md:mb-6 text-[#1D1D1F]",
+          3: "text-[22px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-8 md:mt-10 mb-3 md:mb-4 text-[#1D1D1F]"
         }
 
         // @ts-ignore
@@ -707,7 +706,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
         // If H1 is the first element to be rendered, remove the top margin
         if (level === 1 && currentElements.length === 0) {
-          headerClass = headerClass.replace('mt-24', 'mt-0')
+          headerClass = headerClass.replace('mt-16 md:mt-24', 'mt-0 md:mt-0')
         }
 
         currentElements.push(
@@ -916,7 +915,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
           currentElements.push(
             <div key={`reveal-${currentIndex++}`} className={`${colWide} ${margins}`}>
-              <ScrubParagraph className="text-5xl md:text-7xl lg:text-[5vw] text-black font-semibold leading-[1.05] tracking-tighter max-w-[64rem]">
+              <ScrubParagraph className="text-4xl md:text-7xl lg:text-[5vw] text-black font-semibold leading-[1.05] tracking-tighter max-w-[64rem]">
                 {parseInlineElements(body)}
               </ScrubParagraph>
             </div>
@@ -934,7 +933,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                   {attrs.description && <p className="code-block-description">{attrs.description}</p>}
                 </div>
               )}
-              <div className={`${colWide} ${(attrs.title || attrs.description) ? 'mb-16' : margins}`}>
+              <div className={`${colText} ${(attrs.title || attrs.description) ? 'mb-12 md:mb-16' : margins}`}>
                 <CodeBlock
                   hideHeader
                   title={attrs.title}
@@ -991,13 +990,13 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
               const margins = getBlockMargins(true, nextMeta === 'compact')
 
               currentElements.push(
-                <div key={`gallery-${currentIndex++}`} className={`${colWide} grid grid-cols-1 md:grid-cols-2 gap-6 ${margins}`}>
+                <div key={`gallery-${currentIndex++}`} className={`${colWide} grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 ${margins}`}>
                   {mediaList.map((item, idx) => {
                     const path = resolveAssetPath(item.url)
                     const isV = isVideoFile(item.url)
                     return (
                       <figure key={idx} className="w-full">
-                        <div className="w-full rounded-[2rem] overflow-hidden bg-neutral-50 shadow-xl shadow-black/5 ring-1 ring-black/5">
+                        <div className="w-full rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 ring-1 ring-black/5">
                           {isV ? (
                             <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} />
                           ) : (
@@ -1042,7 +1041,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
             currentElements.push(
               <figure key={`media-${currentIndex++}`} className={`${colWide} ${margins}`}>
-                <div className="w-full rounded-[2rem] overflow-hidden bg-neutral-50 shadow-2xl shadow-black/5 ring-1 ring-black/5">
+                <div className="w-full rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 ring-1 ring-black/5 relative group">
                   {isV ? (
                     <AdaptiveVideoPlayer
                       videoUrl={path}
@@ -1074,17 +1073,17 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
     flushSection()
 
     return (
-      <div className="w-full flex flex-col gap-y-24 md:gap-y-32">
+      <div className="w-full flex flex-col gap-y-16 md:gap-y-32">
         {sections.map((sec, idx) => (
-          <div key={idx} className={`w-full ${sec.title ? 'flex flex-col md:flex-row gap-8 md:gap-16 lg:gap-24 relative z-10' : 'flex flex-col items-center'}`}>
+          <div key={idx} className={`w-full ${sec.title ? 'flex flex-col md:flex-row gap-6 md:gap-16 lg:gap-24 relative z-10' : 'flex flex-col items-center'}`}>
             {sec.title && (
               <div className="w-full md:w-[35%] lg:w-[40%] flex-shrink-0 relative">
-                <div className="md:sticky md:top-32 pt-2 md:pt-0 pb-6 md:pb-0 font-space-grotesk text-5xl md:text-6xl lg:text-[5vw] font-bold tracking-tighter leading-[1.05] text-black">
+                <div className="md:sticky md:top-32 pt-2 md:pt-0 pb-2 md:pb-0 font-space-grotesk text-4xl md:text-6xl lg:text-[5vw] font-bold tracking-tighter leading-[1.05] text-black">
                   {sec.title}
                 </div>
               </div>
             )}
-            <div className={`flex flex-col gap-10 lg:gap-12 w-full ${sec.title ? 'md:w-[65%] lg:w-[60%] items-start' : 'items-center max-w-[1240px]'}`}>
+            <div className={`flex flex-col gap-8 md:gap-10 lg:gap-12 w-full ${sec.title ? 'md:w-[65%] lg:w-[60%] items-start' : 'items-center max-w-[1400px]'}`}>
               {sec.elements.map(el => (
                 <React.Fragment key={el.key}>{el}</React.Fragment>
               ))}
@@ -1365,7 +1364,7 @@ export default function Article({ project, allProjects, heroPriority = false }: 
           )}
 
           {/* Markdown Content */}
-          <section className="px-4 sm:px-8 md:px-10 lg:px-16 xl:px-20 2xl:px-24 relative z-10 pb-32">
+          <section className="px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative z-10 pb-32">
             {project.content && <MarkdownRenderer content={project.content} project={project} accentColor={accentColor} allProjects={allProjects} />}
 
             {(newerProject || olderProject) && (

@@ -10,12 +10,31 @@ interface NavigationProps {
   theme?: 'dark' | 'light'
 }
 
+const desktopNavLinks = [
+  { name: 'Home', href: '/' },
+  { name: 'About', href: '/about' },
+  { name: 'Work', href: '/work' }
+] as const
+
+type DesktopNavItem = (typeof desktopNavLinks)[number]['name'] | 'Contact'
+
+const getActiveNavItem = (pathname: string): DesktopNavItem | null => {
+  if (pathname === '/') return 'Home'
+  if (pathname.startsWith('/about')) return 'About'
+  if (pathname.startsWith('/work') || pathname.startsWith('/project')) return 'Work'
+  if (pathname.startsWith('/contact')) return 'Contact'
+  return null
+}
+
 const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrollY, setScrollY] = useState(0)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const isHome = router.pathname === '/'
+  const activeNavItem = getActiveNavItem(router.pathname)
+  const [hoveredNavItem, setHoveredNavItem] = useState<DesktopNavItem | null>(null)
+  const highlightedNavItem = hoveredNavItem ?? activeNavItem
 
   useEffect(() => {
     setMounted(true)
@@ -48,13 +67,9 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
     setIsMenuOpen(false)
   }
 
-  // Active hover state for the desktop link pill animation
-  const [hoveredLink, setHoveredLink] = useState<string | null>(null)
-
   // Floating pill styles (Globally light as requested)
   const navBgColor = 'bg-white/70 border-neutral-200/90'
   const textColor = isMenuOpen ? 'text-white' : 'text-[#1D1D1F]'
-  const hoverBgColor = 'bg-black/5'
 
   return (
     <>
@@ -69,24 +84,20 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
         {/* Desktop Links Container */}
         <div className="flex items-center gap-1">
-          {[
-            { name: 'Home', href: '/' },
-            { name: 'About', href: '/about' },
-            { name: 'Work', href: '/work' }
-          ].map((link) => {
-            const isActive = router.pathname === link.href || (link.href !== '/' && router.pathname.startsWith(link.href))
+          {desktopNavLinks.map((link) => {
+            const isHighlighted = highlightedNavItem === link.name
 
             return (
               <Link key={link.name} href={link.href} passHref legacyBehavior>
                 <a
-                  className={`relative px-4 py-2 rounded-full font-space-grotesk font-medium text-[13.5px] transition-colors z-10 ${isActive ? textColor : 'text-neutral-500 hover:text-neutral-300'}`}
-                  onMouseEnter={() => setHoveredLink(link.name)}
-                  onMouseLeave={() => setHoveredLink(null)}
+                  className={`relative px-4 py-2 rounded-full font-space-grotesk font-medium text-[13.5px] transition-colors z-10 ${isHighlighted ? 'text-white' : 'text-neutral-500 hover:text-black'}`}
+                  onMouseEnter={() => setHoveredNavItem(link.name)}
+                  onMouseLeave={() => setHoveredNavItem(null)}
                 >
-                  {hoveredLink === link.name && (
+                  {isHighlighted && (
                     <motion.div
-                      layoutId="nav-pill"
-                      className={`absolute inset-0 rounded-full z-[-1] ${hoverBgColor}`}
+                      layoutId="activeNavItem"
+                      className="absolute inset-0 bg-black rounded-full z-[-1]"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -96,25 +107,21 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
             )
           })}
 
-          {/* Separator */}
-          {/* <div className={`w-[1px] h-4 bg-black/10 mx-2`} /> */}
-
-          {/* Contact Icon */}
           <Link href="/contact" passHref legacyBehavior>
             <a
-              className="relative px-3 py-2 rounded-full group transition-colors z-10 flex items-center justify-center"
-              onMouseEnter={() => setHoveredLink('Contact')}
-              onMouseLeave={() => setHoveredLink(null)}
+              className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors z-10 ${highlightedNavItem === 'Contact' ? 'text-white' : 'text-neutral-500 hover:text-black'}`}
+              onMouseEnter={() => setHoveredNavItem('Contact')}
+              onMouseLeave={() => setHoveredNavItem(null)}
               aria-label="Contact"
             >
-              {hoveredLink === 'Contact' && (
+              {highlightedNavItem === 'Contact' && (
                 <motion.div
-                  layoutId="nav-pill"
-                  className={`absolute inset-0 rounded-full z-[-1] ${hoverBgColor}`}
+                  layoutId="activeNavItem"
+                  className="absolute inset-0 bg-black rounded-full z-[-1]"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <Mail className={`w-[18px] h-[18px] ${textColor} group-hover:opacity-70 transition-opacity`} strokeWidth={1.8} />
+              <Mail className="w-[18px] h-[18px]" strokeWidth={1.8} />
             </a>
           </Link>
         </div>
@@ -198,7 +205,10 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                         visible: { x: 0, opacity: 1, transition: { duration: 0.4 } }
                       }}>
                         <Link href={item.href} passHref legacyBehavior>
-                          <a className="text-white font-space-grotesk font-bold text-4xl hover:text-white/70 transition-colors" onClick={closeMenu}>
+                          <a
+                            className={`font-space-grotesk font-bold text-4xl transition-colors ${activeNavItem === item.name ? 'text-white' : 'text-white/70 hover:text-white'}`}
+                            onClick={closeMenu}
+                          >
                             {item.name}
                           </a>
                         </Link>
@@ -269,4 +279,4 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
   )
 }
 
-export default Navigation 
+export default Navigation
