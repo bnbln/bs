@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/router'
@@ -17,6 +17,10 @@ const desktopNavLinks = [
 ] as const
 
 type DesktopNavItem = (typeof desktopNavLinks)[number]['name'] | 'Contact'
+type PillRect = { x: number; y: number; width: number; height: number }
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
+let lastRouteActiveNavItem: DesktopNavItem | null = null
 
 const getActiveNavItem = (pathname: string): DesktopNavItem | null => {
   if (pathname === '/') return 'Home'
@@ -35,6 +39,102 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
   const activeNavItem = getActiveNavItem(router.pathname)
   const [hoveredNavItem, setHoveredNavItem] = useState<DesktopNavItem | null>(null)
   const highlightedNavItem = hoveredNavItem ?? activeNavItem
+  const linksContainerRef = useRef<HTMLDivElement | null>(null)
+  const itemRefs = useRef<Record<DesktopNavItem, HTMLAnchorElement | null>>({
+    Home: null,
+    About: null,
+    Work: null,
+    Contact: null
+  })
+  const [pillRect, setPillRect] = useState<PillRect | null>(null)
+  const didRunInitialRouteAnimation = useRef(false)
+  const routeAnimationFrameRef = useRef<number | null>(null)
+
+  const getItemRect = useCallback((targetItem: DesktopNavItem | null): PillRect | null => {
+    const containerEl = linksContainerRef.current
+    const targetEl = targetItem ? itemRefs.current[targetItem] : null
+
+    if (!containerEl || !targetEl) return null
+
+    const containerRect = containerEl.getBoundingClientRect()
+    const targetRect = targetEl.getBoundingClientRect()
+
+    return {
+      x: targetRect.left - containerRect.left,
+      y: targetRect.top - containerRect.top,
+      width: targetRect.width,
+      height: targetRect.height
+    }
+  }, [])
+
+  const updatePillRect = useCallback((targetItem: DesktopNavItem | null) => {
+    const nextRect = getItemRect(targetItem)
+    if (!nextRect) {
+      setPillRect(null)
+      return
+    }
+
+    setPillRect((prev) => {
+      if (
+        prev &&
+        Math.abs(prev.x - nextRect.x) < 0.5 &&
+        Math.abs(prev.y - nextRect.y) < 0.5 &&
+        Math.abs(prev.width - nextRect.width) < 0.5 &&
+        Math.abs(prev.height - nextRect.height) < 0.5
+      ) {
+        return prev
+      }
+      return nextRect
+    })
+  }, [getItemRect])
+
+  useIsomorphicLayoutEffect(() => {
+    if (!didRunInitialRouteAnimation.current) {
+      didRunInitialRouteAnimation.current = true
+      const previousItem = lastRouteActiveNavItem
+      const shouldAnimateFromPrevious =
+        previousItem &&
+        highlightedNavItem &&
+        hoveredNavItem === null &&
+        previousItem !== highlightedNavItem
+
+      if (shouldAnimateFromPrevious) {
+        const previousRect = getItemRect(previousItem)
+        const nextRect = getItemRect(highlightedNavItem)
+        if (previousRect && nextRect) {
+          setPillRect(previousRect)
+          routeAnimationFrameRef.current = window.requestAnimationFrame(() => {
+            setPillRect(nextRect)
+          })
+          return
+        }
+      }
+    }
+
+    updatePillRect(highlightedNavItem)
+  }, [highlightedNavItem, hoveredNavItem, getItemRect, updatePillRect])
+
+  useEffect(() => {
+    const handleResize = () => updatePillRect(highlightedNavItem)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [highlightedNavItem, updatePillRect])
+
+  useEffect(() => {
+    return () => {
+      if (routeAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(routeAnimationFrameRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    setHoveredNavItem(null)
+  }, [router.pathname])
+
+  useEffect(() => {
+    lastRouteActiveNavItem = activeNavItem
+  }, [activeNavItem])
 
   useEffect(() => {
     setMounted(true)
@@ -83,24 +183,35 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
         </Link>
 
         {/* Desktop Links Container */}
-        <div className="flex items-center gap-1">
+        <div ref={linksContainerRef} className="relative flex items-center gap-1">
+          {pillRect && (
+            <motion.div
+              className="absolute bg-black rounded-full z-0 pointer-events-none"
+              initial={false}
+              animate={{
+                x: pillRect.x,
+                y: pillRect.y,
+                width: pillRect.width,
+                height: pillRect.height,
+                opacity: 1
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
+
           {desktopNavLinks.map((link) => {
             const isHighlighted = highlightedNavItem === link.name
 
             return (
               <Link key={link.name} href={link.href} passHref legacyBehavior>
                 <a
+                  ref={(node) => {
+                    itemRefs.current[link.name] = node
+                  }}
                   className={`relative px-4 py-2 rounded-full font-space-grotesk font-medium text-[13.5px] transition-colors z-10 ${isHighlighted ? 'text-white' : 'text-neutral-500 hover:text-black'}`}
                   onMouseEnter={() => setHoveredNavItem(link.name)}
                   onMouseLeave={() => setHoveredNavItem(null)}
                 >
-                  {isHighlighted && (
-                    <motion.div
-                      layoutId="activeNavItem"
-                      className="absolute inset-0 bg-black rounded-full z-[-1]"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
                   {link.name}
                 </a>
               </Link>
@@ -109,18 +220,14 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
           <Link href="/contact" passHref legacyBehavior>
             <a
+              ref={(node) => {
+                itemRefs.current.Contact = node
+              }}
               className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors z-10 ${highlightedNavItem === 'Contact' ? 'text-white' : 'text-neutral-500 hover:text-black'}`}
               onMouseEnter={() => setHoveredNavItem('Contact')}
               onMouseLeave={() => setHoveredNavItem(null)}
               aria-label="Contact"
             >
-              {highlightedNavItem === 'Contact' && (
-                <motion.div
-                  layoutId="activeNavItem"
-                  className="absolute inset-0 bg-black rounded-full z-[-1]"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
               <Mail className="w-[18px] h-[18px]" strokeWidth={1.8} />
             </a>
           </Link>

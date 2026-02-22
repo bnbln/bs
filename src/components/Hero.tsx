@@ -132,14 +132,16 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
       </motion.div>
 
       {/* 5. LAYER 4: Info Section (Minimalist Redesign) */}
-      <motion.div
-        className="absolute md:bottom-[60px] bottom-[30px] left-6 right-6 z-30 flex flex-col md:flex-row items-start md:items-end justify-between gap-8 pointer-events-none"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.5 }}
-      >
+      <div className="absolute md:bottom-[60px] bottom-[30px] left-6 right-6 z-30 flex flex-col md:flex-row items-start md:items-end justify-between gap-8 pointer-events-none">
+
         {/* Minimalist Location */}
-        <div className="flex items-center gap-3 backdrop-blur-md bg-black/20 px-4 py-2 rounded-full border border-white/10 pointer-events-auto">
+        <motion.div
+          className="flex items-center gap-3 backdrop-blur-md bg-black/20 px-4 py-2 rounded-full border border-white/10 pointer-events-auto"
+          initial={{ y: 50, opacity: 0, z: 0 }}
+          animate={{ y: 0, opacity: 1, z: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          style={{ WebkitBackdropFilter: "blur(12px)", willChange: "transform, opacity" }}
+        >
           <img
             src={worldIcon}
             alt="World Icon"
@@ -148,10 +150,16 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
           <p className="text-white/90 font-space-grotesk tracking-wide font-medium text-sm">
             From {location}
           </p>
-        </div>
+        </motion.div>
 
         {/* Minimalist Role Text */}
-        <div className="flex flex-col items-start md:items-end gap-[2px] text-white/90 font-inter font-normal text-xl md:text-2xl tracking-tight backdrop-blur-md bg-black/10 px-5 py-3 rounded-2xl border border-white/10">
+        <motion.div
+          className="flex flex-col items-start md:items-end gap-[2px] text-white/90 font-inter font-normal text-xl md:text-2xl tracking-tight backdrop-blur-md bg-black/10 px-5 py-3 rounded-2xl border border-white/10 pointer-events-auto"
+          initial={{ y: 50, opacity: 0, z: 0 }}
+          animate={{ y: 0, opacity: 1, z: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          style={{ WebkitBackdropFilter: "blur(12px)", willChange: "transform, opacity" }}
+        >
           <span className="block text-nowrap">Senior Designer</span>
           <div className="flex items-center gap-3">
 
@@ -162,8 +170,8 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             /> */}
           </div>
           <p className="block text-nowrap text-white/70">& Developer</p>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </section>
   )
 }
