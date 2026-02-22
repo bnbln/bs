@@ -1,6 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
-import MagneticButton from './MagneticButton' // For a potential copy interaction
 
 interface FontSpecimenProps {
     name: string
@@ -13,42 +11,68 @@ interface FontSpecimenProps {
 export default function FontSpecimen({
     name,
     styles = "Regular, Medium, Bold",
-    sample = "The quick brown fox jumps over the lazy dog.",
+    sample,
     bgColor = "#1D1D1F",
     color = "#FFFFFF"
 }: FontSpecimenProps) {
 
     return (
         <div
-            className="w-full relative flex flex-col p-8 sm:p-12 md:p-16 rounded-[2rem] overflow-hidden shadow-lg transition-colors duration-500"
-            style={{ backgroundColor: bgColor, color: color }}
+            className="w-full relative flex flex-col rounded-[2rem] overflow-hidden shadow-2xl transition-colors duration-500 ring-1 ring-black/5 mx-auto max-w-[1400px] text-[#1D1D1F]"
+            style={{ backgroundColor: bgColor }}
         >
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 lg:mb-24 gap-6">
-                <div>
-                    <h3 className="text-sm font-medium tracking-[0.2em] uppercase opacity-70 mb-2">Typography</h3>
-                    <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter" style={{ fontFamily: name }}>
-                        {name}
-                    </h2>
+            {/* Top Section - Name & Meta grid */}
+            <div className="flex flex-col md:flex-row border-b border-current/20">
+
+                {/* Abstract typographic element (The "Aa") */}
+                <div className="hidden md:flex items-center justify-center p-8 md:p-16 border-r border-current/20 w-1/4 flex-shrink-0">
+                    <span
+                        className="text-[8rem] lg:text-[10rem] leading-none font-bold tracking-tighter opacity-90 select-none pb-4"
+                        style={{ fontFamily: name, color: color }}
+                    >
+                        Aa
+                    </span>
                 </div>
-                <div className="text-right">
-                    <p className="text-sm font-inter opacity-70 mb-1">Available Weights</p>
-                    <p className="text-lg font-medium">{styles}</p>
+
+                {/* Main Name & Meta */}
+                <div className="flex flex-col w-full">
+                    <div className="p-8 md:p-12 lg:p-16 border-b border-current/20 flex flex-col justify-end min-h-[12rem] md:min-h-[16rem]">
+                        <h3 className="text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase opacity-60 mb-6 font-inter">
+                            Typeface Specimen
+                        </h3>
+                        <h2
+                            className="text-5xl sm:text-7xl md:text-[6rem] lg:text-[7rem] leading-[0.9] font-bold tracking-tighter"
+                            style={{ fontFamily: name }}
+                        >
+                            {name}
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-2">
+                        <div className="p-6 md:p-8 lg:p-10 border-r border-current/20 flex flex-col gap-2">
+                            <span className="text-[10px] uppercase tracking-widest opacity-60 font-inter font-bold">Weights</span>
+                            <span className="text-sm md:text-base font-medium font-inter">{styles}</span>
+                        </div>
+                        <div className="p-6 md:p-8 lg:p-10 flex flex-col gap-2">
+                            <span className="text-[10px] uppercase tracking-widest opacity-60 font-inter font-bold">Design</span>
+                            <span className="text-sm md:text-base font-medium font-inter flex items-center gap-2">
+                                Premium Editorial
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 border-t border-current/20 pt-12">
-                <div className="md:col-span-8">
-                    <p className="text-[2rem] sm:text-[3rem] md:text-[4rem] lg:text-[5rem] leading-[1.1] tracking-[-0.02em] font-medium" style={{ fontFamily: name }}>
+            {sample && (
+                <div className="p-8 md:p-12 lg:p-16 overflow-hidden flex items-center justify-center py-16 md:py-24">
+                    <p
+                        className="text-4xl sm:text-5xl md:text-[5rem] lg:text-[7vw] leading-[1.05] tracking-tight font-medium text-center"
+                        style={{ fontFamily: name }}
+                    >
                         {sample}
                     </p>
                 </div>
-                <div className="md:col-span-4 flex flex-col gap-8 text-lg md:text-2xl leading-relaxed opacity-80" style={{ fontFamily: name, wordBreak: 'break-all' }}>
-                    <p>ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
-                    <p>abcdefghijklmnopqrstuvwxyz</p>
-                    <p>0123456789</p>
-                    <p>!@#$%^&*()_+{ }|:"&lt;&gt;?</p>
-                </div>
-            </div>
+            )}
         </div>
     )
 }

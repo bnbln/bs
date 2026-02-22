@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { resolveAssetPath } from '../lib/assets'
 import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
 
-export type MockupType = 'iphone' | 'macbook'
+export type MockupType = 'iphone' | 'macbook' | 'tv'
 
 interface MockupProps {
     type: MockupType
@@ -44,9 +44,9 @@ export default function Mockup({ type, mediaUrl, image, video, bgColor, accentCo
             )}
 
             {type === 'macbook' && (
-                <div className="relative w-[90%] max-w-[900px]">
+                <div className="relative w-[90%] max-w-[900px] flex flex-col items-center">
                     {/* Screen Bezel */}
-                    <div className="relative aspect-[16/10] bg-black rounded-t-[1.5rem] rounded-b-sm p-2 sm:p-4 shadow-2xl ring-1 ring-white/10">
+                    <div className="relative w-full aspect-[16/10] bg-black rounded-t-[1.5rem] rounded-b-sm p-2 sm:p-4 shadow-2xl ring-1 ring-white/10 z-10">
                         <div className="w-full h-full rounded-md overflow-hidden bg-neutral-900 relative">
                             {isVid ? (
                                 <AdaptiveVideoPlayer videoUrl={path || ''} autoStart={true} color={accentColor || '#000'} minimal loop muted />
@@ -56,8 +56,28 @@ export default function Mockup({ type, mediaUrl, image, video, bgColor, accentCo
                         </div>
                     </div>
                     {/* Base */}
-                    <div className="relative w-[114%] -ml-[7%] h-4 sm:h-6 bg-gradient-to-b from-[#dfdfdf] to-[#bcbcbc] rounded-b-3xl shadow-xl flex justify-center pt-1 border-t border-white/40">
+                    <div className="relative w-[114%] h-4 sm:h-6 bg-gradient-to-b from-[#dfdfdf] to-[#bcbcbc] rounded-b-3xl shadow-xl flex justify-center pt-1 border-t border-white/40 z-20">
                         <div className="w-1/6 h-1 bg-[#a0a0a0] rounded-b-md" />
+                    </div>
+                </div>
+            )}
+
+            {type === 'tv' && (
+                <div className="relative w-[95%] max-w-[1200px] flex flex-col items-center">
+                    {/* TV Screen Thin Bezel */}
+                    <div className="relative w-full aspect-video bg-[#1a1a1a] rounded-lg p-1 shadow-2xl ring-1 ring-white/5 z-10">
+                        <div className="w-full h-full overflow-hidden bg-black relative">
+                            {isVid ? (
+                                <AdaptiveVideoPlayer videoUrl={path || ''} autoStart={true} color={accentColor || '#000'} minimal loop muted />
+                            ) : (
+                                <img src={path} className="w-full h-full object-cover" loading="lazy" />
+                            )}
+                        </div>
+                    </div>
+                    {/* TV Stand / Feet */}
+                    <div className="relative w-[30%] h-8 flex justify-between z-0 -mt-2">
+                        <div className="w-1.5 h-full bg-[#333] transform -skew-x-[20deg] rounded-b-sm shadow-md" />
+                        <div className="w-1.5 h-full bg-[#333] transform skew-x-[20deg] rounded-b-sm shadow-md" />
                     </div>
                 </div>
             )}

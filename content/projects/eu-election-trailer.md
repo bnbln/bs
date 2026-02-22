@@ -36,7 +36,7 @@ Turquoise #00728f rgb(0,114,143) usage=Brand Color
 EU-Gold #E6A105 rgb(230,161,5) usage=Sterne/Highlight
 ```
 
-```font name="Inter" styles="Medium, SemiBold, Bold" sample="Europe in Motion." bgColor="#003a5a" color="#E6A105"
+```font name="Inter" styles="Medium, SemiBold, Bold" bgColor="#F5F5F7" color="#E6A105"
 ```
 
 One standout detail: the twelve stars. They rotate in opposition to the overall scene while staying perfectly horizontal within the viewport. It's a subtle effect powered by After Effects expressions – but visually, it makes all the difference.
@@ -54,7 +54,7 @@ One standout detail: the twelve stars. They rotate in opposition to the overall 
 - stylish split screens for pace and variety
 - a cinematic color grade to tie it all together
 
-```mockup type="macbook" video="assets/Eu Wahl Loop.mp4" bgColor="#F5F5F7"
+```mockup type="tv" video="assets/Eu Wahl Loop.mp4" bgColor="#F5F5F7"
 ```
 
 ![assets/Europawahl Trailer Frame 290.jpg]
