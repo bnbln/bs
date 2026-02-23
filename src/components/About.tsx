@@ -31,12 +31,12 @@ const About = () => {
   // Track scroll through the bio section to scrub the text opacity
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start 75%", "start 10%"]
+    offset: ["start 75%", "end 135%"]
   })
 
   const stats = [
     { label: "Years Experience", value: "10+" },
-    { label: "Projects Delivered", value: "400+" },
+    { label: "Projects Delivered", value: "200+" },
     { label: "Awards", value: "4+" },
   ]
 
@@ -52,8 +52,11 @@ const About = () => {
         {/* Left Column: Fixed Headline (Sticky on Desktop) */}
         <div className="lg:w-[40%] flex-shrink-0">
           <div className="lg:sticky lg:top-32 flex flex-col gap-12">
-            <h2 className="text-5xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-tighter font-bold text-black mix-blend-exclusion">
-              Moving<br />Pixels with<br />Code &<br />Creativity.
+            <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-tighter font-bold text-black mix-blend-exclusion">
+              Moving<br className="hidden lg:block" />
+              <span className="lg:hidden"> </span>Pixels with<br className="hidden lg:block" />
+              <span className="lg:hidden"> </span>Code &<br className="hidden lg:block" />
+              <span className="lg:hidden"> </span>Creativity.
             </h2>
 
             {/* Desktop Socials */}

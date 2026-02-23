@@ -53,5 +53,5 @@ The result is more than just a portfolio website — it’s a **digital stage fo
 ```three
 preset="city"
 autoRotate="true"
-height="600px"
+height="800px"
 ```

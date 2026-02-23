@@ -152,13 +152,13 @@ const WorkPage = ({ projects }: WorkPageProps) => {
                                                         <h3 className="text-2xl md:text-[28px] font-space-grotesk font-bold text-black tracking-tight leading-none group-hover:text-neutral-600 transition-colors duration-300">
                                                             {project.title}
                                                         </h3>
-                                                        <div className="flex items-center gap-3 mt-3">
-                                                            <span className="text-xs font-mono tracking-widest uppercase text-neutral-500 bg-neutral-100 px-2 py-1 rounded shrink-0">
+                                                        <div className="mt-3 w-full leading-snug">
+                                                            <span className="text-xs font-mono tracking-widest uppercase text-neutral-500 mr-3">
                                                                 {Array.isArray(project.category) ? project.category[0] : project.category}
                                                             </span>
-                                                            <p className="text-neutral-500 text-sm font-inter">
+                                                            <span className="text-neutral-500 text-sm font-inter">
                                                                 {project.subtitle}
-                                                            </p>
+                                                            </span>
                                                         </div>
                                                         {!isFeatured && project.excerpts && (
                                                             <p className="mt-4 text-neutral-500 font-inter text-sm md:text-base leading-relaxed line-clamp-3">
