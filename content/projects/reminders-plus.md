@@ -43,6 +43,10 @@ That mechanic sounds small, but it changes how you use the app: you stop aiming 
 ```insight title="Streaks as UX: motivation without gamification noise"
 The streak isn’t a badge explosion — it’s just a calm, persistent signal: “you’re building something.” The UI stays minimal so the feedback loop stays strong.
 ```
+```mockup type="iphone" image="assets/light-00001.webp" bgColor="#F5F5F7"
+```
+```mockup type="iphone" image="assets/Reminders+ Habit Image.webp" bgColor="#F5F5F7"
+```
 
 ## UX/UI: calm, modern, and focused
 

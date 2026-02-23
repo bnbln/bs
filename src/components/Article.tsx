@@ -860,16 +860,40 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           )
           lastElementType = 'compact'
         } else if (typeLower === 'mockup') {
+          const mockups = [attrs]
+
+          while (i + 1 < lines.length) {
+            let nextNonEmpty = i + 1
+            while (nextNonEmpty < lines.length && lines[nextNonEmpty].trim() === '') {
+              nextNonEmpty++
+            }
+            if (nextNonEmpty >= lines.length) break
+            const peekLine = lines[nextNonEmpty].trim()
+            if (peekLine.startsWith('```')) {
+              const fenceInfo = peekLine.replace(/^```+/, '').trim()
+              const [nextType, ...nextRest] = fenceInfo.split(/\s+/)
+              if (nextType.toLowerCase() === 'mockup') {
+                const nextAttrs = parseFenceAttributes(nextRest.join(' '))
+                // skip lines inside the body
+                let j = nextNonEmpty + 1
+                while (j < lines.length && !lines[j].trim().startsWith('```')) {
+                  j++
+                }
+                mockups.push(nextAttrs)
+                i = j // Advance the main index to the closing fence of this newly consumed block
+                continue
+              }
+            }
+            break
+          }
+
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
 
           currentElements.push(
-            <div key={`mockup-${currentIndex++}`} className={`${colWide} ${margins}`}>
+            <div key={`mockup-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>
               <Mockup
-                type={(attrs.type as any) || 'iphone'}
-                image={attrs.image}
-                video={attrs.video}
-                bgColor={attrs.bgColor}
+                items={mockups as any}
                 accentColor={accentColor}
               />
             </div>
