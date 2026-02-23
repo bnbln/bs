@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue, useMotionValue, useSpring } from 'framer-motion';
 import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
@@ -26,9 +26,10 @@ interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   sectionProgress: MotionValue<number>;
   pageMargin: number;
   totalCards: number;
+  setHoveredProject: (project: Project | null) => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgress, pageMargin, totalCards }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgress, pageMargin, totalCards, setHoveredProject }) => {
   const router = useRouter();
   // Detect fine pointer (avoid hover / cursor logic on touch devices)
   const [hasFinePointer, setHasFinePointer] = useState(false);
@@ -43,10 +44,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   }, []);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFastScrolling, setIsFastScrolling] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
-  const [isMouseInsideThisProject, setIsMouseInsideThisProject] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
@@ -59,10 +56,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hoverAnimationRef = useRef<number | null>(null);
   const scrollAnimationRef = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadedImageCount = useRef<number>(0);
   const lastRenderedFrame = useRef<number>(-1);
   const pendingFrame = useRef<number>(-1);
@@ -236,94 +231,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     return `inset(0px ${inset}px 0px ${inset}px round ${radius}px)`;
   });
 
-  // Simple fast scroll detection - only hides tooltip during very fast scrolling
-  useEffect(() => {
-    let lastScrollY = window.scrollY;
-    let lastScrollTime = Date.now();
 
-    const handleScroll = () => {
-      const currentTime = Date.now();
-      const currentScrollY = window.scrollY;
-      const deltaTime = currentTime - lastScrollTime;
-      const deltaY = Math.abs(currentScrollY - lastScrollY);
 
-      // Calculate scroll velocity (pixels per millisecond)
-      const scrollVelocity = deltaTime > 0 ? deltaY / deltaTime : 0;
-
-      // Hide tooltips during very fast scrolling (> 2 pixels per ms)
-      if (scrollVelocity > 2) {
-        setIsFastScrolling(true);
-
-        // Clear existing timeout
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-
-        // Re-enable after short delay and check if mouse is still inside
-        scrollTimeoutRef.current = setTimeout(() => {
-          setIsFastScrolling(false);
-          // If mouse is still inside this project after scrolling stops, show hover again
-          if (isMouseInsideThisProject) {
-            setIsHovered(true);
-          }
-        }, 50);
-      }
-
-      lastScrollY = currentScrollY;
-      lastScrollTime = currentTime;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [isMouseInsideThisProject]);
-
-  // Hide hover when fast scrolling starts
-  useEffect(() => {
-    if (isFastScrolling) {
-      setIsHovered(false);
-    }
-  }, [isFastScrolling]);
-
-  // Optimized mouse move handler with throttling - only update if mouse is inside THIS project
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!hasFinePointer) return; // disable on touch
-    // Only update position if mouse is actually inside this specific project
-    if (!isMouseInsideThisProject) return;
-
-    // Throttle mouse updates to improve performance
-    if (hoverAnimationRef.current) {
-      cancelAnimationFrame(hoverAnimationRef.current);
-    }
-
-    hoverAnimationRef.current = requestAnimationFrame(() => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    });
-  }, [isMouseInsideThisProject, hasFinePointer]);
-
-  // Proper hover handlers that track this specific project
+  // Set hovered project globally
   const handleMouseEnter = useCallback(() => {
     if (!hasFinePointer) return; // disable on touch
-    setIsMouseInsideThisProject(true);
-    // Only show hover if not fast scrolling
-    if (!isFastScrolling) {
-      setIsHovered(true);
-    }
-  }, [isFastScrolling, hasFinePointer]);
+    setHoveredProject(project);
+  }, [hasFinePointer, setHoveredProject, project]);
 
   const handleMouseLeave = useCallback(() => {
     if (!hasFinePointer) return; // disable on touch
-    setIsMouseInsideThisProject(false);
-    setIsHovered(false);
-    // Clear any pending mouse position updates
-    if (hoverAnimationRef.current) {
-      cancelAnimationFrame(hoverAnimationRef.current);
-    }
-  }, [hasFinePointer]);
+    setHoveredProject(null);
+  }, [hasFinePointer, setHoveredProject]);
 
   // Handle project click
   const handleProjectClick = useCallback(() => {
@@ -891,17 +810,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
     return () => {
-      if (hoverAnimationRef.current) {
-        cancelAnimationFrame(hoverAnimationRef.current);
-      }
       if (scrollAnimationRef.current) {
         cancelAnimationFrame(scrollAnimationRef.current);
       }
       if (nativeScrubRafRef.current) {
         cancelAnimationFrame(nativeScrubRafRef.current);
-      }
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
       }
       if (revealTimeoutRef.current) {
         clearTimeout(revealTimeoutRef.current);
@@ -945,7 +858,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         whileInView={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
-        onMouseMove={hasFinePointer ? handleMouseMove : undefined}
         onMouseEnter={hasFinePointer ? handleMouseEnter : undefined}
         onMouseLeave={hasFinePointer ? handleMouseLeave : undefined}
         onClick={handleProjectClick}
@@ -1065,32 +977,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           </div>
         )}
 
-        {/* Floating Cursor Title (Desktop) */}
-        <motion.div
-          className="fixed pointer-events-none z-50 hidden md:flex flex-col items-start gap-1"
-          style={{
-            left: mousePosition.x,
-            top: mousePosition.y,
-          }}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{
-            opacity: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0,
-            scale: isHovered && !isFastScrolling && mousePosition.x > 0 ? 1 : 0.9,
-            x: 24, // Offset from cursor
-            y: 24
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 28,
-            mass: 0.5
-          }}
-        >
-          <div className="bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full border border-white/10 shadow-2xl">
-            <span className="text-sm font-medium whitespace-nowrap font-space-grotesk tracking-wide">{project.title}</span>
-          </div>
-        </motion.div>
-
         {/* Mobile arrow button (mobile only) */}
         <motion.button
           className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
@@ -1127,6 +1013,46 @@ interface WorkProps {
 
 const Work: React.FC<WorkProps> = ({ data }) => {
   const sectionRef = useRef<HTMLElement>(null);
+  const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
+
+  // Global cursor position
+  const mouseX = useMotionValue(-100);
+  const mouseY = useMotionValue(-100);
+  const cursorX = useSpring(mouseX, { stiffness: 400, damping: 28, mass: 0.2 });
+  const cursorY = useSpring(mouseY, { stiffness: 400, damping: 28, mass: 0.2 });
+
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolling(true);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
+  }, [mouseX, mouseY]);
 
   // Responsive page margin matching the site layout:
   // px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]
@@ -1155,8 +1081,45 @@ const Work: React.FC<WorkProps> = ({ data }) => {
   return (
     <section ref={sectionRef} className="bg-white w-full relative" id="work">
       {data.map((project, index) => (
-        <ProjectCard key={`${project.id}-${index}`} project={project} index={index} sectionProgress={sectionProgress} pageMargin={pageMargin} totalCards={data.length} />
+        <ProjectCard
+          key={`${project.id}-${index}`}
+          project={project}
+          index={index}
+          sectionProgress={sectionProgress}
+          pageMargin={pageMargin}
+          totalCards={data.length}
+          setHoveredProject={setHoveredProject}
+        />
       ))}
+
+      {/* Global Cursor for all Work Projects */}
+      <motion.div
+        className="fixed top-0 left-0 pointer-events-none z-[100] hidden md:flex items-center gap-2 will-change-transform"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          originX: 0,
+          originY: 0,
+        }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{
+          opacity: hoveredProject && !isScrolling ? 1 : 0,
+          scale: hoveredProject && !isScrolling ? 1 : 0.8,
+        }}
+        whileTap={{ scale: 0.95 }}
+        transition={{
+          opacity: { duration: 0.15 },
+          scale: { type: "spring", stiffness: 300, damping: 25 },
+        }}
+      >
+        <div className="bg-black/40 backdrop-blur-xl text-white px-4 py-2 rounded-full border border-white/20 shadow-2xl flex items-center gap-2 transform -translate-x-1/2 -translate-y-full mt-[-16px]">
+          <span className="text-sm font-medium whitespace-nowrap font-space-grotesk tracking-wide text-white/95">
+            {hoveredProject?.title}
+          </span>
+          <span className="text-white/40">•</span>
+          <span className="text-sm font-bold text-white/80">View</span>
+        </div>
+      </motion.div>
     </section>
   );
 };
