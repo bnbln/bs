@@ -906,8 +906,13 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         } else if (typeLower === 'lottie') {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
-          const animSrc = resolveAssetPath(attrs.path || attrs.src || attrs.url || '')
-          const isLoop = attrs.loop !== 'false'
+
+          // Also parse attributes from the body if they weren't on the fence line
+          const bodyAttrs = parseFenceAttributes(body.replace(/\r?\n/g, ' '))
+          const animUrl = attrs.path || attrs.src || attrs.url || bodyAttrs.path || bodyAttrs.src || bodyAttrs.url || ''
+
+          const animSrc = animUrl ? resolveAssetPath(animUrl) : ''
+          const isLoop = (attrs.loop || bodyAttrs.loop) !== 'false'
 
           currentElements.push(
             <div key={`lottie-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>

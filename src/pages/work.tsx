@@ -7,6 +7,9 @@ import Footer from '../components/Footer'
 import { getAllProjects, Project } from '../lib/markdown'
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const LottiePlayer = dynamic(() => import('../components/LottiePlayer'), { ssr: false })
 
 interface WorkPageProps {
     projects: Project[]
@@ -14,6 +17,11 @@ interface WorkPageProps {
 
 const WorkPage = ({ projects }: WorkPageProps) => {
     const [filter, setFilter] = useState<'All' | 'Design' | 'Development'>('All')
+    const [mounted, setMounted] = useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Helper to determine category
     const getCategoryTags = (project: Project) => {
@@ -137,10 +145,22 @@ const WorkPage = ({ projects }: WorkPageProps) => {
                                                     className={`w-full ${isFeatured ? 'aspect-[3/4]' : 'aspect-video'} relative rounded-xl overflow-hidden bg-neutral-200 transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-1 shadow-sm group-hover:shadow-2xl`}
                                                     style={{ backgroundColor: project.bgColor || '#e5e5e5' }}
                                                 >
-                                                    <div
-                                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105"
-                                                        style={{ backgroundImage: `url('${project.image}')` }}
-                                                    />
+                                                    {project.image && (
+                                                        <div
+                                                            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105"
+                                                            style={{ backgroundImage: `url('${project.image}')` }}
+                                                        />
+                                                    )}
+                                                    {project.heroLottie && mounted && (
+                                                        <div className="absolute inset-0 w-full h-full pointer-events-none transition-transform duration-1000 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105">
+                                                            <LottiePlayer
+                                                                src={project.heroLottie}
+                                                                className="w-full h-full absolute inset-0 mix-blend-normal object-cover"
+                                                                autoplay={true}
+                                                                loop={true}
+                                                            />
+                                                        </div>
+                                                    )}
 
                                                     {/* Minimal Image Overlay on Hover */}
                                                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

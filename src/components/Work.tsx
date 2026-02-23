@@ -3,6 +3,9 @@ import { motion, useScroll, useTransform, MotionValue, useMotionValue, useSpring
 import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
+import dynamic from 'next/dynamic';
+
+const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
 
 const SCRUB_FPS_CAP = 60;
 const MOBILE_SCRUB_FPS_CAP = 30;
@@ -42,6 +45,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       return () => mq.removeEventListener('change', update);
     }
   }, []);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [currentFrame, setCurrentFrame] = useState(0);
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -949,8 +958,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           </div>
         )}
 
+        {/* Lottie Animation Sequence */}
+        {project.heroLottie && mounted && (
+          <div className="absolute inset-0 w-full h-full pointer-events-none">
+            <LottiePlayer
+              src={project.heroLottie}
+              className="w-full h-full absolute inset-0 mix-blend-normal"
+              style={{ objectFit: 'cover' }}
+              autoplay={true}
+              loop={true}
+            />
+          </div>
+        )}
+
         {/* Video Overlay - Only show if project has a video */}
-        {project.video && (
+        {project.video && !project.heroLottie && (
           <video
             className="absolute inset-0 w-full h-full object-cover"
             autoPlay

@@ -5,7 +5,6 @@ subtitle: Bringing smooth animations to iOS, Android, and Web
 slug: integrating-lottie
 category: [Development, Motion Design]
 published: '2026-02-23'
-image: assets/sample-lottie.json
 heroLottie: assets/sample-lottie.json
 bgColor: '#2E8B57'
 hasAnimation: false

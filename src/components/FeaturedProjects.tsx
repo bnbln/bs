@@ -1,11 +1,19 @@
-import React, { useRef, useCallback } from 'react'
+import React, { useRef, useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { Project } from '../lib/markdown'
 import MagneticButton from './MagneticButton'
+import dynamic from 'next/dynamic'
+
+const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
 
 const FeaturedProjects = ({ data }: { data: Project[] }) => {
+
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -317,23 +325,27 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
               >
                 {/* Background Image */}
                 <div className="absolute inset-0 overflow-hidden bg-neutral-100 border-none">
-                  <motion.div
-                    className="w-full h-full relative"
-                    variants={{
-                      initial: { scale: 1 },
-                      hover: { scale: 1.05 }
-                    }}
-                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <Image
-                      src={project.image}
-                      alt={project.title}
-                      fill
-                      sizes={imageSizes}
-                      className="object-cover object-center"
-                      draggable={false}
-                    />
-                  </motion.div>
+                  {project.image ? (
+                    <motion.div
+                      className="w-full h-full relative"
+                      variants={{
+                        initial: { scale: 1 },
+                        hover: { scale: 1.05 }
+                      }}
+                      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <Image
+                        src={project.image}
+                        alt={project.title}
+                        fill
+                        sizes={imageSizes}
+                        className="object-cover object-center"
+                        draggable={false}
+                      />
+                    </motion.div>
+                  ) : (
+                    <div className="w-full h-full bg-neutral-100" />
+                  )}
                 </div>
                 {/* Dark overlay that intensifies on hover */}
                 <motion.div
@@ -344,6 +356,19 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                   }}
                   transition={{ duration: 0.5 }}
                 />
+
+                {/* Optional Lottie Animation Overlay */}
+                {project.heroLottie && mounted && (
+                  <div className="absolute inset-0 w-full h-full object-cover pointer-events-none">
+                    <LottiePlayer
+                      src={project.heroLottie}
+                      className="w-full h-full absolute inset-0 mix-blend-normal"
+                      style={{ objectFit: 'cover' }}
+                      autoplay={true}
+                      loop={true}
+                    />
+                  </div>
+                )}
 
                 {/* Content Container */}
                 <div className="relative z-10 mt-auto flex flex-col">

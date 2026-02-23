@@ -11,6 +11,8 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
  * @returns Absolute path like "/assets/book.avif" or "/subdirectory/assets/book.avif"
  */
 export function resolveAssetPath(assetPath: string): string {
+  if (!assetPath) return assetPath
+
   // If already absolute, return as-is
   if (assetPath.startsWith('/') || assetPath.startsWith('http')) {
     return assetPath

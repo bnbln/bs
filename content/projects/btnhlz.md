@@ -30,7 +30,7 @@ Gallery-White #F2F2F2 rgb(242,242,242) usage=Background
 
 From a technical perspective, the challenge was to create a smooth 3D experience without heavy loading times. We used optimized GLTF models, lazy loading, and fine-tuned lighting settings to ensure that every scene runs fluidly on both desktop and mobile devices. The Next.js architecture provided the foundation for fast builds and scalable hosting.
 
-```tsx title="Three.js Canvas"
+```javascript title="Three.js Canvas"
 <Canvas
   shadows
   linear
@@ -53,5 +53,5 @@ The result is more than just a portfolio website — it’s a **digital stage fo
 ```three
 preset="city"
 autoRotate="true"
-height="800px"
+height="100vh"
 ```
