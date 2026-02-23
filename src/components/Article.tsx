@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, useScroll } from 'framer-motion'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { Project } from '../lib/markdown'
+
+const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
+const ThreeScene = dynamic(() => import('./ThreeScene'), { ssr: false })
 import { resolveAssetPath } from '../lib/assets'
 import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
 import CodeBlock from './CodeBlock'
@@ -899,6 +903,50 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             </div>
           )
           lastElementType = 'block'
+        } else if (typeLower === 'lottie') {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+          const animSrc = resolveAssetPath(attrs.path || attrs.src || attrs.url || '')
+          const isLoop = attrs.loop !== 'false'
+
+          currentElements.push(
+            <div key={`lottie-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>
+              {animSrc ? (
+                <div className="w-full max-w-[1400px] mx-auto rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 aspect-video relative ring-1 ring-black/5">
+                  <LottiePlayer
+                    src={animSrc}
+                    loop={isLoop}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <Callout variant="warning" title="Lottie block missing path" accentColor={accentColor}>
+                  <p>Add <code>path="assets/your-animation.json"</code> to this block.</p>
+                </Callout>
+              )}
+            </div>
+          )
+          lastElementType = 'block'
+        } else if (typeLower === 'three') {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+          const height = attrs.height || '500px'
+          const modelPath = attrs.model ? resolveAssetPath(attrs.model) : undefined
+          const preset = (attrs.preset || 'city') as any
+          const autoRotate = attrs.autoRotate !== 'false'
+
+          currentElements.push(
+            <div key={`three-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>
+              <ThreeScene
+                modelPath={modelPath}
+                height={height}
+                className="w-full"
+                preset={preset}
+                autoRotate={autoRotate}
+              />
+            </div>
+          )
+          lastElementType = 'block'
         } else if (typeLower === 'font') {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
@@ -1348,7 +1396,12 @@ export default function Article({ project, allProjects, heroPriority = false }: 
               transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="max-w-[1400px] mx-auto rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-2xl shadow-black/10 aspect-video relative group ring-1 ring-black/5">
-                {(project.hasAnimation && project.video) ? (
+                {project.heroLottie ? (
+                  <LottiePlayer
+                    src={resolveAssetPath(project.heroLottie)}
+                    className="w-full h-full"
+                  />
+                ) : (project.hasAnimation && project.video) ? (
                   <AdaptiveVideoPlayer
                     videoUrl={resolveAssetPath(project.video)}
                     thumbnailUrl={project.heroImage ? resolveAssetPath(project.heroImage) : resolveAssetPath(project.image)}

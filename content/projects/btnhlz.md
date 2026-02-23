@@ -47,6 +47,11 @@ From a technical perspective, the challenge was to create a smooth 3D experience
 >
   <Preload all />
   <Scene items={items} targetIndex={index} />
-</Canvas>
 ```
 The result is more than just a portfolio website — it’s a **digital stage for design**. By blending frontend development with immersive 3D presentation, the project opens new perspectives on how product designers can present their work online: as interactive, living objects instead of static images.
+
+```three
+preset="city"
+autoRotate="true"
+height="600px"
+```

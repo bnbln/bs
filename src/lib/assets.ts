@@ -15,7 +15,7 @@ export function resolveAssetPath(assetPath: string): string {
   if (assetPath.startsWith('/') || assetPath.startsWith('http')) {
     return assetPath
   }
-  
+
   // Convert relative path to absolute with base path
   return `${basePath}/${assetPath}`
 }
@@ -25,12 +25,13 @@ export function resolveAssetPath(assetPath: string): string {
  * @param project - Project object from markdown
  * @returns Project with resolved asset paths
  */
-export function resolveProjectAssets<T extends { 
-  image?: string; 
-  video?: string; 
+export function resolveProjectAssets<T extends {
+  image?: string;
+  video?: string;
   pageVideo?: string;
   heroImage?: string;
-  animationSequence?: { 
+  heroLottie?: string;
+  animationSequence?: {
     basePath?: string;
     videoPath?: string;
     mobileVideoPath?: string;
@@ -38,10 +39,10 @@ export function resolveProjectAssets<T extends {
     startFrame?: number;
     endFrame?: number;
     frameCount?: number;
-  } 
+  }
 }>(project: T): T {
   const resolved = { ...project }
-  
+
   // Resolve main image path
   if (resolved.image) {
     resolved.image = resolveAssetPath(resolved.image)
@@ -51,26 +52,31 @@ export function resolveProjectAssets<T extends {
   if (resolved.heroImage) {
     resolved.heroImage = resolveAssetPath(resolved.heroImage)
   }
-  
+
+  // Resolve optional hero Lottie animation
+  if (resolved.heroLottie) {
+    resolved.heroLottie = resolveAssetPath(resolved.heroLottie)
+  }
+
   // Resolve video path (existing background video)
   if (resolved.video) {
     resolved.video = resolveAssetPath(resolved.video)
   }
-  
+
   // Resolve page video path
   if (resolved.pageVideo) {
     resolved.pageVideo = resolveAssetPath(resolved.pageVideo)
   }
-  
+
   // Resolve animation sequence paths
   if (resolved.animationSequence) {
     const animation = { ...resolved.animationSequence }
-    
+
     // Resolve legacy image sequence base path
     if (animation.basePath) {
       animation.basePath = resolveAssetPath(animation.basePath)
     }
-    
+
     // Resolve new video sequence path
     if (animation.videoPath) {
       animation.videoPath = resolveAssetPath(animation.videoPath)
@@ -85,9 +91,9 @@ export function resolveProjectAssets<T extends {
     if (animation.safariVideoPath) {
       animation.safariVideoPath = resolveAssetPath(animation.safariVideoPath)
     }
-    
+
     resolved.animationSequence = animation
   }
-  
+
   return resolved
 }

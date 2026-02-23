@@ -25,6 +25,7 @@ export interface Project {
   video?: string // Existing field for background videos
   pageVideo?: string // New field for page-specific videos
   heroImage?: string // Optional: separates hero image from generic image
+  heroLottie?: string // Optional: renders a Lottie animation
   heroHide?: boolean // Optional: hide hero media block entirely
   heroAspect?: string // Optional: custom aspect ratio (e.g. "16/9" or "1298/730.125")
   hasAnimation: boolean
