@@ -107,12 +107,12 @@ const About = () => {
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="group relative bg-white border border-neutral-200/80 rounded-[2rem] p-8 md:p-10 hover:bg-neutral-50 transition-all duration-500 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden"
+                  className="group relative bg-white border border-neutral-200/80 rounded-[2rem] p-8 sm:p-6 lg:p-5 xl:p-8 2xl:p-10 hover:bg-neutral-50 transition-all duration-500 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden sm:aspect-square flex flex-col justify-center"
                 >
-                  <div className="text-5xl md:text-6xl font-bold font-space-grotesk text-black mb-3 tracking-tighter">
+                  <div className="text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold font-space-grotesk text-black mb-2 xl:mb-3 tracking-tighter">
                     {stat.value}
                   </div>
-                  <div className="text-sm md:text-base text-neutral-500 font-inter font-medium tracking-wide">
+                  <div className="text-sm md:text-base lg:text-sm xl:text-base text-neutral-500 font-inter font-medium tracking-wide">
                     {stat.label}
                   </div>
                   {/* Subtle hover gradient wash */}
@@ -123,10 +123,10 @@ const About = () => {
           </div>
 
           {/* Brands Section */}
-          <Brands
+          {/* <Brands
             title="Clients & Brands"
             logos={brandLogos}
-          />
+          /> */}
 
           {/* Magnetic CTA & Mobile Socials */}
           <div className="pt-12 border-t border-neutral-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 pb-12">

@@ -21,6 +21,7 @@ type PillRect = { x: number; y: number; width: number; height: number }
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 let lastRouteActiveNavItem: DesktopNavItem | null = null
+let lastRouteTheme: 'dark' | 'light' | null = null
 
 const getActiveNavItem = (pathname: string): DesktopNavItem | null => {
   if (pathname === '/') return 'Home'
@@ -34,6 +35,12 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrollY, setScrollY] = useState(0)
   const [mounted, setMounted] = useState(false)
+
+  // Track theme to allow smooth cross-route color transitions
+  const [activeTheme, setActiveTheme] = useState<'dark' | 'light'>(
+    typeof window !== 'undefined' && lastRouteTheme ? lastRouteTheme : theme
+  )
+
   const router = useRouter()
   const isHome = router.pathname === '/'
   const activeNavItem = getActiveNavItem(router.pathname)
@@ -134,7 +141,16 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
   useEffect(() => {
     lastRouteActiveNavItem = activeNavItem
-  }, [activeNavItem])
+    lastRouteTheme = theme
+  }, [activeNavItem, theme])
+
+  useEffect(() => {
+    if (activeTheme !== theme) {
+      // Delay switching to the current theme to trigger CSS transitions after mount
+      const timer = setTimeout(() => setActiveTheme(theme), 50)
+      return () => clearTimeout(timer)
+    }
+  }, [theme, activeTheme])
 
   useEffect(() => {
     setMounted(true)
@@ -167,26 +183,72 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
     setIsMenuOpen(false)
   }
 
-  // Floating pill styles (Globally light as requested)
-  const navBgColor = 'bg-white/70 border-neutral-200/90'
-  const textColor = isMenuOpen ? 'text-white' : 'text-[#1D1D1F]'
+  const isLight = activeTheme === 'light' && !isMenuOpen
+  // Floating pill styles 
+  const navBgColor = isLight ? 'bg-white/30 border-black/10' : 'bg-[#1C1D20]/80 border-white/10'
+
+  // Unselected states (standard text in container)
+  const unselectedTextClass = isLight ? 'text-black/70 hover:text-black' : 'text-white/70 hover:text-white'
+
+  // Active pill state
+  const pillBgClass = isLight ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]' : 'bg-white'
+  const pillTextClass = isLight ? 'text-black' : 'text-black' // Both themes use black text on a white pill
+
+  // The conditional darken layer for light mode that only affects the background
+  const BlendLayer = () => (
+    isLight ? <div className="absolute inset-0 z-[-1] mix-blend-darken bg-black/[0.12] rounded-full pointer-events-none" /> : null
+  )
 
   return (
     <>
       {/* Desktop Navigation */}
       <motion.nav
-        className={`hidden lg:flex fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-fit pl-6 pr-2 py-1.5 rounded-full items-center justify-center pointer-events-auto backdrop-blur-xl border shadow-sm ${navBgColor} transition-colors duration-500`}
+        className={`hidden lg:flex fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-fit pl-6 pr-2 py-1.5 rounded-full items-center justify-center pointer-events-auto backdrop-blur-md border shadow-sm ${navBgColor} transition-colors duration-500 overflow-hidden`}
+        style={{ WebkitBackdropFilter: "blur(12px)", willChange: "transform, opacity" }}
       >
+        <BlendLayer />
+
         {/* Logo / Name */}
-        <Link href="/" className={`pr-6 py-2 ${textColor} font-space-grotesk font-medium text-[14.375px] leading-tight hover:opacity-70 transition-opacity z-10 shrink-0`}>
+        <Link href="/" className={`pr-6 py-2 ${unselectedTextClass} font-space-grotesk font-medium text-[14.375px] leading-tight hover:opacity-70 transition-colors duration-500 z-10 shrink-0`}>
           Benedikt Schnupp
         </Link>
 
         {/* Desktop Links Container */}
         <div ref={linksContainerRef} className="relative flex items-center gap-1">
+          {/* Base Unselected Links */}
+          {desktopNavLinks.map((link) => (
+            <Link key={`base-${link.name}`} href={link.href} passHref legacyBehavior>
+              <a
+                ref={(node) => {
+                  itemRefs.current[link.name] = node
+                }}
+                className={`relative px-4 py-2 rounded-full font-inter font-medium text-[13.5px] transition-colors duration-500 z-10 ${unselectedTextClass}`}
+                onMouseEnter={() => setHoveredNavItem(link.name)}
+                onMouseLeave={() => setHoveredNavItem(null)}
+              >
+                {link.name}
+              </a>
+            </Link>
+          ))}
+
+          <Link href="/contact" passHref legacyBehavior>
+            <a
+              ref={(node) => {
+                itemRefs.current.Contact = node
+              }}
+              className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-500 z-10 ${unselectedTextClass}`}
+              onMouseEnter={() => setHoveredNavItem('Contact')}
+              onMouseLeave={() => setHoveredNavItem(null)}
+              aria-label="Contact"
+            >
+              <Mail className="w-[18px] h-[18px]" strokeWidth={1.8} />
+            </a>
+          </Link>
+
+          {/* Active Highlight Pill / Mask */}
           {pillRect && (
             <motion.div
-              className="absolute bg-black rounded-full z-0 pointer-events-none"
+              className={`absolute top-0 left-0 rounded-full z-20 pointer-events-none overflow-hidden ${pillBgClass}`}
               initial={false}
               animate={{
                 x: pillRect.x,
@@ -196,50 +258,39 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                 opacity: 1
               }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          )}
-
-          {desktopNavLinks.map((link) => {
-            const isHighlighted = highlightedNavItem === link.name
-
-            return (
-              <Link key={link.name} href={link.href} passHref legacyBehavior>
-                <a
-                  ref={(node) => {
-                    itemRefs.current[link.name] = node
-                  }}
-                  className={`relative px-4 py-2 rounded-full font-space-grotesk font-medium text-[13.5px] transition-colors z-10 ${isHighlighted ? 'text-white' : 'text-neutral-500 hover:text-black'}`}
-                  onMouseEnter={() => setHoveredNavItem(link.name)}
-                  onMouseLeave={() => setHoveredNavItem(null)}
-                >
-                  {link.name}
-                </a>
-              </Link>
-            )
-          })}
-
-          <Link href="/contact" passHref legacyBehavior>
-            <a
-              ref={(node) => {
-                itemRefs.current.Contact = node
-              }}
-              className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors z-10 ${highlightedNavItem === 'Contact' ? 'text-white' : 'text-neutral-500 hover:text-black'}`}
-              onMouseEnter={() => setHoveredNavItem('Contact')}
-              onMouseLeave={() => setHoveredNavItem(null)}
-              aria-label="Contact"
             >
-              <Mail className="w-[18px] h-[18px]" strokeWidth={1.8} />
-            </a>
-          </Link>
+              {/* Duplicate translated content perfectly masking underneath */}
+              <motion.div
+                className="absolute top-0 left-0 flex items-center gap-1"
+                initial={false}
+                animate={{
+                  x: -pillRect.x,
+                  y: -pillRect.y,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              >
+                {desktopNavLinks.map((link) => (
+                  <div key={`mask-${link.name}`} className={`relative px-4 py-2 rounded-full font-inter font-medium text-[13.5px] whitespace-nowrap ${pillTextClass}`}>
+                    {link.name}
+                  </div>
+                ))}
+
+                <div className={`relative w-9 h-9 rounded-full flex items-center justify-center ${pillTextClass}`}>
+                  <Mail className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </div>
       </motion.nav>
 
       {/* Mobile Navigation */}
       <motion.nav
-        className={`lg:hidden fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] flex items-center justify-between pointer-events-none`}
+        className={`lg:hidden fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] flex items-center justify-between pointer-events-none transition-colors duration-500`}
       >
         {/* Title Pill */}
-        <Link href="/" className={`pointer-events-auto px-6 h-[46px] rounded-full flex items-center justify-center backdrop-blur-xl border shadow-sm ${navBgColor} ${textColor} font-space-grotesk font-medium text-[14.375px] leading-none hover:opacity-70 transition-opacity z-10`}>
+        <Link href="/" style={{ WebkitBackdropFilter: "blur(12px)" }} className={`pointer-events-auto px-6 h-[46px] rounded-full flex items-center justify-center backdrop-blur-md border shadow-sm ${navBgColor} ${unselectedTextClass} font-space-grotesk font-medium text-[14.375px] leading-none hover:opacity-70 transition-colors duration-500 z-10 relative overflow-hidden`}>
+          <BlendLayer />
           Benedikt Schnupp
         </Link>
 
@@ -247,9 +298,11 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
         <button
           onClick={toggleMenu}
           aria-label="Toggle menu"
-          className={`pointer-events-auto w-[46px] h-[46px] flex items-center justify-center rounded-full backdrop-blur-xl border shadow-sm ${navBgColor} ${textColor} hover:bg-white/5 transition-colors z-10`}
+          style={{ WebkitBackdropFilter: "blur(12px)" }}
+          className={`pointer-events-auto w-[46px] h-[46px] flex items-center justify-center rounded-full backdrop-blur-md border shadow-sm ${navBgColor} ${unselectedTextClass} hover:opacity-70 transition-colors duration-500 z-10 relative overflow-hidden`}
         >
-          <Menu className="w-5 h-5" />
+          <BlendLayer />
+          <Menu className="w-5 h-5 relative z-10" />
         </button>
       </motion.nav>
 
@@ -313,7 +366,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                       }}>
                         <Link href={item.href} passHref legacyBehavior>
                           <a
-                            className={`font-space-grotesk font-bold text-4xl transition-colors ${activeNavItem === item.name ? 'text-white' : 'text-white/70 hover:text-white'}`}
+                            className={`font-inter font-bold text-4xl transition-colors ${activeNavItem === item.name ? 'text-white' : 'text-white/70 hover:text-white'}`}
                             onClick={closeMenu}
                           >
                             {item.name}
@@ -335,13 +388,13 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                         href="https://linkedin.com/in/benedikt-schnupp-928112116"
                         target="_blank"
                         rel="noopener"
-                        className="group flex items-center gap-1 text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
+                        className="group flex items-center gap-1 text-white/70 font-inter text-[15px] hover:text-white transition-colors w-fit"
                       >
                         LinkedIn <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
                       </a>
                       <a
                         href="mailto:mail@benediktschnupp.com"
-                        className="group flex items-center gap-1 text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
+                        className="group flex items-center gap-1 text-white/70 font-inter text-[15px] hover:text-white transition-colors w-fit"
                       >
                         Email <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
                       </a>
@@ -351,10 +404,10 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                     <motion.div className="flex flex-col gap-4" variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
                       <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Legal</h3>
                       <Link href="/datenschutzerklaerung" passHref legacyBehavior>
-                        <a className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit" onClick={closeMenu}>Privacy</a>
+                        <a className="text-white/70 font-inter text-[15px] hover:text-white transition-colors w-fit" onClick={closeMenu}>Privacy</a>
                       </Link>
                       <Link href="/impressum" passHref legacyBehavior>
-                        <a className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit" onClick={closeMenu}>Imprint</a>
+                        <a className="text-white/70 font-inter text-[15px] hover:text-white transition-colors w-fit" onClick={closeMenu}>Imprint</a>
                       </Link>
                     </motion.div>
                   </div>
@@ -366,7 +419,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                   >
                     <Link href="/contact" passHref legacyBehavior>
                       <a
-                        className="flex items-center justify-center gap-3 w-full bg-white text-black py-4 px-6 rounded-lg font-space-grotesk font-bold text-lg hover:bg-white/90 transition-colors"
+                        className="flex items-center justify-center gap-3 w-full bg-white text-black py-4 px-6 rounded-lg font-inter font-bold text-lg hover:bg-white/90 transition-colors"
                         onClick={closeMenu}
                       >
                         <Mail className="w-5 h-5" />
