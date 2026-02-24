@@ -4,6 +4,8 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowUpRight, Mail, Linkedin } from 'lucide-react'
 
 import MagneticButton from './MagneticButton'
+import Brands from './Brands'
+import { brandLogos } from '../lib/brands'
 
 // Word-by-word scroll reveal component
 const ScrubText = ({ text, progress }: { text: string, progress: any }) => {
@@ -119,6 +121,12 @@ const About = () => {
               ))}
             </div>
           </div>
+
+          {/* Brands Section */}
+          <Brands
+            title="Clients & Brands"
+            logos={brandLogos}
+          />
 
           {/* Magnetic CTA & Mobile Socials */}
           <div className="pt-12 border-t border-neutral-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 pb-12">
