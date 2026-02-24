@@ -1,15 +1,71 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/router'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll } from 'framer-motion'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { Project } from '../lib/markdown'
+
+const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
+const ThreeScene = dynamic(() => import('./ThreeScene'), { ssr: false })
 import { resolveAssetPath } from '../lib/assets'
 import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
 import CodeBlock from './CodeBlock'
 import ColorPalette from './ColorPalette'
 import Callout, { CalloutVariant } from './Callout'
 import Navigation from './Navigation'
-import { ArrowLeft } from 'lucide-react'
+import ScrollScrubVideo from './ScrollScrubVideo'
+import Mockup from './Mockup'
+import FontSpecimen from './FontSpecimen'
+import StatHighlight from './StatHighlight'
+import MagneticButton from './MagneticButton'
+
+import { useTransform } from 'framer-motion'
+
+// Paragraph that acts like ScrubText, using continuous scroll progress to reveal
+const ScrubParagraph = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => {
+  const ref = useRef<HTMLParagraphElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 90%", "start 40%"]
+  })
+
+  const opacity = useTransform(scrollYProgress, [0, 1], [0.2, 1])
+
+  return (
+    <motion.p
+      ref={ref}
+      style={{ opacity }}
+      className={className}
+    >
+      {children}
+    </motion.p>
+  )
+}
+
+// Senior UX/UI styled list with scroll scrub
+const SeniorList = ({ items, accentColor }: { items: React.ReactNode[], accentColor: string }) => {
+  const ref = useRef<HTMLUListElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 95%", "end 80%"]
+  })
+
+  const opacity = useTransform(scrollYProgress, [0, 1], [0.2, 1])
+
+  return (
+    <motion.ul ref={ref} style={{ opacity }} className="w-full flex flex-col border-t border-black/10 mt-8 mb-16">
+      {items.map((item, idx) => (
+        <li key={idx} className="flex items-start gap-6 py-6 border-b border-black/10 group hover:bg-neutral-50/50 transition-colors duration-300">
+          <span className="text-neutral-300 font-mono text-sm tracking-widest pt-1" style={{ color: accentColor }}>
+            {(idx + 1).toString().padStart(2, '0')}
+          </span>
+          <span className="text-[20px] md:text-[24px] leading-[1.4] text-neutral-800 font-medium tracking-tight">
+            {item}
+          </span>
+        </li>
+      ))}
+    </motion.ul>
+  )
+}
 
 interface ArticleProps {
   project: Project
@@ -23,14 +79,6 @@ const isVideoFile = (url: string): boolean => {
   return videoExtensions.some(ext => url.toLowerCase().endsWith(ext))
 }
 
-// Helper function to format date from YYYY-MM-DD to "Year" or full date
-const formatYear = (dateString: string): string => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return '' 
-  return date.getFullYear().toString()
-}
-
 // Attribute parser for fenced code blocks
 const parseFenceAttributes = (attr: string): Record<string, string> => {
   const attrs: Record<string, string> = {}
@@ -42,19 +90,99 @@ const parseFenceAttributes = (attr: string): Record<string, string> => {
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1)
     }
-    attrs[key] = val
+    if (val.trim() !== '') {
+      attrs[key] = val
+    }
   }
   return attrs
 }
 
+const parseVector3 = (val: string | undefined): [number, number, number] | undefined => {
+  if (!val) return undefined;
+  const parts = val.split(/[,\s]+/).filter(Boolean).map(Number);
+  if (parts.length === 3 && parts.every(n => !isNaN(n))) return [parts[0], parts[1], parts[2]];
+  if (parts.length === 1 && !isNaN(parts[0])) return [parts[0], parts[0], parts[0]];
+  return undefined;
+}
+
+const parseRotationVector3 = (val: string | undefined): [number, number, number] | undefined => {
+  if (!val) return undefined;
+  const parts = val.split(/[,\s]+/).filter(Boolean).map(n => Number(n) * (Math.PI / 180));
+  if (parts.length === 3 && parts.every(n => !isNaN(n))) return [parts[0], parts[1], parts[2]];
+  if (parts.length === 1 && !isNaN(parts[0])) return [parts[0], parts[0], parts[0]];
+  return undefined;
+}
+
+const parseScale = (val: string | undefined): number | [number, number, number] | undefined => {
+  if (!val) return undefined;
+  const parts = val.split(/[,\s]+/).filter(Boolean).map(Number);
+  if (parts.length === 3 && parts.every(n => !isNaN(n))) return [parts[0], parts[1], parts[2]];
+  if (parts.length >= 1 && !isNaN(parts[0])) return parts[0];
+  return undefined;
+}
+
+const ANIMATION_SEQUENCE_FENCE_TYPES = new Set([
+  'animationsequence',
+  'animation-sequence',
+  'scrollanimation',
+  'scroll-animation',
+  'scrollvideo',
+  'scroll-video',
+])
+
+const parseOptionalNumber = (value?: string): number | undefined => {
+  if (!value) return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return undefined
+  return parsed
+}
+
+const parseAnimationSequenceFence = (body: string): { videoPath?: string; mobileVideoPath?: string; safariVideoPath?: string; frameCount?: number } => {
+  const result: { videoPath?: string; mobileVideoPath?: string; safariVideoPath?: string; frameCount?: number } = {}
+  const source = ` ${body} `
+
+  const videoMatch = source.match(
+    /(?:^|[\s;\n\r])(videopath|video|path)\s*[:=]\s*("[^"]+"|'[^']+'|[^\s;\n\r]+)/i
+  )
+  if (videoMatch?.[2]) {
+    result.videoPath = videoMatch[2].trim().replace(/^['"]|['"]$/g, '')
+  }
+
+  const mobileVideoMatch = source.match(
+    /(?:^|[\s;\n\r])(mobilevideopath|mobilevideo|mobile)\s*[:=]\s*("[^"]+"|'[^']+'|[^\s;\n\r]+)/i
+  )
+  if (mobileVideoMatch?.[2]) {
+    result.mobileVideoPath = mobileVideoMatch[2].trim().replace(/^['"]|['"]$/g, '')
+  }
+
+  const safariVideoMatch = source.match(
+    /(?:^|[\s;\n\r])(safarivideopath|safarivideo|safari)\s*[:=]\s*("[^"]+"|'[^']+'|[^\s;\n\r]+)/i
+  )
+  if (safariVideoMatch?.[2]) {
+    result.safariVideoPath = safariVideoMatch[2].trim().replace(/^['"]|['"]$/g, '')
+  }
+
+  const frameMatch = source.match(
+    /(?:^|[\s;\n\r])(framecount|frames|frame)\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)/i
+  )
+  if (frameMatch?.[2]) {
+    const parsed = parseOptionalNumber(frameMatch[2])
+    if (parsed !== undefined) {
+      result.frameCount = parsed
+    }
+  }
+
+  return result
+}
+
 // Custom markdown components with "Apple-like" Grid Layout
 const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { content: string; project: Project; accentColor: string; allProjects?: Project[] }) => {
-  
-  // Layout Classes - Apple Style: highly tailored, centralized text, wide media
-  const colText = "col-span-1 md:col-start-4 md:col-span-6" // 6 cols centered (approx 680-700px on large screens)
-  const colWide = "col-span-1 md:col-start-2 md:col-span-10" // Wider breakout
-  const colFull = "col-span-1 md:col-span-12" // Full width
-  
+
+  // Layout Classes: Flex-based for senior typography layout
+  const colText = "w-full max-w-[48rem]" // slightly wider text column for large type
+  const colWide = "w-full max-w-[1400px]" // Match hero image max width
+  const colFull = "w-full"
+
   let currentIndex = 0
 
   type RowGalleryItem = { url: string; caption?: string }
@@ -231,7 +359,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             ref={scrollerRef}
             className={[
               'scrollbar-hide flex gap-4 sm:gap-6 overflow-x-auto pb-2',
-              'snap-x snap-mandatory scroll-px-4 sm:scroll-px-8 md:scroll-px-12 lg:scroll-px-[100px] xl:scroll-px-[140px]',
+              'snap-x snap-mandatory scroll-px-4 sm:scroll-px-8 md:scroll-px-10 lg:scroll-px-16 xl:scroll-px-20 2xl:scroll-px-24',
               '[scroll-snap-stop:always] [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch]',
               'cursor-grab select-none',
               isDragging ? 'cursor-grabbing' : '',
@@ -249,7 +377,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 <figure
                   key={idx}
                   data-row-gallery-item="1"
-                  className="snap-start snap-always shrink-0 first:ml-4 sm:first:ml-8 md:first:ml-12 lg:first:ml-[100px] xl:first:ml-[140px] last:mr-4 sm:last:mr-8 md:last:mr-12 lg:last:mr-[100px] xl:last:mr-[140px]"
+                  className="snap-start snap-always shrink-0 first:ml-4 sm:first:ml-8 md:first:ml-10 lg:first:ml-16 xl:first:ml-20 2xl:first:ml-24 last:mr-4 sm:last:mr-8 md:last:mr-10 lg:last:mr-16 xl:last:mr-20 2xl:last:mr-24"
                 >
                   <div className="rounded-2xl overflow-hidden bg-neutral-50 shadow-sm border border-black/5 ring-1 ring-black/5">
                     {isV ? (
@@ -277,19 +405,21 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
           {/* Minimal controls under gallery: small buttons + center stepper */}
           {items.length > 1 && (
-            <div className="mt-4 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px]">
+            <div className="mt-4 px-4 sm:px-8 md:px-10 lg:px-16 xl:px-20 2xl:px-24">
               <div className="flex items-center justify-between gap-4">
-                <button
-                  type="button"
-                  onClick={scrollPrev}
-                  disabled={!canScrollLeft}
-                  aria-label="Previous image"
-                  className="h-10 w-10 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-black disabled:hover:border-neutral-200"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+                <MagneticButton className={!canScrollLeft ? 'opacity-30 pointer-events-none' : ''}>
+                  <button
+                    type="button"
+                    onClick={scrollPrev}
+                    disabled={!canScrollLeft}
+                    aria-label="Previous image"
+                    className="h-12 w-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-colors shadow-sm"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </MagneticButton>
 
                 <div className="flex items-center justify-center gap-2">
                   {items.slice(0, visibleDots).map((_, idx) => {
@@ -312,17 +442,19 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                   })}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={scrollNext}
-                  disabled={!canScrollRight}
-                  aria-label="Next image"
-                  className="h-10 w-10 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-black disabled:hover:border-neutral-200"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+                <MagneticButton className={!canScrollRight ? 'opacity-30 pointer-events-none' : ''}>
+                  <button
+                    type="button"
+                    onClick={scrollNext}
+                    disabled={!canScrollRight}
+                    aria-label="Next image"
+                    className="h-12 w-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-colors shadow-sm"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </MagneticButton>
               </div>
             </div>
           )}
@@ -333,9 +465,19 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
   const parseMarkdown = (text: string) => {
     const lines = text.split('\n')
-    const elements: React.ReactElement[] = []
-    let currentSection: string[] = []
+    const sections: { title: React.ReactNode | null, elements: React.ReactElement[] }[] = []
+    let currentElements: React.ReactElement[] = []
+    let currentTitle: React.ReactNode | null = null
+    let textBuffer: string[] = []
     let lastElementType: 'text' | 'compact' | 'block' | 'none' = 'none'
+
+    const flushSection = () => {
+      if (currentElements.length > 0 || currentTitle) {
+        sections.push({ title: currentTitle, elements: currentElements })
+      }
+      currentElements = []
+      currentTitle = null
+    }
 
     const isTwoUpGalleryLine = (raw: string): boolean => {
       const s = (raw || '').trim()
@@ -364,8 +506,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
     }
 
     const isPaletteLine = (raw: string): boolean => {
-        const s = (raw || '').trim().toLowerCase()
-        return s.startsWith('```palette') || (s.startsWith('```') && s.includes('type="palette"'))
+      const s = (raw || '').trim().toLowerCase()
+      return s.startsWith('```palette') || (s.startsWith('```') && s.includes('type="palette"'))
     }
 
     const nextNonEmptyLine = (startIdx: number): string | null => {
@@ -377,27 +519,27 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
     }
 
     const getLineType = (line: string | null): 'compact' | 'block' | 'text' => {
-        if (!line) return 'text'
-        if (isTwoUpGalleryLine(line)) return 'compact'
-        if (isPaletteLine(line)) return 'compact'
-        // Check for other blocks
-        const s = line.trim()
-        if (s.startsWith('```') || s.startsWith('![') || s.includes('[video')) return 'block'
-        return 'text'
+      if (!line) return 'text'
+      if (isTwoUpGalleryLine(line)) return 'compact'
+      if (isPaletteLine(line)) return 'compact'
+      // Check for other blocks
+      const s = line.trim()
+      if (s.startsWith('```') || s.startsWith('![') || s.includes('[video')) return 'block'
+      return 'text'
     }
 
     const getBlockMargins = (isCompact: boolean, nextIsCompact: boolean) => {
-        let mt = 'mt-12' // fallback standard
-        if (lastElementType === 'text') mt = 'mt-6' // Text(mb-6) + mt-6 = 12
-        else if (lastElementType === 'block') mt = 'mt-0' // Block(mb-12) + mt-0 = 12
-        else if (lastElementType === 'compact') mt = isCompact ? 'mt-6' : 'mt-12'
-        else if (lastElementType === 'none') mt = 'mt-0'
-        
-        // Compact elements collapse bottom margin if next is also compact
-        let mb = 'mb-12'
-        if (isCompact && nextIsCompact) mb = 'mb-0'
-        
-        return `${mt} ${mb}`
+      let mt = 'mt-12' // fallback standard
+      if (lastElementType === 'text') mt = 'mt-6' // Text(mb-6) + mt-6 = 12
+      else if (lastElementType === 'block') mt = 'mt-0' // Block(mb-12) + mt-0 = 12
+      else if (lastElementType === 'compact') mt = isCompact ? 'mt-6' : 'mt-12'
+      else if (lastElementType === 'none') mt = 'mt-0'
+
+      // Compact elements collapse bottom margin if next is also compact
+      let mb = 'mb-12'
+      if (isCompact && nextIsCompact) mb = 'mb-0'
+
+      return `${mt} ${mb}`
     }
 
     const paragraphsFromLines = (ls: string[]) => {
@@ -448,31 +590,31 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
     }
 
     const flushCurrentSection = () => {
-      if (currentSection.length > 0) {
+      if (textBuffer.length > 0) {
         // Merge empty lines into paragraph breaks
         let buffer: string[] = []
-        currentSection.forEach(l => {
-            if (l.trim() === '') {
-                if (buffer.length) {
-                    elements.push(
-                        <p key={`p-${currentIndex++}`} className={`${colText} text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em] mb-6`}>
-                            {parseInlineElements(buffer.join(' '))}
-                        </p>
-                    )
-                    buffer = []
-                }
-            } else {
-                buffer.push(l)
+        textBuffer.forEach(l => {
+          if (l.trim() === '') {
+            if (buffer.length) {
+              currentElements.push(
+                <ScrubParagraph key={`p-${currentIndex++}`} className={`${colText} text-[19px] md:text-[24px] lg:text-[28px] leading-[1.5] md:leading-[1.4] text-[#1D1D1F] font-inter tracking-[-0.015em] mb-4 md:mb-8`}>
+                  {parseInlineElements(buffer.join(' '))}
+                </ScrubParagraph>
+              )
+              buffer = []
             }
+          } else {
+            buffer.push(l)
+          }
         })
         if (buffer.length) {
-            elements.push(
-                <p key={`p-${currentIndex++}`} className={`${colText} text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em] mb-6`}>
-                    {parseInlineElements(buffer.join(' '))}
-                </p>
-            )
+          currentElements.push(
+            <ScrubParagraph key={`p-${currentIndex++}`} className={`${colText} text-[19px] md:text-[24px] lg:text-[28px] leading-[1.5] md:leading-[1.4] text-[#1D1D1F] font-inter tracking-[-0.015em] mb-4 md:mb-8`}>
+              {parseInlineElements(buffer.join(' '))}
+            </ScrubParagraph>
+          )
         }
-        currentSection = []
+        textBuffer = []
         lastElementType = 'text'
       }
     }
@@ -481,35 +623,35 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       // Basic Bold, Italic & Link parsing
       const boldRegex = /\*\*(.*?)\*\*/g
       const parts = text.split(boldRegex)
-      
+
       return parts.map((part, index) => {
         if (index % 2 === 1) {
-            return <strong key={index} className="font-semibold text-black">{part}</strong>
+          return <strong key={index} className="font-semibold text-black">{part}</strong>
         }
 
         // Split by Italic
         const italicParts = part.split(/\*([^*]+)\*/g)
         return italicParts.map((subPart, subIndex) => {
-             if (subIndex % 2 === 1) {
-                 return <em key={`${index}-${subIndex}`} className="italic">{subPart}</em>
-             }
+          if (subIndex % 2 === 1) {
+            return <em key={`${index}-${subIndex}`} className="italic">{subPart}</em>
+          }
 
-             // Handle links
-             const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-             const nodes: React.ReactNode[] = []
-             let lastIndex = 0
-             let m: RegExpExecArray | null
-             while ((m = linkRegex.exec(subPart)) !== null) {
-                 if (m.index > lastIndex) nodes.push(subPart.slice(lastIndex, m.index))
-                 nodes.push(
-                     <a key={`${index}-${subIndex}-${m.index}`} href={m[2]} target="_blank" rel="noopener" className="underline decoration-2 underline-offset-2 transition-colors font-medium hover:opacity-70" style={{ color: accentColor, textDecorationColor: `${accentColor}40` }}>
-                         {m[1]}
-                     </a>
-                 )
-                 lastIndex = m.index + m[0].length
-             }
-             if (lastIndex < subPart.length) nodes.push(subPart.slice(lastIndex))
-             return <React.Fragment key={`${index}-${subIndex}`}>{nodes}</React.Fragment>
+          // Handle links
+          const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+          const nodes: React.ReactNode[] = []
+          let lastIndex = 0
+          let m: RegExpExecArray | null
+          while ((m = linkRegex.exec(subPart)) !== null) {
+            if (m.index > lastIndex) nodes.push(subPart.slice(lastIndex, m.index))
+            nodes.push(
+              <a key={`${index}-${subIndex}-${m.index}`} href={m[2]} target="_blank" rel="noopener" className="underline decoration-2 underline-offset-2 transition-colors font-medium hover:opacity-70" style={{ color: accentColor, textDecorationColor: `${accentColor}40` }}>
+                {m[1]}
+              </a>
+            )
+            lastIndex = m.index + m[0].length
+          }
+          if (lastIndex < subPart.length) nodes.push(subPart.slice(lastIndex))
+          return <React.Fragment key={`${index}-${subIndex}`}>{nodes}</React.Fragment>
         })
       })
     }
@@ -536,8 +678,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           if (refs.length > 0) {
             const nextMeta = getLineType(nextNonEmptyLine(i + 1))
             const margins = getBlockMargins(false, nextMeta === 'compact')
-            
-            elements.push(
+
+            currentElements.push(
               <div key={`projrefs-${currentIndex++}`} className={`${colWide} ${margins}`}>
                 <div className={`grid gap-6 ${refs.length > 1 ? 'md:grid-cols-2' : ''}`}>
                   {refs.map(ref => (
@@ -584,24 +726,24 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const level = match ? match[0].length : 1
         const text = line.replace(/^#+\s*/, '')
         const sizes = {
-            1: "text-[40px] md:text-[56px] leading-[1.07] tracking-[-0.015em] font-bold font-space-grotesk mt-20 mb-8 text-[#1D1D1F]",
-            2: "text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-16 mb-6 text-[#1D1D1F]",
-            3: "text-[24px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-10 mb-4 text-[#1D1D1F]"
+          1: "text-4xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-tighter font-bold text-black mt-16 md:mt-24 mb-8 md:mb-12",
+          2: "text-[28px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-12 md:mt-16 mb-4 md:mb-6 text-[#1D1D1F]",
+          3: "text-[22px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-8 md:mt-10 mb-3 md:mb-4 text-[#1D1D1F]"
         }
 
         // @ts-ignore
         let headerClass = sizes[level] || sizes[1]
-        
+
         // If H1 is the first element to be rendered, remove the top margin
-        if (level === 1 && elements.length === 0) {
-            headerClass = headerClass.replace('mt-20', 'mt-0')
+        if (level === 1 && currentElements.length === 0) {
+          headerClass = headerClass.replace('mt-16 md:mt-24', 'mt-0 md:mt-0')
         }
 
-        elements.push(
-             // @ts-ignore
-            <div key={`h-${currentIndex++}`} className={`${colText} ${headerClass}`}>
-                {text}
-            </div>
+        currentElements.push(
+          // @ts-ignore
+          <div key={`h-${currentIndex++}`} className={`${colText} ${headerClass}`}>
+            {text}
+          </div>
         )
         lastElementType = 'text'
       }
@@ -609,20 +751,15 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       else if (line.startsWith('- ')) {
         flushCurrentSection()
         const listItems: string[] = []
-        while (i < lines.length && lines[i].trim().startsWith('- ')) { 
-            listItems.push(lines[i].trim().replace('- ', ''))
-            i++ 
+        while (i < lines.length && lines[i].trim().startsWith('- ')) {
+          listItems.push(lines[i].trim().replace('- ', ''))
+          i++
         }
         i--
-        elements.push(
-            <ul key={`list-${currentIndex++}`} className={`${colText} space-y-3 mb-10 mt-2`}>
-                {listItems.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-4 text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter">
-                        <span className="shrink-0 mt-2.5 w-1.5 h-1.5 rounded-full bg-neutral-300 transform" style={{ backgroundColor: accentColor }} />
-                        <span>{parseInlineElements(item)}</span>
-                    </li>
-                ))}
-            </ul>
+        currentElements.push(
+          <div key={`list-${currentIndex++}`} className={colText}>
+            <SeniorList items={listItems.map(item => parseInlineElements(item))} accentColor={accentColor} />
+          </div>
         )
         lastElementType = 'text'
       }
@@ -638,6 +775,28 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const bodyLines: string[] = []
         while (i < lines.length && !lines[i].trim().startsWith('```')) { bodyLines.push(lines[i]); i++ }
         const body = bodyLines.join('\n')
+        const sequenceBodyConfig = parseAnimationSequenceFence(body)
+        const sequenceVideoPath = attrs.videoPath || attrs.video || attrs.path || sequenceBodyConfig.videoPath || project.animationSequence?.videoPath
+        const sequenceMobileVideoPath =
+          attrs.mobileVideoPath ||
+          attrs.mobileVideo ||
+          attrs.mobilevideopath ||
+          attrs.mobilevideo ||
+          attrs.mobile ||
+          sequenceBodyConfig.mobileVideoPath ||
+          project.animationSequence?.mobileVideoPath
+        const sequenceSafariVideoPath =
+          attrs.safariVideoPath ||
+          attrs.safariVideo ||
+          attrs.safarivideopath ||
+          attrs.safarivideo ||
+          attrs.safari ||
+          sequenceBodyConfig.safariVideoPath ||
+          project.animationSequence?.safariVideoPath
+        const sequenceFrameCount =
+          parseOptionalNumber(attrs.frameCount || attrs.frames || attrs.frame) ??
+          sequenceBodyConfig.frameCount ??
+          project.animationSequence?.frameCount
 
         const calloutVariant = normalizeCalloutVariant(typeLower, attrs.type)
         if (calloutVariant) {
@@ -645,8 +804,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           const nextMeta = getLineType(nextNonEmptyLine(i + 1)) // i is closing fence now? wait. loop stops at closing fence. so lines[i] is closing. loop check lines[i].startsWith.
           // Correct, i is at closing fence. next content is i+1.
           const margins = getBlockMargins(false, nextMeta === 'compact')
-          
-          elements.push(
+
+          currentElements.push(
             <div key={`callout-${currentIndex++}`} className={`${colText} ${margins}`}>
               <Callout
                 variant={calloutVariant}
@@ -661,25 +820,57 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           )
           lastElementType = 'block'
         }
+        else if (ANIMATION_SEQUENCE_FENCE_TYPES.has(typeLower)) {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          if (sequenceVideoPath) {
+            currentElements.push(
+              <div key={`anim-seq-${currentIndex++}`} className={`${colWide} ${margins}`}>
+                <ScrollScrubVideo
+                  videoPath={sequenceVideoPath}
+                  mobileVideoPath={sequenceMobileVideoPath}
+                  safariVideoPath={sequenceSafariVideoPath}
+                  frameCount={sequenceFrameCount}
+                  accentColor={accentColor}
+                />
+              </div>
+            )
+          } else {
+            currentElements.push(
+              <div key={`anim-seq-missing-${currentIndex++}`} className={`${colText} ${margins}`}>
+                <Callout variant="warning" title="Animation block missing videoPath" accentColor={accentColor}>
+                  <p>
+                    Add <code>videoPath: assets/your-animation.mp4</code> to this block or define
+                    <code> animationSequence.videoPath </code>
+                    in the project frontmatter.
+                  </p>
+                </Callout>
+              </div>
+            )
+          }
+
+          lastElementType = 'block'
+        }
         else if (typeLower === 'palette') {
           // Parse palette data... simple version for now
           const parsePaletteLines = (lines: string[]) => {
             return lines.filter(l => l.trim()).map(l => {
-                const parts = l.split(/\s+/)
-                return { name: parts[0], hex: parts.find(p => p.startsWith('#')) || '#000' }
+              const parts = l.split(/\s+/)
+              return { name: parts[0], hex: parts.find(p => p.startsWith('#')) || '#000' }
             })
           }
-           // @ts-ignore
+          // @ts-ignore
           const colors = parsePaletteLines(bodyLines)
 
           // Lookahead for next element type (skip closing fence at i has to be handled carefully. i points to closing fence)
           // Actually i is updated after loop: `while... i++`. Loop ends when line starts with ```.
           // So lines[i] IS the closing fence. 
           // So next line is i+1.
-          const nextMeta = getLineType(nextNonEmptyLine(i + 1)) 
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(true, nextMeta === 'compact')
-           
-          elements.push(
+
+          currentElements.push(
             <React.Fragment key={`palette-${currentIndex++}`}>
               {(attrs.title || attrs.description) && (
                 <div className={`${colText} mt-16 mb-6`}>
@@ -698,162 +889,330 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             </React.Fragment>
           )
           lastElementType = 'compact'
+        } else if (typeLower === 'mockup') {
+          const mockups = [attrs]
+
+          while (i + 1 < lines.length) {
+            let nextNonEmpty = i + 1
+            while (nextNonEmpty < lines.length && lines[nextNonEmpty].trim() === '') {
+              nextNonEmpty++
+            }
+            if (nextNonEmpty >= lines.length) break
+            const peekLine = lines[nextNonEmpty].trim()
+            if (peekLine.startsWith('```')) {
+              const fenceInfo = peekLine.replace(/^```+/, '').trim()
+              const [nextType, ...nextRest] = fenceInfo.split(/\s+/)
+              if (nextType.toLowerCase() === 'mockup') {
+                const nextAttrs = parseFenceAttributes(nextRest.join(' '))
+                // skip lines inside the body
+                let j = nextNonEmpty + 1
+                while (j < lines.length && !lines[j].trim().startsWith('```')) {
+                  j++
+                }
+                mockups.push(nextAttrs)
+                i = j // Advance the main index to the closing fence of this newly consumed block
+                continue
+              }
+            }
+            break
+          }
+
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          currentElements.push(
+            <div key={`mockup-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>
+              <Mockup
+                items={mockups as any}
+                accentColor={accentColor}
+              />
+            </div>
+          )
+          lastElementType = 'block'
+        } else if (typeLower === 'lottie') {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          // Also parse attributes from the body if they weren't on the fence line
+          const bodyAttrs = parseFenceAttributes(body.replace(/\r?\n/g, ' '))
+          const animUrl = attrs.path || attrs.src || attrs.url || bodyAttrs.path || bodyAttrs.src || bodyAttrs.url || ''
+
+          const animSrc = animUrl ? resolveAssetPath(animUrl) : ''
+          const isLoop = (attrs.loop || bodyAttrs.loop) !== 'false'
+
+          currentElements.push(
+            <div key={`lottie-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>
+              {animSrc ? (
+                <div className="w-full max-w-[1400px] mx-auto rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 aspect-video relative ring-1 ring-black/5">
+                  <LottiePlayer
+                    src={animSrc}
+                    loop={isLoop}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <Callout variant="warning" title="Lottie block missing path" accentColor={accentColor}>
+                  <p>Add <code>path="assets/your-animation.json"</code> to this block.</p>
+                </Callout>
+              )}
+            </div>
+          )
+          lastElementType = 'block'
+        } else if (typeLower === 'three') {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          // Also parse attributes from the body if they weren't on the fence line
+          const bodyAttrs = parseFenceAttributes(body.replace(/\r?\n/g, ' '))
+
+          const height = attrs.height || bodyAttrs.height || '500px'
+          const modelSrc = attrs.model || bodyAttrs.model
+          const modelPath = modelSrc ? resolveAssetPath(modelSrc) : undefined
+          const preset = (attrs.preset || bodyAttrs.preset || 'city') as any
+          const autoRotate = (attrs.autoRotate || bodyAttrs.autoRotate) !== 'false'
+
+          const scale = parseScale(attrs.scale || bodyAttrs.scale)
+          const position = parseVector3(attrs.position || bodyAttrs.position)
+          const rotation = parseRotationVector3(attrs.rotation || bodyAttrs.rotation)
+
+          currentElements.push(
+            <div key={`three-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>
+              <ThreeScene
+                modelPath={modelPath}
+                height={height}
+                className="w-full"
+                preset={preset}
+                autoRotate={autoRotate}
+                scale={scale}
+                position={position}
+                rotation={rotation}
+              />
+            </div>
+          )
+          lastElementType = 'block'
+        } else if (typeLower === 'font') {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          currentElements.push(
+            <div key={`font-${currentIndex++}`} className={`${colWide} ${margins}`}>
+              <FontSpecimen
+                name={attrs.name || 'Inter'}
+                styles={attrs.styles}
+                sample={attrs.sample}
+                bgColor={attrs.bgColor}
+                color={attrs.color}
+              />
+            </div>
+          )
+          lastElementType = 'block'
+        } else if (typeLower === 'stats' || typeLower === 'stat') {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          const parseStatLines = (lines: string[]) => {
+            return lines.filter(l => l.trim()).map(l => {
+              const [val, ...descParts] = l.split('::')
+              return { value: val.trim(), label: descParts.join('::').trim() || '' }
+            })
+          }
+          const stats = parseStatLines(bodyLines)
+
+          currentElements.push(
+            <div key={`stats-${currentIndex++}`} className={`${colText} ${margins}`}>
+              <StatHighlight stats={stats} accentColor={accentColor} />
+            </div>
+          )
+          lastElementType = 'block'
+        } else if (typeLower === 'reveal') {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          currentElements.push(
+            <div key={`reveal-${currentIndex++}`} className={`${colWide} ${margins}`}>
+              <ScrubParagraph className="text-4xl md:text-7xl lg:text-[5vw] text-black font-semibold leading-[1.05] tracking-tighter max-w-[64rem]">
+                {parseInlineElements(body)}
+              </ScrubParagraph>
+            </div>
+          )
+          lastElementType = 'block'
         } else {
-             const nextMeta = getLineType(nextNonEmptyLine(i + 1))
-             const margins = getBlockMargins(false, nextMeta === 'compact')
-             
-             elements.push(
-                <React.Fragment key={`code-${currentIndex++}`}>
-                  {(attrs.title || attrs.description) && (
-                    <div className={`${colText} mt-16 mb-6`}>
-                      {attrs.title && <h2 className="code-block-title">{attrs.title}</h2>}
-                      {attrs.description && <p className="code-block-description">{attrs.description}</p>}
-                    </div>
-                  )}
-                  <div className={`${colWide} ${(attrs.title || attrs.description) ? 'mb-16' : margins}`}>
-                    <CodeBlock
-                      hideHeader
-                      title={attrs.title}
-                      description={attrs.description}
-                      code={body}
-                      language={type || 'text'}
-                      filename={attrs.filename}
-                      githubUrl={attrs.githubUrl}
-                      liveUrl={attrs.liveUrl}
-                    />
-                  </div>
-                </React.Fragment>
-            )
-            lastElementType = 'block'
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          currentElements.push(
+            <React.Fragment key={`code-${currentIndex++}`}>
+              {(attrs.title || attrs.description) && (
+                <div className={`${colText} mt-16 mb-6`}>
+                  {attrs.title && <h2 className="code-block-title">{attrs.title}</h2>}
+                  {attrs.description && <p className="code-block-description">{attrs.description}</p>}
+                </div>
+              )}
+              <div className={`${colText} ${(attrs.title || attrs.description) ? 'mb-12 md:mb-16' : margins}`}>
+                <CodeBlock
+                  hideHeader
+                  title={attrs.title}
+                  description={attrs.description}
+                  code={body}
+                  language={type || 'text'}
+                  filename={attrs.filename}
+                  githubUrl={attrs.githubUrl}
+                  liveUrl={attrs.liveUrl}
+                />
+              </div>
+            </React.Fragment>
+          )
+          lastElementType = 'block'
         }
       }
       // Images / Videos
       else if (line.startsWith('![') || line.includes('[video')) {
-         flushCurrentSection()
-         let mediaUrl = ''
-         let thumbnailUrl = ''
-         let isVid = false
-         
-         let loop = false
-         
-         if (line.includes('[video')) {
-             const match = line.match(/\[(video.*?)\]\((.*?)\)/)
-             if (match) {
-                 const label = match[1].toLowerCase()
-                 if (label.includes('loop')) loop = true
+        flushCurrentSection()
+        let mediaUrl = ''
+        let thumbnailUrl = ''
+        let isVid = false
 
-                 const parts = match[2].split('|')
-                 mediaUrl = parts[0]
-                 if (parts[1]) thumbnailUrl = parts[1]
-                 isVid = true
-             }
-         } else {
-             const match = line.match(/!\[.*?\]\((.*?)\)/) || line.match(/!\[(.*?)\]/)
-             if (match) mediaUrl = match[1]
-         }
+        let loop = false
 
-         if (mediaUrl) {
-              // Check if multiple images
-             if (mediaUrl.includes('|')) {
-                  // Support optional captions via `asset.jpg::Caption`
-                  const mediaList = mediaUrl.split('|').map(entry => {
-                    const [u, c] = entry.split('::')
-                    return { url: (u || '').trim(), caption: (c || '').trim() }
-                  }).filter(item => item.url)
+        if (line.includes('[video')) {
+          const match = line.match(/\[(video.*?)\]\((.*?)\)/)
+          if (match) {
+            const label = match[1].toLowerCase()
+            if (label.includes('loop')) loop = true
 
-                  // <=2 images: keep clean 2-up grid
-                  if (mediaList.length <= 2) {
-                    const nextMeta = getLineType(nextNonEmptyLine(i + 1))
-                    const margins = getBlockMargins(true, nextMeta === 'compact')
+            const parts = match[2].split('|')
+            mediaUrl = parts[0]
+            if (parts[1]) thumbnailUrl = parts[1]
+            isVid = true
+          }
+        } else {
+          const match = line.match(/!\[.*?\]\((.*?)\)/) || line.match(/!\[(.*?)\]/)
+          if (match) mediaUrl = match[1]
+        }
 
-                    elements.push(
-                      <div key={`gallery-${currentIndex++}`} className={`${colWide} grid grid-cols-1 md:grid-cols-2 gap-6 ${margins}`}>
-                        {mediaList.map((item, idx) => {
-                          const path = resolveAssetPath(item.url)
-                          const isV = isVideoFile(item.url)
-                          return (
-                            <figure key={idx} className="w-full">
-                              <div className="w-full rounded-2xl overflow-hidden bg-neutral-50 shadow-sm border border-black/5 ring-1 ring-black/5">
-                                {isV ? (
-                                  <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} />
-                                ) : (
-                                  <img src={path} className="w-full h-auto object-cover" loading="lazy" />
-                                )}
-                              </div>
-                              {item.caption && (
-                                <figcaption className="mt-3 text-[12px] leading-snug text-[#86868b] font-inter tracking-[-0.01em]">
-                                  {item.caption}
-                                </figcaption>
-                              )}
-                            </figure>
-                          )
-                        })}
-                      </div>
-                    )
-                    lastElementType = 'compact'
-                  } else {
-                    // >2 images: full-bleed horizontal row gallery (clean + minimal)
-                    const nextMeta = getLineType(nextNonEmptyLine(i + 1))
-                    // Row Gallery is FULL WIDTH. Usually treating it as Block.
-                    const margins = getBlockMargins(false, nextMeta === 'compact')
-                    
-                    // Row Gallery needs full control over its container width to do breakout logic.
-                    // The DraggableRowGallery component handles the breakout internally using w-screen etc.
-                    // But it must be placed in a container that allows it to "exist" in the grid flow properly.
-                    // We apply `colFull` here to the wrapper, and margins via the component prop.
-                    elements.push(
-                        <DraggableRowGallery 
-                            key={`gallery-row-${currentIndex++}`} 
-                            items={mediaList} 
-                            className={`${colFull} ${margins}`} 
-                        />
-                    )
-                    lastElementType = 'block'
-                  }
-             } else {
-                 const path = resolveAssetPath(mediaUrl.trim())
-                 const isV = isVid || isVideoFile(mediaUrl)
-                 const nextMeta = getLineType(nextNonEmptyLine(i + 1))
-                 const margins = getBlockMargins(false, nextMeta === 'compact')
+        if (mediaUrl) {
+          // Check if multiple images
+          if (mediaUrl.includes('|')) {
+            // Support optional captions via `asset.jpg::Caption`
+            const mediaList = mediaUrl.split('|').map(entry => {
+              const [u, c] = entry.split('::')
+              return { url: (u || '').trim(), caption: (c || '').trim() }
+            }).filter(item => item.url)
 
-                 elements.push(
-                    <figure key={`media-${currentIndex++}`} className={`${colWide} ${margins}`}>
-                        <div className="w-full rounded-2xl overflow-hidden bg-neutral-50 shadow-lg shadow-black/5 ring-1 ring-black/5">
-                             {isV ? (
-                                <AdaptiveVideoPlayer 
-                                  videoUrl={path} 
-                                  thumbnailUrl={thumbnailUrl ? resolveAssetPath(thumbnailUrl.trim()) : undefined}
-                                  autoStart={loop} 
-                                  loop={loop}
-                                  muted={loop}
-                                  minimal={loop}
-                                  color={accentColor} 
-                                />
-                             ) : (
-                                <img src={path} className="w-full h-auto object-cover" loading="lazy" />
-                             )}
+            // <=2 images: keep clean 2-up grid
+            if (mediaList.length <= 2) {
+              const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+              const margins = getBlockMargins(true, nextMeta === 'compact')
+
+              currentElements.push(
+                <div key={`gallery-${currentIndex++}`} className={`${colWide} grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 ${margins}`}>
+                  {mediaList.map((item, idx) => {
+                    const path = resolveAssetPath(item.url)
+                    const isV = isVideoFile(item.url)
+                    return (
+                      <figure key={idx} className="w-full">
+                        <div className="w-full rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 ring-1 ring-black/5">
+                          {isV ? (
+                            <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} />
+                          ) : (
+                            <img src={path} className="w-full h-auto object-cover" loading="lazy" />
+                          )}
                         </div>
-                    </figure>
-                 )
-                 lastElementType = 'block'
-             }
-         }
+                        {item.caption && (
+                          <figcaption className="mt-3 text-[12px] leading-snug text-[#86868b] font-inter tracking-[-0.01em]">
+                            {item.caption}
+                          </figcaption>
+                        )}
+                      </figure>
+                    )
+                  })}
+                </div>
+              )
+              lastElementType = 'compact'
+            } else {
+              // >2 images: full-bleed horizontal row gallery (clean + minimal)
+              const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+              // Row Gallery is FULL WIDTH. Usually treating it as Block.
+              const margins = getBlockMargins(false, nextMeta === 'compact')
+
+              // Row Gallery needs full control over its container width to do breakout logic.
+              // The DraggableRowGallery component handles the breakout internally using w-screen etc.
+              // But it must be placed in a container that allows it to "exist" in the grid flow properly.
+              // We apply `colFull` here to the wrapper, and margins via the component prop.
+              currentElements.push(
+                <DraggableRowGallery
+                  key={`gallery-row-${currentIndex++}`}
+                  items={mediaList}
+                  className={`${colFull} ${margins}`}
+                />
+              )
+              lastElementType = 'block'
+            }
+          } else {
+            const path = resolveAssetPath(mediaUrl.trim())
+            const isV = isVid || isVideoFile(mediaUrl)
+            const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+            const margins = getBlockMargins(false, nextMeta === 'compact')
+
+            currentElements.push(
+              <figure key={`media-${currentIndex++}`} className={`${colWide} ${margins}`}>
+                <div className="w-full rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 ring-1 ring-black/5 relative group">
+                  {isV ? (
+                    <AdaptiveVideoPlayer
+                      videoUrl={path}
+                      thumbnailUrl={thumbnailUrl ? resolveAssetPath(thumbnailUrl.trim()) : undefined}
+                      autoStart={loop}
+                      loop={loop}
+                      muted={loop}
+                      minimal={loop}
+                      color={accentColor}
+                    />
+                  ) : (
+                    <img src={path} className="w-full h-auto object-cover" loading="lazy" />
+                  )}
+                </div>
+              </figure>
+            )
+            lastElementType = 'block'
+          }
+        }
       }
       else if (line.length > 0) {
-        currentSection.push(line)
-      } else if (currentSection.length > 0) {
-        currentSection.push('')
+        textBuffer.push(line)
+      } else if (textBuffer.length > 0) {
+        textBuffer.push('')
       }
       i++
     }
     flushCurrentSection()
-    return elements
+    flushSection()
+
+    return (
+      <div className="w-full flex flex-col gap-y-16 md:gap-y-32">
+        {sections.map((sec, idx) => (
+          <div key={idx} className={`w-full ${sec.title ? 'flex flex-col md:flex-row gap-6 md:gap-16 lg:gap-24 relative z-10' : 'flex flex-col items-center'}`}>
+            {sec.title && (
+              <div className="w-full md:w-[35%] lg:w-[40%] flex-shrink-0 relative">
+                <div className="md:sticky md:top-32 pt-2 md:pt-0 pb-2 md:pb-0 font-space-grotesk text-4xl md:text-6xl lg:text-[5vw] font-bold tracking-tighter leading-[1.05] text-black">
+                  {sec.title}
+                </div>
+              </div>
+            )}
+            <div className={`flex flex-col gap-8 md:gap-10 lg:gap-12 w-full ${sec.title ? 'md:w-[65%] lg:w-[60%] items-start' : 'items-center max-w-[1400px]'}`}>
+              {sec.elements.map(el => (
+                <React.Fragment key={el.key}>{el}</React.Fragment>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   return (
-      <div className="w-full max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-x-6">
-        {parseMarkdown(content)}
-      </div>
+    <div className="w-full max-w-[1680px] mx-auto text-black relative z-10">
+      {parseMarkdown(content)}
+    </div>
   )
 }
 
@@ -861,7 +1220,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 const formatDate = (dateString: string): string => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  if (isNaN(date.getTime())) return '' 
+  if (isNaN(date.getTime())) return ''
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
@@ -870,15 +1229,12 @@ import Footer from './Footer'
 // ... existing imports
 
 export default function Article({ project, allProjects, heroPriority = false }: ArticleProps) {
-  const router = useRouter()
-  
   if (!project) return <div className="min-h-screen bg-white" />
 
-  const accentColor = project.bgColor || '#0066CC' 
-  
+  const accentColor = project.bgColor || '#0066CC'
+
   const date = formatDate(project.published)
-  const tags = ((project.category || '') + ',' + (project.title || '')).split(',').slice(0, 3) 
-  
+
   // Helper for category (string or array)
   const getCategories = (cat: string | string[]) => {
     if (Array.isArray(cat)) return cat
@@ -897,13 +1253,13 @@ export default function Article({ project, allProjects, heroPriority = false }: 
         if (keys.length === 0) return null
         // Case: { "Hernan Gaete": null, "hernangaete.com": null } (loose format)
         if (keys.length === 2 && item[keys[0]] === null && item[keys[1]] === null) {
-            // Heuristic: Check which looks like a URL
-            const p1 = keys[0]
-            const p2 = keys[1]
-            if (p2.includes('.') && !p1.includes('.')) return { name: p1, url: `https://${p2.replace(/^https?:\/\//, '')}` }
-            if (p1.includes('.') && !p2.includes('.')) return { name: p2, url: `https://${p1.replace(/^https?:\/\//, '')}` }
-            // Fallback
-            return { name: p1, url: null }
+          // Heuristic: Check which looks like a URL
+          const p1 = keys[0]
+          const p2 = keys[1]
+          if (p2.includes('.') && !p1.includes('.')) return { name: p1, url: `https://${p2.replace(/^https?:\/\//, '')}` }
+          if (p1.includes('.') && !p2.includes('.')) return { name: p2, url: `https://${p1.replace(/^https?:\/\//, '')}` }
+          // Fallback
+          return { name: p1, url: null }
         }
         // Case: { "Name": "URL" }
         return { name: keys[0], url: item[keys[0]] }
@@ -940,12 +1296,12 @@ export default function Article({ project, allProjects, heroPriority = false }: 
         className={`group flex flex-col justify-center w-full min-h-[200px] p-8 md:p-12 rounded-3xl bg-neutral-50 hover:bg-neutral-100 transition-colors duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isNewer ? 'items-end text-right' : 'items-start text-left'}`}
       >
         <div className="flex flex-col gap-2 relative z-10">
-           <span className="text-[14px] md:text-[16px] uppercase tracking-widest font-bold text-neutral-400 group-hover:text-black transition-colors duration-300">
-             {label}
-           </span>
-           <span className="text-[28px] md:text-[40px] leading-[1.1] font-space-grotesk font-bold text-neutral-900 group-hover:text-[var(--ref-accent)] transition-colors duration-300" style={{ ['--ref-accent' as any]: p.bgColor || accentColor }}>
-             {p.title}
-           </span>
+          <span className="text-[14px] md:text-[16px] uppercase tracking-widest font-bold text-neutral-400 group-hover:text-black transition-colors duration-300">
+            {label}
+          </span>
+          <span className="text-[28px] md:text-[40px] leading-[1.1] font-space-grotesk font-bold text-neutral-900 group-hover:text-[var(--ref-accent)] transition-colors duration-300" style={{ ['--ref-accent' as any]: p.bgColor || accentColor }}>
+            {p.title}
+          </span>
         </div>
       </a>
     )
@@ -953,200 +1309,209 @@ export default function Article({ project, allProjects, heroPriority = false }: 
 
   return (
     <div className="min-h-screen bg-[#1C1D20] text-[#1D1D1F] selection:bg-[var(--accent)] selection:text-white" style={{ ['--accent' as any]: accentColor }}>
-      
+
       {/* Main Content Wrapper - Slides over the footer */}
       <div className="relative z-10 bg-white shadow-2xl mb-0 md:mb-[500px] min-h-screen flex flex-col">
-          {/* Navigation - Apple Style: Minimal, Blur */}
-          <Navigation theme="light" />
+        {/* Navigation - Apple Style: Minimal, Blur */}
+        <Navigation theme="light" />
 
-          <main className="w-full pb-0 flex-grow">
-            {/* Ambient Glow */}
-            <div 
-                className="absolute top-0 left-0 w-full h-[50vh] opacity-10 pointer-events-none z-0"
-                style={{ 
-                    background: `radial-gradient(ellipse at 50% 0%, ${accentColor}, transparent 70%)` 
-                }}
-            />
+        <main className="w-full pb-0 flex-grow">
+          {/* Ambient Glow */}
+          <div
+            className="absolute top-0 left-0 w-full h-[50vh] opacity-20 pointer-events-none z-0"
+            style={{
+              background: `radial-gradient(ellipse at 50% 0%, ${accentColor}, transparent 70%)`
+            }}
+          />
 
-            {/* Header Section */}
-            <section className="pt-32 md:pt-48 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] mb-20 relative z-10">
-                 {/* ... existing header code ... */}
-                 <div className="max-w-[1400px] mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-x-6 pb-4">
-                        {/* Title Column */}
-                        <div className="md:col-span-8">
-                            <motion.h1 
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                                className="text-[12vw] sm:text-[9vw] md:text-[7vw] leading-[0.9] tracking-[-0.03em] font-bold font-space-grotesk mb-8 text-black"
-                            >
-                                {project.title}
-                            </motion.h1>
-                            <motion.p 
-                                 initial={{ y: 20, opacity: 0 }}
-                                 animate={{ y: 0, opacity: 1 }}
-                                 transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                                 className="text-2xl md:text-3xl lg:text-[2.2rem] font-medium leading-tight max-w-3xl"
-                                 style={{ color: accentColor }}
-                            >
-                                {project.subtitle || project.excerpts}
-                            </motion.p>
+          {/* Header Section */}
+          <section className="pt-32 md:pt-48 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] mb-20 relative z-10">
+            {/* ... existing header code ... */}
+            <div className="max-w-[1400px] mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-x-6 pb-4">
+                {/* Title Column */}
+                <div className="md:col-span-8">
+                  <motion.h1
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-[12vw] sm:text-[9vw] md:text-[7vw] leading-[0.9] tracking-[-0.03em] font-bold font-space-grotesk mb-8 text-black"
+                  >
+                    {project.title}
+                  </motion.h1>
+                  <motion.p
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-2xl md:text-3xl lg:text-[2.2rem] font-medium leading-tight max-w-3xl"
+                    style={{ color: accentColor }}
+                  >
+                    {project.subtitle || project.excerpts}
+                  </motion.p>
+                </div>
+
+                {/* Metadata Grid Column - High End Data Look */}
+                <div className="md:col-span-4 flex flex-col justify-end pb-2">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    className="grid grid-cols-2 gap-y-10 gap-x-8 font-inter"
+                  >
+                    {/* CLIENT */}
+                    {project.client && project.client.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Client</div>
+                        <div className="text-[15px] font-medium text-[#1d1d1f]">
+                          {project.client.join(', ')}
                         </div>
-    
-                        {/* Metadata Grid Column - High End Data Look */}
-                        <div className="md:col-span-4 flex flex-col justify-end pb-2">
-                            <motion.div 
-                                 initial={{ opacity: 0, x: 20 }}
-                                 animate={{ opacity: 1, x: 0 }}
-                                 transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                 className="grid grid-cols-2 gap-y-10 gap-x-8 font-inter"
-                            >
-                                 {/* CLIENT */}
-                                 {project.client && project.client.length > 0 && (
-                                    <div className="space-y-1">
-                                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Client</div>
-                                        <div className="text-[15px] font-medium text-[#1d1d1f]">
-                                            {project.client.join(', ')}
-                                        </div>
-                                    </div>
-                                 )}
-
-                                 {/* TIMELINE */}
-                                <div className="space-y-1">
-                                    <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Timeline</div>
-                                    <div className="text-[15px] font-medium text-[#1d1d1f]">{date}</div>
-                                </div>
-
-                                {/* COLLABORATION */}
-                                {collaborators.length > 0 && (
-                                    <div className="space-y-1">
-                                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Collaboration</div>
-                                        <div className="flex flex-col items-start gap-1">
-                                            {collaborators.map((c, i) => {
-                                                if (!c) return null
-                                                return (
-                                                    <React.Fragment key={i}>
-                                                        {c.url ? (
-                                                            <a 
-                                                                href={c.url} 
-                                                                target="_blank" 
-                                                                rel="noopener noreferrer" 
-                                                                className="text-[15px] font-medium text-[#1d1d1f] hover:text-[var(--accent)] transition-colors underline decoration-1 underline-offset-2 decoration-black/20 hover:decoration-[var(--accent)]"
-                                                            >
-                                                                {c.name}
-                                                            </a>
-                                                        ) : (
-                                                            <span className="text-[15px] font-medium text-[#1d1d1f]">{c.name}</span>
-                                                        )}
-                                                    </React.Fragment>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* AWARDS */}
-                                {project.awards && project.awards.length > 0 && (
-                                    <div className="space-y-1">
-                                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Awards</div>
-                                        <div className="flex flex-col gap-1">
-                                            {project.awards.map((award, i) => (
-                                                <span key={i} className="text-[15px] font-medium text-[#1d1d1f]">{award}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                 <div className="col-span-2 space-y-2">
-                                    <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Scope</div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {projectTags.map((t, i) => (
-                                            <span key={i} className="px-2.5 py-1 rounded-full bg-black/5 text-[#1d1d1f] text-[13px] font-medium">
-                                                {t}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    </div>
-                 </div>
-            </section>
-    
-            {/* Hero Media - strict 16/9 aspect ratio */}
-            {!project.heroHide && (
-                <motion.div 
-                    className="w-full px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] mb-32 md:mb-32 relative z-10"
-                    initial={{ opacity: 0, scale: 0.98, y: 40 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                >
-                 <div className="max-w-[1400px] mx-auto rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-2xl shadow-black/10 aspect-video relative group ring-1 ring-black/5">
-                    {(project.hasAnimation && project.video) ? (
-                        <AdaptiveVideoPlayer 
-                            videoUrl={resolveAssetPath(project.video)} 
-                            thumbnailUrl={project.heroImage ? resolveAssetPath(project.heroImage) : resolveAssetPath(project.image)} 
-                            autoStart={true} 
-                            color={accentColor}
-                            loop={true}
-                            muted={true}
-                            minimal={true}
-                        />
-                    ) : project.pageVideo ? (
-                        <AdaptiveVideoPlayer 
-                            videoUrl={project.pageVideo} 
-                            thumbnailUrl={project.heroImage ? resolveAssetPath(project.heroImage) : resolveAssetPath(project.image)} 
-                            autoStart={false} 
-                            color={accentColor} 
-                        />
-                    ) : (
-                        (() => {
-                          const heroSrc = resolveAssetPath(project.heroImage || project.image || '')
-                          if (!heroSrc) return null
-                          return (
-                            <Image
-                              src={heroSrc}
-                              alt={project.title}
-                              fill
-                              priority={heroPriority}
-                              fetchPriority={heroPriority ? 'high' : undefined}
-                              sizes="(max-width: 768px) 100vw, 1400px"
-                              className="object-cover"
-                              draggable={false}
-                            />
-                          )
-                        })()
+                      </div>
                     )}
-                 </div>
-                </motion.div>
+
+                    {/* TIMELINE */}
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Timeline</div>
+                      <div className="text-[15px] font-medium text-[#1d1d1f]">{date}</div>
+                    </div>
+
+                    {/* COLLABORATION */}
+                    {collaborators.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Collaboration</div>
+                        <div className="flex flex-col items-start gap-1">
+                          {collaborators.map((c, i) => {
+                            if (!c) return null
+                            return (
+                              <React.Fragment key={i}>
+                                {c.url ? (
+                                  <a
+                                    href={c.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[15px] font-medium text-[#1d1d1f] hover:text-[var(--accent)] transition-colors underline decoration-1 underline-offset-2 decoration-black/20 hover:decoration-[var(--accent)]"
+                                  >
+                                    {c.name}
+                                  </a>
+                                ) : (
+                                  <span className="text-[15px] font-medium text-[#1d1d1f]">{c.name}</span>
+                                )}
+                              </React.Fragment>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AWARDS */}
+                    {project.awards && project.awards.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Awards</div>
+                        <div className="flex flex-col gap-1">
+                          {project.awards.map((award, i) => (
+                            <span key={i} className="text-[15px] font-medium text-[#1d1d1f]">{award}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="col-span-2 space-y-2">
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Scope</div>
+                      <div className="flex flex-wrap gap-2">
+                        {projectTags.map((t, i) => (
+                          <span key={i} className="px-2.5 py-1 rounded-full bg-black/5 text-[#1d1d1f] text-[13px] font-medium">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Hero Media - strict 16/9 aspect ratio */}
+          {!project.heroHide && (
+            <motion.div
+              className="w-full px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] mb-32 md:mb-32 relative z-10"
+              initial={{ opacity: 0, scale: 0.98, y: 40 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="max-w-[1400px] mx-auto rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-2xl shadow-black/10 aspect-video relative group ring-1 ring-black/5">
+                {project.heroLottie ? (
+                  <LottiePlayer
+                    src={resolveAssetPath(project.heroLottie)}
+                    className="w-full h-full"
+                  />
+                ) : (project.hasAnimation && project.video) ? (
+                  <AdaptiveVideoPlayer
+                    videoUrl={resolveAssetPath(project.video)}
+                    thumbnailUrl={project.heroImage ? resolveAssetPath(project.heroImage) : resolveAssetPath(project.image)}
+                    autoStart={true}
+                    color={accentColor}
+                    loop={true}
+                    muted={true}
+                    minimal={true}
+                  />
+                ) : project.pageVideo ? (
+                  <AdaptiveVideoPlayer
+                    videoUrl={project.pageVideo}
+                    thumbnailUrl={project.heroImage ? resolveAssetPath(project.heroImage) : resolveAssetPath(project.image)}
+                    autoStart={false}
+                    color={accentColor}
+                  />
+                ) : (
+                  (() => {
+                    const heroSrc = resolveAssetPath(project.heroImage || project.image || '')
+                    if (!heroSrc) return null
+                    return (
+                      <Image
+                        src={heroSrc}
+                        alt={project.title}
+                        fill
+                        priority={heroPriority}
+                        fetchPriority={heroPriority ? 'high' : undefined}
+                        sizes="(max-width: 768px) 100vw, 1400px"
+                        className="object-cover"
+                        draggable={false}
+                      />
+                    )
+                  })()
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Markdown Content */}
+          <section className="px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative z-10 pb-32">
+            {project.content && <MarkdownRenderer content={project.content} project={project} accentColor={accentColor} allProjects={allProjects} />}
+
+            {(newerProject || olderProject) && (
+              <div className="mt-24">
+                <div className="max-w-[1400px] mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-8">
+
+
+                    <div className="col-span-1 md:col-start-1 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {newerProject ? (
+                        <RelatedNavCard p={newerProject} label="Previous" direction="older" />
+                      ) : (
+                        <div />
+                      )}
+                      {olderProject ? (
+                        <RelatedNavCard p={olderProject} label="Next" direction="newer" />
+                      ) : (
+                        <div />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
-    
-            {/* Markdown Content */}
-            <section className="px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative z-10 pb-32">
-                 {project.content && <MarkdownRenderer content={project.content} project={project} accentColor={accentColor} allProjects={allProjects} />}
+          </section>
 
-                 {(newerProject || olderProject) && (
-                   <div className="mt-24">
-                     <div className="max-w-[1400px] mx-auto">
-                       <div className="grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-8">
-
-
-                         <div className="col-span-1 md:col-start-1 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-                           {olderProject && (
-                             <RelatedNavCard p={olderProject} label="Previous" direction="older" />
-                           )}
-                           {newerProject && (
-                             <RelatedNavCard p={newerProject} label="Next" direction="newer" />
-                           )}
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 )}
-            </section>
-    
-          </main>
+        </main>
       </div>
 
       <Footer />

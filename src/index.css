@@ -461,7 +461,7 @@
     margin:0;
   }
   .palette-block-description {
-    @apply text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em];
+    @apply text-[17px] sm:text-[18px] leading-[1.72] text-[#1D1D1F] font-inter font-normal tracking-[-0.005em];
     margin:0 0 20px 0;
   }
   
@@ -471,7 +471,7 @@
     margin:0;
   }
   .code-block-description {
-    @apply text-[19px] sm:text-[21px] leading-[1.6] text-[#1D1D1F] font-inter font-normal tracking-[-0.01em];
+    @apply text-[17px] sm:text-[18px] leading-[1.72] text-[#1D1D1F] font-inter font-normal tracking-[-0.005em];
     margin:0;
   }
   @media (min-width:640px){

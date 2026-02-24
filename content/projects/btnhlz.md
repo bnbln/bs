@@ -30,7 +30,7 @@ Gallery-White #F2F2F2 rgb(242,242,242) usage=Background
 
 From a technical perspective, the challenge was to create a smooth 3D experience without heavy loading times. We used optimized GLTF models, lazy loading, and fine-tuned lighting settings to ensure that every scene runs fluidly on both desktop and mobile devices. The Next.js architecture provided the foundation for fast builds and scalable hosting.
 
-```tsx title="Three.js Canvas"
+```javascript title="Three.js Canvas"
 <Canvas
   shadows
   linear
@@ -47,6 +47,15 @@ From a technical perspective, the challenge was to create a smooth 3D experience
 >
   <Preload all />
   <Scene items={items} targetIndex={index} />
-</Canvas>
 ```
 The result is more than just a portfolio website — it’s a **digital stage for design**. By blending frontend development with immersive 3D presentation, the project opens new perspectives on how product designers can present their work online: as interactive, living objects instead of static images.
+
+```three
+preset="city"
+autoRotate="true"
+height="90vh"
+model="assets/chair/Bubble Chair Model.glb"
+scale="4"
+position="0, 0, 0"
+rotation="0, 45, 0"
+```

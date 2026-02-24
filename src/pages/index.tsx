@@ -10,6 +10,7 @@ import Work from '../components/Work'
 import Contact from '../components/Contact'
 import Footer from '../components/Footer'
 import Create from '../components/Create'
+import Skills from '../components/Skills'
 
 interface HomeProps {
   data: {
@@ -56,20 +57,19 @@ export default function Home({ data }: HomeProps) {
       />
       <div className="min-h-screen bg-[#1C1D20] w-full">
         {/* Main Content - Slides over the footer on desktop, sits above it on mobile */}
-        <div className="relative z-10 bg-white shadow-2xl mb-0 md:mb-[500px]">
+        <div className="relative z-10 bg-white shadow-2xl mb-0 md:mb-[500px] pb-24 md:pb-40">
           <Navigation />
           <Hero />
           <About />
-          <div className="featured-projects">
-            <FeaturedProjects data={data.featuredProjects} />
-          </div>
           <Work data={data.projects} />
-          <Create />
+          {/* <Create /> */}
+          <Skills />
           <Contact />
+          <FeaturedProjects data={data.featuredProjects} />
         </div>
-        
+
         {/* Footer - Relative on Mobile, Fixed Reveal on Desktop */}
-        <Footer /> 
+        <Footer />
       </div>
     </>
   )
@@ -77,7 +77,7 @@ export default function Home({ data }: HomeProps) {
 
 export const getStaticProps: GetStaticProps = async () => {
   const data = getProjectsData()
-  
+
   return {
     props: {
       data

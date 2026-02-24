@@ -185,12 +185,19 @@ export class AssetPreloader {
         const useVideoScrubbing = project.animationSequence.videoPath !== undefined;
         
         if (useVideoScrubbing) {
+          const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+          const scrubVideoPath = isTouchDevice && project.animationSequence.mobileVideoPath
+            ? project.animationSequence.mobileVideoPath
+            : project.animationSequence.videoPath;
+
           // For video scrubbing projects, only load the video file
-          assets.push({
-            url: project.animationSequence.videoPath,
-            type: 'video',
-            projectId: project.id
-          });
+          if (scrubVideoPath) {
+            assets.push({
+              url: scrubVideoPath,
+              type: 'video',
+              projectId: project.id
+            });
+          }
         } else {
           // For legacy image sequence projects, load the webp frames
           const { startFrame, endFrame, basePath } = project.animationSequence;

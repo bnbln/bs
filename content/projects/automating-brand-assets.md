@@ -19,8 +19,6 @@ type: [Design, Development]
 At the Premium Gruppe, I’m currently designing and building an automation platform that connects brand design, production and distribution into one coherent workflow.  
 The goal is straightforward: make high-quality brand assets for streaming platforms faster, more reliable, and easier to scale — without losing craft or consistency.
 
-<!-- ![assets/amg.jpg::Bits and Bytes|assets/Zeitreise.webp::Office Headquarters|assets/mm.jpg::Office Headquarters|assets/mp.jpg::Office Headquarters|assets/boerse.jpg::Office Headquarters] -->
-
 This project lives exactly where my work tends to end up: between **brand design, automation and real-world production pressure**.
 
 
@@ -40,9 +38,7 @@ Each platform comes with its own reality:
 - different deadlines  
 - constantly shifting program schedules  
 
-None of this is conceptually complex — but at scale, it becomes fragile.
-
-Traditionally, a lot of time went into manual checks:  
+None of this is conceptually complex — but at scale, it becomes fragile. Traditionally, a lot of time went into manual checks:  
 availability, resizing, gap tracking, deadline coordination across teams.
 
 The bottleneck wasn’t creative quality.  

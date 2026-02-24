@@ -40,7 +40,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ title, description, hideHea
           {colors.map((color, index) => (
             <motion.div
               key={color.name + index}
-              className="flex flex-col bg-neutral-50 rounded-2xl md:rounded-3xl overflow-hidden hover:bg-neutral-100 transition-colors duration-500 group"
+              className="flex flex-col bg-[#F5F5F7] rounded-3xl overflow-hidden hover:bg-[#eaeaec] transition-colors duration-500 group shadow-sm ring-1 ring-black/5"
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -64,26 +64,26 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({ title, description, hideHea
                   </motion.div>
                 </div>
               </div>
-              <div className="p-4 md:p-8 flex flex-col gap-1.5 md:gap-2">
+              <div className="p-6 md:p-8 flex flex-col gap-2">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-1 md:gap-0">
-                     <h3 className="font-space-grotesk font-bold text-[16px] md:text-[24px] leading-[1.1] text-neutral-900 break-words">
-                        {color.name}
-                     </h3>
-                     {color.usage && (
-                        <span className="shrink-0 text-[9px] md:text-[11px] uppercase tracking-widest font-bold text-neutral-400 md:mt-1.5">
-                            {color.usage}
-                        </span>
-                     )}
+                  <h3 className="font-space-grotesk font-bold text-[18px] md:text-[24px] leading-[1.1] text-neutral-900 break-words">
+                    {color.name}
+                  </h3>
+                  {color.usage && (
+                    <span className="shrink-0 text-[10px] md:text-[11px] uppercase tracking-widest font-bold text-neutral-400 md:mt-1.5">
+                      {color.usage}
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <span className="text-[13px] md:text-[18px] leading-tight font-medium text-neutral-500 group-hover:text-black transition-colors duration-300">
-                        {color.hex}
+                  <span className="text-[14px] md:text-[18px] leading-tight font-medium text-neutral-500 group-hover:text-black transition-colors duration-300">
+                    {color.hex}
+                  </span>
+                  {color.rgb && (
+                    <span className="text-[12px] md:text-[14px] font-medium text-neutral-400 font-mono">
+                      {color.rgb.replace('rgb(', '').replace(')', '')}
                     </span>
-                    {color.rgb && (
-                        <span className="text-[11px] md:text-[14px] font-medium text-neutral-400 font-mono">
-                            {color.rgb.replace('rgb(', '').replace(')', '')}
-                        </span>
-                    )}
+                  )}
                 </div>
               </div>
             </motion.div>
