@@ -72,40 +72,40 @@ const AboutPage = ({ data }: AboutPageProps) => {
          year: "2019",
          title: "Internship Brand Communication",
          location: "Spring UG",
-         description: "My first professional role in brand communication.",
+         description: "My first professional role bridging the gap between design and high-level brand communication.",
          icon: <Briefcase className="w-5 h-5" />,
          track: "Agency / Inhouse"
       },
       {
-         year: "2020 - 2022",
+         year: "2019 - 2024",
          title: "Motion & Brand Designer",
-         location: "WELT-Gruppe",
-         description: "Built motion and brand assets for editorial and commercial formats.",
+         location: "WeltN24 GmbH",
+         description: "Designed and animated on-air graphics, trailers, promotions, openers, advertising campaigns, and show designs, contributing to a +27% TV market share increase. Created event packages, visuals, sponsor loops, and live graphics for high-profile conferences.",
          icon: <Briefcase className="w-5 h-5" />,
          track: "Agency / Inhouse"
       },
       {
-         year: "2022 - 2026",
+         year: "2024 - Present",
          title: "Senior Motion & Brand Designer",
          location: "PREMIUM-GRUPPE",
-         description: "Leading motion and brand work across campaigns, digital products, and new formats.",
+         description: "Developing corporate design and 360° communication for international media brands. Leading a creative team of three plus freelancers, and automating asset management with AI-driven workflows, reducing hand-off time by 50%.",
          icon: <Briefcase className="w-5 h-5" />,
          track: "Agency / Inhouse"
-      }
+      },
    ]
 
    const freelanceTrackEvents: TimelineEvent[] = [
       {
          year: "2019",
-         title: "Launching my first Website",
-         description: "Started building and publishing my own web projects.",
+         title: "Launching my first Web-Project",
+         description: "Started building and publishing my own web projects and apps. In 2019 I published my first app for Quizzes like Buzzfeed. In 2020 I published my first app for Tarot Card Meanings and beautiful Illustrations.",
          icon: <Calendar className="w-5 h-5" />,
          track: "Freelance / Studio"
       },
       {
-         year: "2020 - Now",
+         year: "2019 - Present",
          title: "Freelance Creative Developer",
-         description: "Working with Artists, Media Brands, and Ad Agencies on Brand, UX/UI, Motion, 3D, Frontend-Dev, and AI Projects.",
+         description: "Developing responsive web apps in React, Next.js, and TypeScript for SMEs. Researching and designing wireframes, prototypes, and user-centered design solutions while tightly integrating design and development workflows.",
          icon: <Briefcase className="w-5 h-5" />,
          track: "Freelance / Studio"
       },
@@ -191,16 +191,15 @@ const AboutPage = ({ data }: AboutPageProps) => {
                            </h2>
                            <div className="prose prose-lg text-neutral-600 font-inter leading-relaxed">
                               <p>
-                                 I am an outgoing, friendly Berliner with a creative and tech-savvy mind. My journey began in this vibrant city, where I was born and raised, soaking in the diverse culture and relentless innovation that defines Berlin.
+                                 I am a creative and tech-savvy Berlin-based Motion Designer & Developer with over 8 years of experience. My journey began in this vibrant city, where I studied <strong>Media Management & Communication Design</strong> and soaked in the diverse culture that continues to inspire my work today.
                               </p>
                               <br />
                               <p>
-                                 Through my studies in <strong>Media Management & Communication Design</strong> and years of hands-on experience, I've cultivated a unique skill set that bridges the gap between aesthetic beauty and functional code.
-                                 I don't just build websites; I craft digital experiences. Whether it's 3D motion graphics, complex frontend logic, or AI-driven interfaces, I approach every project with passion and a solution-oriented mindset.
+                                 I specialize in crafting and implementing innovative visual concepts, bridging the gap between aesthetic beauty and functional code. Whether it's 3D motion graphics, complex frontend logic in React and Next.js, or integrating generative AI into modern web technologies, I approach every project with a solution-oriented mindset.
                               </p>
                               <br />
                               <p>
-                                 Outside of work, I'm a maker at heart. You'll find me experimenting with <strong>3D printing</strong>, whipping up new recipes in the kitchen, or enjoying movie nights.
+                                 I am highly committed and enthusiastic about driving impactful, brand-defining projects. Outside of work, I'm a maker at heart. You'll find me experimenting with <strong>3D printing</strong>, whipping up new recipes in the kitchen, or enjoying movie nights.
                               </p>
                            </div>
                         </motion.div>
