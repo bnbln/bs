@@ -26,13 +26,13 @@ const skills: Skill[] = [
         title: "Motion &",
         subtitle: "Brand Design",
         description: "Crafting kinetic identities and motion systems that breathe life into digital brands, blending typography and animation seamlessly.",
-        shapeConfig: {
-            object: "/assets/cursor-2.glb",
-            scale: [1, 1, 1],
-            position: [0, 0, 0],
-            rotation: [0, 0, 0],
-            hoverScale: [1.3, 1.3, 1.3]
-        }
+        // shapeConfig: {
+        //     object: "/assets/cursor-2.glb",
+        //     scale: [1, 1, 1],
+        //     position: [0, 0, 0],
+        //     rotation: [0, 0, 0],
+        //     hoverScale: [1.3, 1.3, 1.3]
+        // }
     },
     {
         num: "02",

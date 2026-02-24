@@ -185,7 +185,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
   const isLight = activeTheme === 'light' && !isMenuOpen
   // Floating pill styles 
-  const navBgColor = isLight ? 'bg-white/30 border-black/10' : 'bg-[#1C1D20]/80 border-white/10'
+  const navBgColor = isLight ? 'bg-[#fff]/60 border-black/10' : 'bg-[#1C1D20]/80 border-white/10'
 
   // Unselected states (standard text in container)
   const unselectedTextClass = isLight ? 'text-black/70 hover:text-black' : 'text-white/70 hover:text-white'
@@ -196,7 +196,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
   // The conditional darken layer for light mode that only affects the background
   const BlendLayer = () => (
-    isLight ? <div className="absolute inset-0 z-[-1] mix-blend-darken bg-black/[0.12] rounded-full pointer-events-none" /> : null
+    isLight ? <div className={`absolute inset-0 z-[-1] mix-blend-darken ${navBgColor}/[10] rounded-full pointer-events-none`} /> : null
   )
 
   return (
@@ -206,7 +206,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
         className={`hidden lg:flex fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-fit pl-6 pr-2 py-1.5 rounded-full items-center justify-center pointer-events-auto backdrop-blur-md border shadow-sm ${navBgColor} transition-colors duration-500 overflow-hidden`}
         style={{ WebkitBackdropFilter: "blur(12px)", willChange: "transform, opacity" }}
       >
-        <BlendLayer />
+        {/* <BlendLayer /> */}
 
         {/* Logo / Name */}
         <Link href="/" className={`pr-6 py-2 ${unselectedTextClass} font-space-grotesk font-medium text-[14.375px] leading-tight hover:opacity-70 transition-colors duration-500 z-10 shrink-0`}>
