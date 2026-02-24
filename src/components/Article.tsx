@@ -90,9 +90,35 @@ const parseFenceAttributes = (attr: string): Record<string, string> => {
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1)
     }
-    attrs[key] = val
+    if (val.trim() !== '') {
+      attrs[key] = val
+    }
   }
   return attrs
+}
+
+const parseVector3 = (val: string | undefined): [number, number, number] | undefined => {
+  if (!val) return undefined;
+  const parts = val.split(/[,\s]+/).filter(Boolean).map(Number);
+  if (parts.length === 3 && parts.every(n => !isNaN(n))) return [parts[0], parts[1], parts[2]];
+  if (parts.length === 1 && !isNaN(parts[0])) return [parts[0], parts[0], parts[0]];
+  return undefined;
+}
+
+const parseRotationVector3 = (val: string | undefined): [number, number, number] | undefined => {
+  if (!val) return undefined;
+  const parts = val.split(/[,\s]+/).filter(Boolean).map(n => Number(n) * (Math.PI / 180));
+  if (parts.length === 3 && parts.every(n => !isNaN(n))) return [parts[0], parts[1], parts[2]];
+  if (parts.length === 1 && !isNaN(parts[0])) return [parts[0], parts[0], parts[0]];
+  return undefined;
+}
+
+const parseScale = (val: string | undefined): number | [number, number, number] | undefined => {
+  if (!val) return undefined;
+  const parts = val.split(/[,\s]+/).filter(Boolean).map(Number);
+  if (parts.length === 3 && parts.every(n => !isNaN(n))) return [parts[0], parts[1], parts[2]];
+  if (parts.length >= 1 && !isNaN(parts[0])) return parts[0];
+  return undefined;
 }
 
 const ANIMATION_SEQUENCE_FENCE_TYPES = new Set([
@@ -935,10 +961,19 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         } else if (typeLower === 'three') {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
-          const height = attrs.height || '500px'
-          const modelPath = attrs.model ? resolveAssetPath(attrs.model) : undefined
-          const preset = (attrs.preset || 'city') as any
-          const autoRotate = attrs.autoRotate !== 'false'
+
+          // Also parse attributes from the body if they weren't on the fence line
+          const bodyAttrs = parseFenceAttributes(body.replace(/\r?\n/g, ' '))
+
+          const height = attrs.height || bodyAttrs.height || '500px'
+          const modelSrc = attrs.model || bodyAttrs.model
+          const modelPath = modelSrc ? resolveAssetPath(modelSrc) : undefined
+          const preset = (attrs.preset || bodyAttrs.preset || 'city') as any
+          const autoRotate = (attrs.autoRotate || bodyAttrs.autoRotate) !== 'false'
+
+          const scale = parseScale(attrs.scale || bodyAttrs.scale)
+          const position = parseVector3(attrs.position || bodyAttrs.position)
+          const rotation = parseRotationVector3(attrs.rotation || bodyAttrs.rotation)
 
           currentElements.push(
             <div key={`three-${currentIndex++}`} className={`${colWide} flex justify-center ${margins}`}>
@@ -948,6 +983,9 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 className="w-full"
                 preset={preset}
                 autoRotate={autoRotate}
+                scale={scale}
+                position={position}
+                rotation={rotation}
               />
             </div>
           )
@@ -1456,11 +1494,15 @@ export default function Article({ project, allProjects, heroPriority = false }: 
 
 
                     <div className="col-span-1 md:col-start-1 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {olderProject && (
-                        <RelatedNavCard p={olderProject} label="Previous" direction="older" />
+                      {newerProject ? (
+                        <RelatedNavCard p={newerProject} label="Previous" direction="older" />
+                      ) : (
+                        <div />
                       )}
-                      {newerProject && (
-                        <RelatedNavCard p={newerProject} label="Next" direction="newer" />
+                      {olderProject ? (
+                        <RelatedNavCard p={olderProject} label="Next" direction="newer" />
+                      ) : (
+                        <div />
                       )}
                     </div>
                   </div>

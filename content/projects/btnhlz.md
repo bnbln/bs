@@ -53,5 +53,9 @@ The result is more than just a portfolio website — it’s a **digital stage fo
 ```three
 preset="city"
 autoRotate="true"
-height="100vh"
+height="90vh"
+model="assets/chair/Bubble Chair Model.glb"
+scale="4"
+position="0, 0, 0"
+rotation="0, 45, 0"
 ```
