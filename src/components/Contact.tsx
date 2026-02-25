@@ -110,7 +110,7 @@ const Contact = () => {
               <div className="flex flex-col items-center mt-8 md:mt-12">
                 <span className="text-base md:text-lg font-space-grotesk font-semibold text-black">Benedikt Schnupp</span>
                 <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 font-inter mt-1">
-                  Branding, Motion, UX/UI & Development
+                  Motion, UX/UI Design & Development
                 </span>
               </div>
               {/* Left: Meta Data & Engagement Options */}
