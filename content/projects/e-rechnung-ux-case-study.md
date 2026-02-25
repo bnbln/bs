@@ -1,168 +1,167 @@
 ---
 id: 15
-title: E-Rechnungen als UX-Hürde für kleine Unternehmen
-subtitle: Nativer Rechnungsworkflow für iOS
+title: E-Invoicing as a UX Challenge for Small Businesses
+subtitle: Native Invoicing Workflow for iOS
 slug: e-rechnung-ux-case-study
 category: [Case Study,UX/UI Design, Product Strategy]
 collaboration: []
 excerpts: >-
-  Rechnungen+ transformiert einen fehleranfälligen mobilen Rechnungsprozess in einen
-  geführten End-to-End-Workflow: vom Kontakt bis zum ZUGFeRD-PDF mit
-  eingebetteter XML.
+  Rechnungen+ transforms an error-prone mobile invoicing process into a guided
+  end-to-end workflow, from contact setup to ZUGFeRD PDF export with embedded XML.
 published: '2026-02-25'
-description: Mobile UX-Case-Study für sichere, schnelle E-Rechnungsprozesse im B2B-Kontext
+description: Mobile UX case study for secure, fast B2B e-invoicing workflows
 bgColor: '#0F4C81'
-image: assets/invoice-case-study.jpg
+image: assets/einvoice/hero.jpg
 hasAnimation: false
 featured: false
 type: [Design, Strategy]
 ---
 
-Rechnungserstellung auf dem Smartphone ist selten nur Dateneingabe. In der Praxis ist es ein **Risikoworkflow**: unter Zeitdruck, zwischen Terminen, mit regulatorischen Anforderungen und direktem Einfluss auf Cashflow und Vertrauen.
+Creating invoices on a smartphone is rarely just data entry. In reality, it is a **risk workflow**: done under time pressure, between appointments, with regulatory constraints and direct impact on cash flow and trust.
 
-**Rechnungen+** wurde genau für diese Realität gestaltet: nicht als Formular-App, sondern als geführter Arbeitsfluss, der fachliche Korrektheit, Geschwindigkeit und Nachvollziehbarkeit zusammenbringt.
+**Rechnungen+** was designed for exactly this reality. Not as a form app, but as a guided workflow that combines compliance, speed, and traceability.
 
-## Projekt in einem Satz
+## The Project in One Sentence
 
-**Rechnungen+ ist eine mobile App (iOS/Android), die einen fragmentierten Rechnungsprozess in einen validierten End-to-End-Workflow überführt - von Kontakt und Positionen bis zum ZUGFeRD-PDF mit eingebetteter XML.**
+**Rechnungen+ is a mobile app (iOS/Android) that turns a fragmented invoicing process into a validated end-to-end workflow, from contacts and line items to ZUGFeRD PDF export with embedded XML.**
 
-```insight title="Senior UX Fokus"
-Das Ziel war nicht, Komplexität zu verstecken, sondern sie in klare, sichere Entscheidungsräume zu übersetzen: weniger Unsicherheit, weniger Korrekturschleifen, mehr verlässliche Outcomes.
+```insight title="Senior UX Focus"
+The goal was not to hide complexity, but to translate it into clear, safe decision spaces: less uncertainty, fewer correction loops, and more reliable outcomes.
 ```
 ```mockup type="iphone" image="assets/einvoice/03.png" bgColor="#F5F5F7"
 ```
 ```mockup type="iphone" image="assets/einvoice/04.png" bgColor="#F5F5F7"
 ```
 
-## Kontext
+## Context
 
-Kleine Teams und Solo-Selbstständige arbeiten mobil und oft unter Zeitdruck. Gleichzeitig steigen im B2B-Umfeld die formalen Anforderungen:
+Small teams and solo professionals work on the go, often under time pressure. At the same time, formal requirements in B2B contexts keep rising:
 
-- Pflichtangaben müssen vollständig und korrekt sein
-- Statuslogiken müssen nachvollziehbar bleiben
-- E-Rechnungsformate müssen exportierbar und kompatibel sein
+- Mandatory data has to be complete and correct
+- Status logic must stay understandable and auditable
+- E-invoicing formats must be exportable and compatible
 
-Ein "PDF per Mail" reicht in vielen Fällen nicht mehr aus. Die zentrale UX-Frage war deshalb: **Wie schaffen wir Geschwindigkeit ohne Kontrollverlust - und Korrektheit ohne Fachjargon?**
+In many cases, "just sending a PDF by email" is no longer enough. The central UX question became: **How do we create speed without losing control, and correctness without domain jargon?**
 
-## Meine Rolle (Senior UX/UI)
+## My Role (Senior UX/UI)
 
-Ich habe den Produktkern von Problem Framing bis Interaktionslogik gestaltet:
+I shaped the product core from problem framing to interaction logic:
 
-- Product Strategy und Problem Framing
-- Informationsarchitektur und End-to-End-Flow-Design
-- UX/UI für mobile Kernflows
-- Content Design und Fehler-Microcopy
-- Interaktionsmodell für Status, Historie und Export
-- Übergabe in states- und validierungsfähige UI-Struktur (Design x Logik)
+- Product strategy and problem framing
+- Information architecture and end-to-end flow design
+- UX/UI for core mobile workflows
+- Content design and error microcopy
+- Interaction model for status, history, and export
+- Handover into a state-aware, validation-ready UI structure (design x logic)
 
-## Das Kernproblem
+## The Core Problem
 
-Nutzer:innen hatten selten ein "UI-Problem", sondern vor allem **Unsicherheit**:
+Users rarely had a pure "UI problem." What they had was **uncertainty**:
 
-- Ist die Rechnung formal korrekt?
-- Fehlt etwas Relevantes?
-- Warum wurde ein Dokument abgelehnt?
-- Wie komme ich ohne Umwege von Leistung zu versendbarer Rechnung?
+- Is this invoice formally correct?
+- Am I missing something important?
+- Why was this document rejected?
+- How do I get from work delivered to send-ready invoice without detours?
 
-Daraus entstand ein klarer Produktfokus: **Unsicherheit früh abbauen statt Fehler spät korrigieren.**
+This led to a clear product focus: **reduce uncertainty early instead of fixing errors late.**
 
-## Research-Synthese (komprimiert)
+## Research Synthesis (Condensed)
 
-Ich habe die Domäne entlang dreier Segmente strukturiert:
+I structured the domain around three segments:
 
-- Freelancer:innen und Kreative
-- handwerksnahe Kleinbetriebe
-- Backoffice in kleinen Teams
+- Freelancers and creatives
+- Trade-adjacent small businesses
+- Back-office roles in small teams
 
-Wiederkehrende Muster:
+Recurring patterns:
 
-- Pflichtangaben und Statuslogik sind unklar
-- Stammdatenpflege wird als Reibung erlebt
-- Formatbegriffe erzeugen kognitive Last
-- Vertrauen entsteht über sichtbares PDF, nicht über abstrakte Datenmodelle
-- Fehler werden zu spät entdeckt, wenn Korrekturen bereits teuer sind
+- Mandatory fields and status logic are unclear
+- Master data maintenance feels like friction
+- Format terminology creates cognitive load
+- Trust is built through visible PDFs, not abstract data models
+- Errors are discovered too late, when corrections are already costly
 
 ```mockup type="iphone" image="assets/einvoice/06.png" bgColor="#F5F5F7"
 ```
 ```mockup type="iphone" image="assets/einvoice/05.png" bgColor="#F5F5F7"
 ```
-## Produktstrategie
+## Product Strategy
 
-Ich habe Rechnungen+ bewusst als **sicheren Arbeitsfluss** aufgebaut, nicht als klassische Formularstrecke.
+I intentionally designed Rechnungen+ as a **safe workflow**, not as a traditional form sequence.
 
-### 1) Task-first statt Format-first
-Nutzer:innen starten mit dem Ziel "Rechnung erstellen" - nicht mit technischen Formatentscheidungen.
+### 1) Task-First Instead of Format-First
+Users start with the goal "create invoice," not with technical format decisions.
 
 ### 2) Progressive Disclosure
-Komplexe Eingaben wurden in fokussierte Subflows aufgeteilt (Details, Textbausteine, Positionen, Anhänge, PDF-Design), statt alles auf einer Fläche zu bündeln.
+Complex input was split into focused subflows (details, text blocks, line items, attachments, PDF design) instead of forcing everything into one screen.
 
 ### 3) Safety by Design
-Validierung passiert während der Eingabe, nicht nur beim Export: Pflichtfelder, Duplikate, ungültige Positionen, Statuskonsistenz.
+Validation happens during input, not only at export: mandatory fields, duplicates, invalid items, and status consistency.
 
 ### 4) Speed by Reuse
-Stammdaten, Vorlagen, Barcode-Scan und Assist reduzieren manuelle Arbeit in wiederkehrenden Schritten.
+Master data, templates, barcode scanning, and Assist reduce manual work in recurring steps.
 
-### 5) Vertrauen durch Transparenz
-PDF-Vorschau, Historie und Status-Verlauf machen Änderungen nachvollziehbar.
+### 5) Trust Through Transparency
+PDF preview, history, and status timeline make changes easy to understand.
 
-## IA und Produktstruktur
+## IA and Product Structure
 
-Die Navigation wurde als produktiver Arbeitsraum aufgebaut:
+Navigation was structured as a productive workspace:
 
-- Suche
-- Rechnungen
-- Vorlagen
-- Produkte
-- Kontakte
+- Search
+- Invoices
+- Templates
+- Products
+- Contacts
 - Assist
-- Statistik
+- Analytics
 - Scanner
-- Konto
+- Account
 
-Der Rechnungsworkflow ist modular und durchgängig:
+The invoicing workflow is modular and continuous:
 
-1. Empfänger wählen oder anlegen
-2. Positionen aus Produkten übernehmen oder manuell hinzufügen
-3. Details setzen (Datum, Fälligkeit, Währung, Rechnungsnummer)
-4. Textbausteine und Anhänge ergänzen
-5. Status und Prozessstufe steuern (Angebot, Rechnung, Mahnung, Storno)
-6. PDF erzeugen, prüfen, teilen und in der Historie versionieren
+1. Select or create recipient
+2. Pull line items from products or add them manually
+3. Set details (date, due date, currency, invoice number)
+4. Add text blocks and attachments
+5. Control status and process stage (quote, invoice, reminder, cancellation)
+6. Generate, review, share, and version the PDF in history
 
-## Entscheidende UX-Entscheidungen
+## Key UX Decisions
 
-- **Hero + Detail-Sheets im Editor**: Kernstatus und Kontext bleiben sichtbar, tiefe Eingaben passieren fokussiert in Sheets
-- **Status als aktive Steuerung** statt statischem Label (Offen, Überfällig, Bezahlt, Storniert) inklusive Verlauf
-- **Vorlagen als inhaltliche Defaults** für Einleitung, Zahlungshinweise und Zusatztexte
-- **PDF-Design als First-Class-Feature** (Layout, Farbwelt, Typografie, Custom Font, Vorschau)
-- **Assist als eingebettete Hilfe**: Entwürfe aus Freitext, passende Datensätze vorschlagen, Unsicherheit reduzieren
-- **Scanner-Flow** mit Mengenmultiplikator und direkter Übergabe in den Rechnungsvorbefüllungszustand
-- **Import von E-Rechnungen** aus XML oder PDF mit eingebetteter XML für eingehende Dokumente
+- **Hero + detail sheets in the editor**: core status and context remain visible, while deeper input happens in focused sheets
+- **Status as active control** instead of a static label (Open, Overdue, Paid, Cancelled), including timeline
+- **Templates as content defaults** for intros, payment notes, and additional text
+- **PDF design as a first-class feature** (layout, color system, typography, custom font, preview)
+- **Assist as embedded support**: generate drafts from free text, suggest matching records, reduce uncertainty
+- **Scanner flow** with quantity multiplier and direct handoff into invoice prefill state
+- **E-invoice import** from XML or PDF with embedded XML for incoming documents
 
-## Validation, Edge Cases und UX-Logik
+## Validation, Edge Cases, and UX Logic
 
-Wesentliche Schutzmechaniken im Flow:
+Core safeguards in the flow:
 
-- Verhinderung doppelter Rechnungsnummern
-- Abfangen leerer oder ungültiger Positionen
-- Duplikaterkennung bei Kontakten und Produkten (inklusive Barcode)
-- Schutz vor Datenverlust bei ungespeicherten Änderungen (Verwerfen vs. Entwurf)
-- Exportprüfung auf Existenz und Validität vor dem Teilen
-- Historie trennt klar zwischen Statusänderungen und PDF-Versionen
+- Prevention of duplicate invoice numbers
+- Handling of empty or invalid line items
+- Duplicate detection for contacts and products (including barcode)
+- Data-loss protection for unsaved changes (discard vs draft)
+- Export checks for existence and validity before sharing
+- History clearly separates status changes from PDF versions
 
 ## Outcome
 
-Rechnungen+ liefert einen durchgehenden mobilen Workflow von Datenerfassung bis exportierbarer E-Rechnung mit einem klaren Fokus auf:
+Rechnungen+ delivers an end-to-end mobile workflow from data capture to export-ready e-invoice, with a clear focus on:
 
-- **Klarheit** in fachlich komplexen Schritten
-- **Sicherheit** durch frühzeitige Validierung
-- **Tempo** durch Wiederverwendung und geführte Flows
+- **Clarity** in domain-heavy steps
+- **Safety** through early validation
+- **Speed** through reuse and guided flows
 
-Senior-relevante Wirkung des Projekts:
+Senior-level impact of the project:
 
-- Komplexität wurde nicht "wegdesignt", sondern sinnvoll segmentiert
-- Fachlogik, UI-States und Datenmodell wurden konsistent verzahnt
-- Vertrauenskritische Bereiche (Status, Historie, Export) wurden explizit gestaltet
-- Scope wurde bewusst geführt: EN16931/ZUGFeRD im Fokus, komplexere Steuerfälle als definierte nächste Stufe
+- Complexity was not "designed away," but segmented in a meaningful way
+- Domain logic, UI states, and data model were integrated consistently
+- Trust-critical areas (status, history, export) were designed explicitly
+- Scope was managed deliberately: focus on EN16931/ZUGFeRD, with advanced tax cases defined as the next stage
 
 ```mockup type="iphone" image="assets/einvoice/01.png" bgColor="#F5F5F7"
 ```
@@ -170,20 +169,20 @@ Senior-relevante Wirkung des Projekts:
 ```
 
 
-## KPI-Framework für die Produktphase nach Launch
+## KPI Framework for the Post-Launch Product Phase
 
 - Time-to-First-Invoice
-- Completion Rate im Editor
-- Fehlerquote vor Export
-- Erfolgreiche Export-/Share-Rate
-- Supportfälle pro 100 Rechnungen
-- Korrekturschleifen pro Rechnungsvorgang
+- Completion rate in the editor
+- Error rate before export
+- Successful export/share rate
+- Support cases per 100 invoices
+- Correction loops per invoicing process
 
-## Nächste Ausbaustufen
+## Next Expansion Steps
 
-1. Erweiterte Steuerfälle (mehrere Steuersätze, Reverse Charge, EU-Fälle) mit verständlicher UX-Abstraktion
-2. Sichtbarer Readiness Score mit priorisierten To-dos vor dem Export
-3. In-App-Analytics pro Schritt zur Reduktion von Abbrüchen und Fehlermustern
-4. Geführtes Onboarding für Erstnutzer:innen mit domänenspezifischen Presets
+1. Advanced tax cases (multiple tax rates, reverse charge, EU scenarios) with understandable UX abstraction
+2. Visible readiness score with prioritized to-dos before export
+3. Step-level in-app analytics to reduce drop-offs and error patterns
+4. Guided onboarding for first-time users with domain-specific presets
 
-Mit Rechnungen+ wurde aus einem fehleranfälligen Formularprozess ein verlässlicher mobiler Arbeitsfluss - exportbereit in wenigen Minuten.
+With Rechnungen+, an error-prone form process became a reliable mobile workflow, ready for export in minutes.
