@@ -43,6 +43,8 @@ export interface Project {
     rowCount?: number
     // Optional: control scrub speed in Work cards (lower = faster)
     scrollPixelsPerFrame?: number
+    // Optional: delay scrub start by N scroll pixels
+    scrollStartOffsetPx?: number
     // New video sequence support
     videoPath?: string
     mobileVideoPath?: string

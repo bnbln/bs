@@ -42,6 +42,7 @@ export function resolveProjectAssets<T extends {
     columnCount?: number;
     rowCount?: number;
     scrollPixelsPerFrame?: number;
+    scrollStartOffsetPx?: number;
     videoPath?: string;
     mobileVideoPath?: string;
     safariVideoPath?: string;

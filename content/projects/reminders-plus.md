@@ -22,7 +22,8 @@ animationSequence:
   rowCount: 13
   spriteWidth: 1920
   spriteHeight: 1080
-  scrollPixelsPerFrame: 7
+  scrollPixelsPerFrame: 8
+  scrollStartOffsetPx: 150
   videoPath: assets/reminders-8.mp4
   mobileVideoPath: assets/reminders-8-mobile-scrub.mp4
   safariVideoPath: assets/reminders-8-safari-scrub.mp4

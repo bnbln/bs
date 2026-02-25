@@ -34,8 +34,8 @@ const Contact = () => {
       ref={containerRef}
       className="py-16 md:py-24 lg:py-32 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full flex justify-center items-center"
     >
-      {/* Subtle noise wash overlay for the entire section */}
-      <div className="absolute inset-0 bg-[url('/assets/noise.png')] bg-repeat bg-[length:100px_100px] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
+      {/* Subtle texture wash overlay for the entire section */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.35),transparent_35%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.22),transparent_40%)] opacity-60 mix-blend-overlay pointer-events-none"></div>
 
       <div className="w-full max-w-[1400px] relative z-10">
 
