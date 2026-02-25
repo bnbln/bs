@@ -46,7 +46,7 @@ const About = () => {
     <section
       id="about"
       ref={containerRef}
-      className="py-24 md:py-32 pb-4 sm:pb-8 md:pb-12 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full border-t border-neutral-100"
+      className="py-24 md:py-32 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full border-t border-neutral-100"
     >
       {/* Container: Asymmetric Sticky Layout */}
       <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-16 lg:gap-24 relative z-10">

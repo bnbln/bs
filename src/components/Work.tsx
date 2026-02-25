@@ -442,11 +442,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // ── Two-phase scroll animation ──
   // Phase 1 – Entrance (sectionProgress 0→0.35): cards settle into a tight stack
-  //   gap: 100 → 16,  borderRadius: 20 → 12,  scale: 0.93 → 0.97
+  //   gap: 100 → 22,  borderRadius: 20 → 12,  scale: 0.93 → 0.97
   // Phase 2 – Expand  (sectionProgress 0.5→0.75): stack goes fullscreen
-  //   gap: 16 → 0,   borderRadius: 12 → 0,   scale: 0.97 → 1,  margins → 0
+  //   gap: 22 → 0,   borderRadius: 12 → 0,   scale: 0.97 → 1,  margins → 0
 
-  const STACK_SCALE_STEP = 0.04;     // slightly stronger step to make the scale difference visible
+  const isMobileStackLayout = pageMargin <= 32;
+  // Re-enable index scaling on all breakpoints; keep it stronger on mobile.
+  const STACK_SCALE_STEP = isMobileStackLayout ? 0.032 : 0.052;
   const stackScaleOffset = Math.max(0, totalCards - 1 - index) * STACK_SCALE_STEP;
 
   // Keep a live ref so MotionValue callbacks always read the latest pageMargin
@@ -454,33 +456,33 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   pageMarginRef.current = pageMargin;
 
   // Entrance: 0 → 1  (settling into stack)
-  const entranceT = useTransform(sectionProgress, [0, 0.3], [0, 1], { clamp: true });
+  // Finish this phase earlier so the closed stack state is reached sooner.
+  const entranceT = useTransform(sectionProgress, [0, 0.18], [0, 1], { clamp: true });
 
   // Expand: 0 → 1  (stack → fullscreen)
   // Expand mapped over a larger distance to give the transition more time
   const expandT = useTransform(sectionProgress, [0.35, 0.95], [0, 1], { clamp: true });
+  // Slight ease-in on unstack so movement ramps in more gently.
+  const expandTEased = useTransform(expandT, (v) => Math.pow(v, 1.5));
 
   // Border radius transition: starts even later than the rest (at 0.85 instead of 0.7)
   const borderExpandT = useTransform(sectionProgress, [0.85, 0.98], [0, 1], { clamp: true });
 
   // ── Derived values from both phases ──
 
-  // Gap per card:  100 → 16 (entrance)  → 0 (expand)
-  const GAP_INITIAL = 100;
-  const GAP_STACKED = 16;
-  const stickyTop = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
-    const entranceGap = GAP_INITIAL - (GAP_INITIAL - GAP_STACKED) * e; // 40→16
-    return index * entranceGap * (1 - t);                              // →0
-  });
+  // Closed stack spacing controls.
+  // This is the direct, linear gap knob for closed stack spacing.
+  const STACK_GAP_PX = isMobileStackLayout ? 28 : 58;
+  const stickyTop = 0;
 
   // Border radius:  20 → 12 (entrance)  → 0 (borderExpand)
   const cardBorderRadius = useTransform([entranceT, borderExpandT] as any, ([e, bt]: number[]) => {
-    const entranceRadius = 20 - 8 * e; // 20→12
+    const entranceRadius = 40 - 8 * e; // 20→12
     return entranceRadius * (1 - bt);   // →0
   });
 
   // Scale:  0.93 → 0.97 (entrance)  → 1.0 (expand),  per-card offset fades out
-  const cardScale = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
+  const cardScale = useTransform([entranceT, expandTEased] as any, ([e, t]: number[]) => {
     const entranceBase = 0.93 + 0.04 * e;            // 0.93→0.97
     const base = entranceBase + 0.03 * t;             // 0.97→1.0
     const stackFactor = 1 - t;
@@ -488,7 +490,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   });
 
   // Horizontal margin: pageMargin (stacked) → 0 (fullscreen), with scale compensation
-  const cardMargin = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
+  const cardMargin = useTransform([entranceT, expandTEased] as any, ([e, t]: number[]) => {
     const pm = pageMarginRef.current;
     const fraction = 1 - t;
     if (fraction <= 0) return 0;
@@ -505,9 +507,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   });
 
   // Calculate stack overlapped position
-  const percentY = useTransform(expandT, [0, 1], [-100 * index, 0]);
-  // Positive pixel offset shifts items down so the back cards peek out at the top
-  const pixelY = useTransform(expandT, [0, 1], [35 * index, 0]);
+  const percentY = useTransform(expandTEased, [0, 1], [-100 * index, 0]);
+  // Closed state uses an exact linear pixel gap per card; expand collapses it to 0.
+  const pixelY = useTransform(expandTEased, [0, 1], [STACK_GAP_PX * index, 0]);
   const cardY = useMotionTemplate`calc(${percentY}% + ${pixelY}px)`;
 
   // Safari: animate crop via clip-path instead of margins/border radius to avoid
@@ -1294,10 +1296,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const useSafariClipPath = isSafari && !useVideoScrubbing;
 
   return (
-    <div ref={scrollTrackRef} className="relative">
+    <div ref={scrollTrackRef} className="relative w-full aspect-[16/10] md:aspect-video">
       <motion.div
         ref={containerRef}
-        className={`sticky w-full aspect-[16/10] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
+        className={`sticky w-full h-full shadow-xl cursor-pointer group`}
         style={{
           zIndex: index + 1,
           top: stickyTop,
@@ -1308,6 +1310,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           WebkitClipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           y: cardY,
           scale: cardScale,
+          transformOrigin: 'top center',
           overflow: 'hidden',
           width: 'auto',
           willChange: useSafariClipPath ? 'transform, clip-path' : 'transform',
