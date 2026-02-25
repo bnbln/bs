@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
@@ -19,6 +19,7 @@ interface Skill {
     description: string;
     shapeConfig?: SkillShapeConfig;
     skillPills: string[];
+    deliverables: string[];
 }
 
 const skills: Skill[] = [
@@ -33,7 +34,15 @@ const skills: Skill[] = [
         //     position: [0, 0, 0],
         //     rotation: [0, 0, 0],
         //     hoverScale: [1.3, 1.3, 1.3]
-        // }
+        // },
+        deliverables: [
+            "Brand Identities & Guidelines",
+            "Broadcast & Show Packages",
+            "Promos & Campaign Trailers",
+            "Motion Design Systems",
+            "C-Level Pitch Decks",
+            "Digital & Print Event Packages"
+        ],
         skillPills: [
             "Motion Design",
             "Brand Design",
@@ -58,6 +67,13 @@ const skills: Skill[] = [
             scale: [0.9, 0.9, 0.9],
             hoverScale: [1.3, 1.3, 1.3]
         },
+        deliverables: [
+            "Scalable Design Systems",
+            "Web App Interfaces & SaaS",
+            "High-Fidelity Prototypes",
+            "User Personas & Conversion Flows",
+            "iOS & Mobile Interfaces"
+        ],
         skillPills: [
             "UX/UI Design",
             "User Research",
@@ -82,6 +98,13 @@ const skills: Skill[] = [
             scale: [0.9, 0.9, 0.9],
             hoverScale: [1.3, 1.3, 1.3]
         },
+        deliverables: [
+            "High-Performance Web Apps",
+            "Interactive 3D/WebGL Experiences",
+            "Marketing Websites & Portfolios",
+            "AI-Integrated Prototypes & Tools",
+            "Custom Content Architecture"
+        ],
         skillPills: [
             "Web Development",
             "React / Next.js",
@@ -223,7 +246,7 @@ const DevShape = ({ isHovered, config }: { isHovered: boolean, config?: SkillSha
 
 const ThreeDScene = ({ index, isHovered, config }: { index: number, isHovered: boolean, config?: SkillShapeConfig }) => {
     return (
-        <div className="absolute inset-0 pointer-events-none rounded-3xl overflow-hidden w-full h-full" style={{ opacity: isHovered ? 0.8 : 0.5, transition: 'opacity 0.7s ease', zIndex: 0 }}>
+        <div className="absolute inset-0 pointer-events-none rounded-[40px] overflow-hidden w-full h-full" style={{ opacity: isHovered ? 0.8 : 0.5, transition: 'opacity 0.7s ease', zIndex: 0 }}>
             <Canvas camera={{ position: [0, 0, 5], fov: 45 }} style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', top: 0, left: 0 }} resize={{ debounce: 0, scroll: false }}>
                 <ambientLight intensity={1} />
                 <directionalLight position={[10, 10, 5]} intensity={2} />
@@ -245,15 +268,54 @@ const ThreeDScene = ({ index, isHovered, config }: { index: number, isHovered: b
 const Skills = () => {
     const containerRef = useRef<HTMLDivElement>(null)
     const isInView = useInView(containerRef, { once: true, margin: "-10%" })
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-    const [isDesktop, setIsDesktop] = useState(true)
 
-    useEffect(() => {
-        const handleResize = () => setIsDesktop(window.innerWidth >= 1024)
-        handleResize()
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    // -1 signifies all drawers are closed
+    const [expandedIndex, setExpandedIndex] = useState<number>(-1)
+
+    // Store refs for each drawer to handle scroll toggling
+    const drawerRefs = useRef<(HTMLDivElement | null)[]>([])
+
+    const handleToggle = (index: number) => {
+        const isCurrentlyExpanded = expandedIndex === index
+        setExpandedIndex(isCurrentlyExpanded ? -1 : index)
+
+        // If we are opening a drawer, smoothly scroll to it dynamically tracking its
+        // position over the course of the exact 600ms layout animation.
+        if (!isCurrentlyExpanded) {
+            const element = drawerRefs.current[index]
+            if (element) {
+                const startY = window.scrollY;
+                const duration = 600; // Matches framer-motion transition
+                let startTime: number | null = null;
+
+                const animateScroll = (currentTime: number) => {
+                    if (startTime === null) startTime = currentTime;
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Smooth easeOut cubic curve
+                    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+                    const easedProgress = easeOut(progress);
+
+                    // Re-calculate target Y dynamically every frame as the layout above shrinks
+                    const targetY = element.getBoundingClientRect().top + window.scrollY - 100;
+
+                    // Interpolate between start and a moving target
+                    const nextY = startY + (targetY - startY) * easedProgress;
+                    window.scrollTo({ top: nextY, behavior: 'auto' });
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateScroll);
+                    } else {
+                        // Final precision snap
+                        window.scrollTo({ top: element.getBoundingClientRect().top + window.scrollY - 100, behavior: 'auto' });
+                    }
+                }
+
+                requestAnimationFrame(animateScroll);
+            }
+        }
+    }
 
     return (
         <section
@@ -261,146 +323,126 @@ const Skills = () => {
             className="bg-[#1C1D20] py-24 md:py-40 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
         >
             <div className="max-w-[1400px] mx-auto relative z-10">
-
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={isInView ? { y: 0, opacity: 1 } : {}}
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-12 md:mb-20 flex justify-between items-end"
+                    className="mb-16 md:mb-32 flex justify-between items-end"
                 >
-                    <h2 className="text-white text-3xl md:text-5xl lg:text-6xl font-space-grotesk font-bold tracking-tight">
-                        Specialized<br />Expertise
+                    <h2 className="text-white text-4xl md:text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tight">
+                        Technical<br />Skills
                     </h2>
-                    <div className="hidden md:block text-neutral-400 font-inter text-sm uppercase tracking-widest">
-                        Capabilities
-                    </div>
                 </motion.div>
 
-                {/* 3-Column Interactive Layout */}
-                <div
-                    className="flex flex-col lg:flex-row gap-4 h-[auto] lg:h-[600px] w-full"
-                    onMouseLeave={() => setHoveredIndex(null)}
-                >
+                <div className="flex flex-col gap-4 md:gap-6">
                     {skills.map((skill, index) => {
-                        const isHovered = hoveredIndex === index
-                        const isAnyHovered = hoveredIndex !== null
+                        const isExpanded = expandedIndex === index;
 
                         return (
                             <motion.div
                                 key={skill.num}
-                                onMouseEnter={() => setHoveredIndex(index)}
                                 initial={{ opacity: 0, y: 30 }}
-                                style={{
-                                    transition: 'background-color 0.5s'
-                                }}
-                                animate={isInView ? {
-                                    opacity: 1,
-                                    y: 0,
-                                    flex: isDesktop
-                                        ? (isHovered ? 2 : (isAnyHovered ? 0.8 : 1))
-                                        : undefined
-                                } : {}}
+                                animate={isInView ? { opacity: 1, y: 0 } : {}}
                                 transition={{
-                                    duration: 0.6,
-                                    ease: [0.32, 0.72, 0, 1],
-                                    opacity: { duration: 0.8, delay: index * 0.1 },
-                                    y: { duration: 0.8, delay: index * 0.1 },
-                                    flex: { duration: 0.7, ease: [0.32, 0.72, 0, 1] }
+                                    duration: 0.8,
+                                    delay: index * 0.15,
+                                    ease: [0.32, 0.72, 0, 1]
                                 }}
-                                className={`
-                  relative group overflow-hidden rounded-3xl
-                  flex flex-col justify-between p-8 md:p-10
-                  border border-neutral-800
-                  ${isHovered ? 'bg-[#2A2B2F]' : 'bg-[#1C1D20]'}
-                  lg:h-full lg:min-w-[200px] h-[350px]
-                `}
+                                ref={(el) => { drawerRefs.current[index] = el }}
+                                className={`relative rounded-3xl md:rounded-[40px] border border-neutral-800/80 bg-[#1C1D20]/80 overflow-hidden group transition-colors duration-500 ${isExpanded ? 'hover:border-neutral-700' : 'hover:border-neutral-600 cursor-pointer'}`}
+                                onClick={() => handleToggle(index)}
                             >
-                                {/* Background Pattern / Hint */}
-                                <div
-                                    className={`absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent transition-opacity duration-500 z-10 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-                                />
-
-                                {/* 3D Canvas Background */}
-                                <ThreeDScene index={index} isHovered={isHovered} config={skill.shapeConfig} />
-
-                                {/* Top Section */}
-                                <div className="relative z-10 flex justify-between items-start">
-                                    <div className="font-space-grotesk text-neutral-500 text-lg md:text-xl font-medium">
-                                        {skill.num}
-                                    </div>
-                                </div>
-
-                                {/* Bottom Section */}
-                                <div className="relative z-10 w-[260px] sm:w-[320px] md:w-[380px] lg:w-[420px] xl:w-[460px]">
-                                    <div className="mb-2 md:mb-4">
-                                        <h3 className={`font-space-grotesk font-bold tracking-tight transition-all duration-500 origin-left whitespace-nowrap leading-[1.1] ${isHovered
-                                            ? 'text-4xl md:text-5xl lg:text-6xl text-white'
-                                            : 'text-3xl md:text-4xl lg:text-5xl text-white lg:text-neutral-300'
-                                            }`}>
-                                            {skill.title}<br />{skill.subtitle}
+                                {/* Collapsed Header Area (Always visible) */}
+                                <div className={`flex items-center justify-between px-6 md:px-12 lg:px-16 transition-all duration-500 ${isExpanded ? 'pt-10 md:pt-14 pb-4 md:pb-6' : 'py-6 md:py-8'}`}>
+                                    <div className="flex items-center gap-6 md:gap-12">
+                                        <div className={`font-space-grotesk font-medium transition-colors duration-300 ${isExpanded ? 'text-neutral-500 text-xl' : 'text-neutral-400 text-lg md:text-xl'}`}>
+                                            {skill.num}
+                                        </div>
+                                        <h3 className={`font-space-grotesk font-bold tracking-tight transition-all duration-300 ${isExpanded ? 'text-3xl md:text-4xl lg:text-5xl text-white' : 'text-2xl md:text-3xl text-neutral-300 group-hover:text-white'}`}>
+                                            {skill.title} {skill.subtitle}
                                         </h3>
                                     </div>
 
-                                    {/* Description (Expands on Hover) */}
+                                    {/* Expand/Collapse Icon */}
                                     <motion.div
-                                        initial={false}
-                                        animate={{
-                                            opacity: hoveredIndex === null || isHovered ? (isDesktop ? (isHovered ? 1 : 0) : 1) : 0,
-                                            height: hoveredIndex === null || isHovered ? (isDesktop ? (isHovered ? 'auto' : 0) : 'auto') : 0
-                                        }}
+                                        animate={{ rotate: isExpanded ? 45 : 0 }}
                                         transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                                        className="overflow-hidden"
+                                        className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-neutral-700 flex items-center justify-center shrink-0"
                                     >
-                                        <div className="pt-2 md:pt-4 pb-2">
-                                            <p className="font-inter text-neutral-400 text-base md:text-lg lg:text-xl">
-                                                {skill.description}
-                                            </p>
-                                        </div>
+                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                                            <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                        </svg>
                                     </motion.div>
                                 </div>
 
-                                {/* Decorative Line that animates on hover */}
-                                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-neutral-800">
-                                    <motion.div
-                                        className="h-full bg-white origin-left"
-                                        initial={{ scaleX: 0 }}
-                                        animate={{ scaleX: isHovered ? 1 : 0 }}
-                                        transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-                                    />
-                                </div>
+                                {/* Expandable Content Area */}
+                                <AnimatePresence initial={false}>
+                                    {isExpanded && (
+                                        <motion.div
+                                            key="content"
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+                                            className="overflow-hidden"
+                                        >
+                                            {/* We apply the bottom padding HERE inside the animated layout, so it collapses to 0 height gracefully */}
+                                            <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start px-6 md:px-12 lg:px-16 pb-10 md:pb-14 mt-4 md:mt-6">
+
+                                                {/* 3D Canvas Background (Left Column) */}
+                                                <div className="relative col-span-1 lg:col-span-5 h-[300px] sm:h-[400px] lg:h-full lg:min-h-[450px] rounded-3xl overflow-hidden bg-[#151618]">
+                                                    <ThreeDScene index={index} isHovered={true} config={skill.shapeConfig} />
+                                                </div>
+
+                                                {/* Content Details (Right Column) */}
+                                                <div className="relative z-10 col-span-1 lg:col-span-7 flex flex-col gap-10 lg:gap-12 w-full">
+                                                    <p className="font-inter text-neutral-400 text-lg md:text-xl leading-relaxed max-w-[600px]">
+                                                        {skill.description}
+                                                    </p>
+
+                                                    <div className="flex flex-col xl:flex-row gap-12 lg:gap-8 pt-8 border-t border-neutral-800/50 w-full">
+                                                        {/* Core Skills (Pills) */}
+                                                        <div className="flex flex-col gap-5 w-full xl:w-1/2">
+                                                            <h4 className="text-white font-space-grotesk text-sm md:text-base font-semibold uppercase tracking-widest text-neutral-400">
+                                                                Core Methods
+                                                            </h4>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {skill.skillPills.map((pill, i) => (
+                                                                    <span
+                                                                        key={i}
+                                                                        className="px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-neutral-800 bg-[#2A2B2F]/40 backdrop-blur-sm text-neutral-300 text-xs md:text-sm font-inter whitespace-nowrap"
+                                                                    >
+                                                                        {pill}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Deliverables */}
+                                                        <div className="flex flex-col gap-5 w-full xl:w-1/2">
+                                                            <h4 className="text-white font-space-grotesk text-sm md:text-base font-semibold uppercase tracking-widest text-neutral-400">
+                                                                What I Build
+                                                            </h4>
+                                                            <ul className="flex flex-col gap-2.5">
+                                                                {skill.deliverables.map((item, i) => (
+                                                                    <li key={i} className="flex gap-3 items-start text-neutral-300 font-inter text-sm md:text-base leading-snug">
+                                                                        <svg className="w-5 h-5 text-neutral-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                        </svg>
+                                                                        {item}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </motion.div>
                         )
                     })}
-                </div>
-
-                {/* Skill Pills Categories */}
-                <div className="mt-16 md:mt-32 pt-12 md:pt-20 border-t border-neutral-800/50 grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 lg:gap-12">
-                    {skills.map((skillGroup, groupIndex) => (
-                        <motion.div
-                            key={skillGroup.num}
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={isInView ? { y: 0, opacity: 1 } : {}}
-                            transition={{ duration: 0.8, delay: 0.4 + groupIndex * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                            className="flex flex-col"
-                        >
-                            <h4 className="text-white font-space-grotesk text-xl font-bold mb-6">
-                                {skillGroup.title} {skillGroup.subtitle}
-                            </h4>
-                            <div className="flex flex-wrap gap-2 md:gap-3">
-                                {skillGroup.skillPills.map((skill, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                                        transition={{ duration: 0.4, delay: 0.5 + groupIndex * 0.1 + i * 0.03 }}
-                                        className="px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-neutral-800/80 bg-[#1C1D20]/50 backdrop-blur-sm text-neutral-400 text-sm font-inter hover:bg-[#2A2B2F] hover:text-white hover:border-neutral-700 transition-all duration-300 cursor-default"
-                                    >
-                                        {skill}
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    ))}
                 </div>
             </div>
         </section>

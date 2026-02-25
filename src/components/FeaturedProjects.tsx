@@ -193,7 +193,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const carouselLength = items.length
 
   return (
-    <section className="bg-white py-24 relative w-full overflow-hidden" id="work">
+    <section className="relative w-full overflow-hidden" id="work">
 
       {/* Section Title with Navigation */}
       <motion.div
@@ -205,7 +205,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
       >
         <div className="max-w-[1400px] mx-auto flex items-end justify-between gap-4">
           <h2 className="text-neutral-800 text-[20px] font-space-grotesk font-bold tracking-tight">
-            The Latest
+            Recent News
           </h2>
 
           <div className="flex gap-3">

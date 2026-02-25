@@ -1115,7 +1115,7 @@ const Work: React.FC<WorkProps> = ({ data }) => {
   });
 
   return (
-    <section ref={sectionRef} className="bg-[#FAFAFA] w-full relative" id="work">
+    <section ref={sectionRef} className="w-full relative" id="work">
       {data.map((project, index) => (
         <ProjectCard
           key={`${project.id}-${index}`}

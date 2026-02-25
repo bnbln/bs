@@ -32,7 +32,7 @@ const Contact = () => {
     <section
       id="contact"
       ref={containerRef}
-      className="bg-[#FAFAFA] py-16 md:py-24 lg:py-32 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full flex justify-center items-center"
+      className="py-16 md:py-24 lg:py-32 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full flex justify-center items-center"
     >
       {/* Subtle noise wash overlay for the entire section */}
       <div className="absolute inset-0 bg-[url('/assets/noise.png')] bg-repeat bg-[length:100px_100px] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
@@ -47,7 +47,7 @@ const Contact = () => {
         >
 
           {/* Main Hero Zone */}
-          <div className="pt-16 sm:pt-20 md:pt-28 lg:pt-40 pb-12 sm:pb-16 md:pb-20 lg:pb-28 flex flex-col items-center justify-center relative w-full">
+          <div className="pt-16 sm:pt-20 pb-12 sm:pb-16 flex flex-col items-center justify-center relative w-full">
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -65,7 +65,7 @@ const Contact = () => {
               </span>
 
               {/* Massive Dynamic Headline with Inline Images */}
-              <h2 className="text-[12vw] sm:text-[10vw] md:text-[8.5vw] lg:text-[7.5vw] xl:text-[7vw] leading-[1.05] tracking-tighter font-bold font-space-grotesk text-black mb-6 w-full max-w-[1200px] flex flex-wrap justify-center items-center gap-x-[2vw] gap-y-1 sm:gap-y-2">
+              <h2 className="text-[10vw] sm:text-[7vw] md:text-[7vw] leading-[1.05] tracking-tighter font-bold font-space-grotesk text-black mb-6 w-full max-w-[1200px] flex flex-wrap justify-center items-center gap-x-[2vw] gap-y-1 sm:gap-y-2">
                 <span>LET'S</span>
                 <span>CREATE</span>
                 <span>SOMETHING</span>
@@ -113,46 +113,47 @@ const Contact = () => {
                   Branding, Motion, UX/UI & Development
                 </span>
               </div>
+              {/* Left: Meta Data & Engagement Options */}
+              <div className="flex flex-col items-center lg:items-start gap-6 w-full lg:w-auto mt-8">
+
+                {/* Redistributed Location & Time */}
+                <div className="flex items-center gap-3 text-center lg:text-left text-neutral-500 font-medium bg-neutral-50/50 px-4 py-2 rounded-full border border-neutral-200/50">
+                  <span className="text-[10px] md:text-xs font-inter">
+                    Berlin, Germany
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-neutral-300"></span>
+                  <span className="text-[10px] md:text-xs font-mono text-black font-semibold tabular-nums tracking-tight">
+                    CET {time ? formatTime(time) : '00:00:00'}
+                  </span>
+                </div>
+
+              </div>
 
             </motion.div>
+
           </div>
 
           {/* Bottom Bar: Action & Engagement Zone */}
-          <div className="flex flex-col lg:flex-row items-center justify-between pt-8 border-t border-neutral-200/80 gap-8 lg:gap-0">
+          <div className="flex flex-col items-center justify-center w-full">
 
-            {/* Left: Meta Data & Engagement Options */}
-            <div className="flex flex-col items-center lg:items-start gap-6 w-full lg:w-auto">
+            {/* Actions */}
+            <div className="flex flex-col items-center gap-4 lg:gap-6 w-full justify-center">
 
-              {/* Redistributed Location & Time */}
-              <div className="flex items-center gap-3 text-center lg:text-left text-neutral-500 font-medium bg-neutral-50/50 px-4 py-2 rounded-full border border-neutral-200/50">
-                <span className="text-[10px] md:text-xs font-inter">
-                  Berlin, Germany
-                </span>
-                <span className="w-1 h-1 rounded-full bg-neutral-300"></span>
-                <span className="text-[10px] md:text-xs font-mono text-black font-semibold tabular-nums tracking-tight">
-                  CET {time ? formatTime(time) : '00:00:00'}
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center lg:items-start gap-3">
-                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 font-inter text-center lg:text-left">
-                  Engagement Options
-                </span>
-                <div className="flex flex-wrap justify-center lg:justify-start gap-2 max-w-[300px] sm:max-w-none">
-                  {["Freelance", "Contract", "Consulting", "Retainer"].map((tag, i) => (
-                    <span key={i} className="px-4 py-2 bg-white/80 border border-neutral-200/60 rounded-full text-[10px] sm:text-xs font-inter font-medium text-neutral-600 shadow-sm backdrop-blur-sm">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Actions */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 lg:gap-6 w-full lg:w-auto">
+              {/* Primary CTA */}
+              <MagneticButton className="w-full sm:w-auto">
+                <Link
+                  href="/contact"
+                  className="group relative w-full sm:w-auto inline-flex items-center justify-center sm:justify-between px-8 py-4 sm:py-5 md:px-10 lg:py-6 bg-[#1C1D20] text-white rounded-full overflow-hidden transition-all duration-500 hover:bg-black shadow-[0_8px_20px_rgb(0,0,0,0.15)] hover:shadow-[0_12px_30px_rgb(0,0,0,0.25)] flex-grow"
+                >
+                  <span className="relative z-10 font-space-grotesk font-bold text-base sm:text-lg md:text-xl tracking-wide sm:mr-6 mr-3">Start a Project</span>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white text-white group-hover:text-black transition-colors duration-500 relative z-10 shrink-0">
+                    <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-45 transition-transform duration-500" />
+                  </div>
+                </Link>
+              </MagneticButton>
 
               {/* Secondary Actions */}
-              <div className="flex gap-3 sm:gap-4 w-full sm:w-auto justify-center">
+              <div className="flex gap-3 sm:gap-4 w-auto justify-center">
                 <MagneticButton>
                   <a
                     href="https://linkedin.com/in/benedikt-schnupp-928112116"
@@ -174,19 +175,6 @@ const Contact = () => {
                   </a>
                 </MagneticButton>
               </div>
-
-              {/* Primary CTA */}
-              <MagneticButton className="w-full sm:w-auto">
-                <Link
-                  href="/contact"
-                  className="group relative w-full sm:w-auto inline-flex items-center justify-center sm:justify-between px-8 py-4 sm:py-5 md:px-10 lg:py-6 bg-[#1C1D20] text-white rounded-full overflow-hidden transition-all duration-500 hover:bg-black shadow-[0_8px_20px_rgb(0,0,0,0.15)] hover:shadow-[0_12px_30px_rgb(0,0,0,0.25)] flex-grow"
-                >
-                  <span className="relative z-10 font-space-grotesk font-bold text-base sm:text-lg md:text-xl tracking-wide sm:mr-6 mr-3">Start a Project</span>
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white text-white group-hover:text-black transition-colors duration-500 relative z-10 shrink-0">
-                    <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-45 transition-transform duration-500" />
-                  </div>
-                </Link>
-              </MagneticButton>
 
             </div>
           </div>
