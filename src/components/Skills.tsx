@@ -18,6 +18,7 @@ interface Skill {
     subtitle: string;
     description: string;
     shapeConfig?: SkillShapeConfig;
+    skillPills: string[];
 }
 
 const skills: Skill[] = [
@@ -33,6 +34,20 @@ const skills: Skill[] = [
         //     rotation: [0, 0, 0],
         //     hoverScale: [1.3, 1.3, 1.3]
         // }
+        skillPills: [
+            "Motion Design",
+            "Brand Design",
+            "After Effects",
+            "3D Modeling",
+            "Animation",
+            "Show Design",
+            "Style Guides",
+            "Brand Films",
+            "Presentations",
+            "Corporate Identity",
+            "Visual Identity",
+            "Typography"
+        ]
     },
     {
         num: "02",
@@ -42,7 +57,21 @@ const skills: Skill[] = [
         shapeConfig: {
             scale: [0.9, 0.9, 0.9],
             hoverScale: [1.3, 1.3, 1.3]
-        }
+        },
+        skillPills: [
+            "UX/UI Design",
+            "User Research",
+            "Scrum / Agile",
+            "Wireframing",
+            "Prototyping",
+            "Design Systems",
+            "Usability Testing",
+            "Information Architecture",
+            "Figma",
+            "Interactive Prototypes",
+            "User Flows",
+            "Journey Mapping"
+        ]
     },
     {
         num: "03",
@@ -52,7 +81,21 @@ const skills: Skill[] = [
         shapeConfig: {
             scale: [0.9, 0.9, 0.9],
             hoverScale: [1.3, 1.3, 1.3]
-        }
+        },
+        skillPills: [
+            "Web Development",
+            "React / Next.js",
+            "Three.js / WebGL",
+            "Generative AI",
+            "Frontend Development",
+            "TypeScript",
+            "Tailwind CSS",
+            "Creative Coding",
+            "Framer Motion",
+            "Web Animations",
+            "API Integration",
+            "CMS Options"
+        ]
     }
 ]
 
@@ -328,6 +371,36 @@ const Skills = () => {
                             </motion.div>
                         )
                     })}
+                </div>
+
+                {/* Skill Pills Categories */}
+                <div className="mt-16 md:mt-32 pt-12 md:pt-20 border-t border-neutral-800/50 grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 lg:gap-12">
+                    {skills.map((skillGroup, groupIndex) => (
+                        <motion.div
+                            key={skillGroup.num}
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={isInView ? { y: 0, opacity: 1 } : {}}
+                            transition={{ duration: 0.8, delay: 0.4 + groupIndex * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                            className="flex flex-col"
+                        >
+                            <h4 className="text-white font-space-grotesk text-xl font-bold mb-6">
+                                {skillGroup.title} {skillGroup.subtitle}
+                            </h4>
+                            <div className="flex flex-wrap gap-2 md:gap-3">
+                                {skillGroup.skillPills.map((skill, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                                        transition={{ duration: 0.4, delay: 0.5 + groupIndex * 0.1 + i * 0.03 }}
+                                        className="px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-neutral-800/80 bg-[#1C1D20]/50 backdrop-blur-sm text-neutral-400 text-sm font-inter hover:bg-[#2A2B2F] hover:text-white hover:border-neutral-700 transition-all duration-300 cursor-default"
+                                    >
+                                        {skill}
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </section>

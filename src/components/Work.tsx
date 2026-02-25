@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { motion, useScroll, useTransform, MotionValue, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
 import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
@@ -180,18 +180,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   // Phase 2 – Expand  (sectionProgress 0.5→0.75): stack goes fullscreen
   //   gap: 16 → 0,   borderRadius: 12 → 0,   scale: 0.97 → 1,  margins → 0
 
-  const STACK_SCALE_STEP = 0.015;     // each deeper card is 1.5 % smaller
-  const stackScaleOffset = index * STACK_SCALE_STEP;
+  const STACK_SCALE_STEP = 0.04;     // slightly stronger step to make the scale difference visible
+  const stackScaleOffset = Math.max(0, totalCards - 1 - index) * STACK_SCALE_STEP;
 
   // Keep a live ref so MotionValue callbacks always read the latest pageMargin
   const pageMarginRef = useRef(pageMargin);
   pageMarginRef.current = pageMargin;
 
   // Entrance: 0 → 1  (settling into stack)
-  const entranceT = useTransform(sectionProgress, [0, 0.35], [0, 1], { clamp: true });
+  const entranceT = useTransform(sectionProgress, [0, 0.3], [0, 1], { clamp: true });
 
   // Expand: 0 → 1  (stack → fullscreen)
-  const expandT = useTransform(sectionProgress, [0.5, 0.75], [0, 1], { clamp: true });
+  // Expand mapped over a larger distance to give the transition more time
+  const expandT = useTransform(sectionProgress, [0.35, 0.95], [0, 1], { clamp: true });
+
+  // Border radius transition: starts even later than the rest (at 0.85 instead of 0.7)
+  const borderExpandT = useTransform(sectionProgress, [0.85, 0.98], [0, 1], { clamp: true });
 
   // ── Derived values from both phases ──
 
@@ -203,10 +207,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     return index * entranceGap * (1 - t);                              // →0
   });
 
-  // Border radius:  20 → 12 (entrance)  → 0 (expand)
-  const cardBorderRadius = useTransform([entranceT, expandT] as any, ([e, t]: number[]) => {
+  // Border radius:  20 → 12 (entrance)  → 0 (borderExpand)
+  const cardBorderRadius = useTransform([entranceT, borderExpandT] as any, ([e, bt]: number[]) => {
     const entranceRadius = 20 - 8 * e; // 20→12
-    return entranceRadius * (1 - t);   // →0
+    return entranceRadius * (1 - bt);   // →0
   });
 
   // Scale:  0.93 → 0.97 (entrance)  → 1.0 (expand),  per-card offset fades out
@@ -228,9 +232,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     const currentScale = base - stackScaleOffset * fraction;
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1440;
 
-    const M = vw / 2 - (vw - 2 * pm * fraction) / (2 * currentScale);
+    // Use `base` instead of `currentScale` to calculate identical DOM margins for all cards,
+    // so the scale difference becomes fully visible horizontally.
+    const M = vw / 2 - (vw - 2 * pm * fraction) / (2 * base);
     return Math.max(0, M);
   });
+
+  // Calculate stack overlapped position
+  const percentY = useTransform(expandT, [0, 1], [-100 * index, 0]);
+  // Positive pixel offset shifts items down so the back cards peek out at the top
+  const pixelY = useTransform(expandT, [0, 1], [35 * index, 0]);
+  const cardY = useMotionTemplate`calc(${percentY}% + ${pixelY}px)`;
 
   // Safari: animate crop via clip-path instead of margins/border radius to avoid
   // layout-heavy repaints during the intro stack transition.
@@ -849,7 +861,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     <div ref={scrollTrackRef} className="relative">
       <motion.div
         ref={containerRef}
-        className={`sticky w-full aspect-[16/9] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
+        className={`sticky w-full aspect-[3/4] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
         style={{
           zIndex: index + 1,
           top: stickyTop,
@@ -858,13 +870,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           marginRight: useSafariClipPath ? 0 : cardMargin,
           clipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           WebkitClipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
+          y: cardY,
           scale: cardScale,
           overflow: 'hidden',
           width: 'auto',
           willChange: useSafariClipPath ? 'transform, clip-path' : 'transform',
         }}
-        initial={{ y: 0, opacity: 1 }}
-        whileInView={{ y: 0, opacity: 1 }}
+        initial={{ opacity: 1 }}
+        whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
         onMouseEnter={hasFinePointer ? handleMouseEnter : undefined}
@@ -985,16 +998,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           </video>
         )}
 
-        {/* Loading indicator for animations */}
+        {/* Subtle loading indicator for animations */}
         {project.hasAnimation && project.animationSequence && !showAnimation && !(useVideoScrubbing && preferNativeVideoScrub) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-700">
-                  {useVideoScrubbing ? 'Loading animation...' : `Loading animation... ${Math.round((loadedImageCount.current / (loadedImages.length || 1)) * 100)}%`}
-                </span>
-              </div>
+          <div className="absolute top-6 right-6 z-20 pointer-events-none">
+            <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-2xl">
+              <svg className="animate-spin h-3.5 w-3.5 text-white/90" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle>
+                <path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-[11px] font-medium tracking-wide uppercase font-inter text-white/95">
+                {useVideoScrubbing ? 'Loading' : `Loading ${Math.round((loadedImageCount.current / (loadedImages.length || 1)) * 100)}%`}
+              </span>
             </div>
           </div>
         )}
@@ -1101,7 +1115,7 @@ const Work: React.FC<WorkProps> = ({ data }) => {
   });
 
   return (
-    <section ref={sectionRef} className="bg-white w-full relative" id="work">
+    <section ref={sectionRef} className="bg-[#FAFAFA] w-full relative" id="work">
       {data.map((project, index) => (
         <ProjectCard
           key={`${project.id}-${index}`}
