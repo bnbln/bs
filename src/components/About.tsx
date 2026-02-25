@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react'
-import Link from 'next/link'
+import React, { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowUpRight, Mail, Linkedin } from 'lucide-react'
+import { Mail, Linkedin } from 'lucide-react'
 
-import MagneticButton from './MagneticButton'
+import { PrimaryActionButton, SocialActionButton } from './ActionButtons'
 import Brands from './Brands'
 import { brandLogos } from '../lib/brands'
 
@@ -63,26 +62,17 @@ const About = () => {
 
             {/* Desktop Socials */}
             <div className="hidden lg:flex gap-4">
-              <MagneticButton>
-                <a
-                  href="https://linkedin.com/in/benedikt-schnupp-928112116"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-14 h-14 rounded-full border border-neutral-200/80 flex items-center justify-center hover:bg-neutral-100 transition-colors text-black bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]"
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin className="w-5 h-5" />
-                </a>
-              </MagneticButton>
-              <MagneticButton>
-                <a
-                  href="mailto:mail@benediktschnupp.com"
-                  className="w-14 h-14 rounded-full border border-neutral-200/80 flex items-center justify-center hover:bg-neutral-100 transition-colors text-black bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]"
-                  aria-label="Email"
-                >
-                  <Mail className="w-5 h-5" />
-                </a>
-              </MagneticButton>
+              <SocialActionButton
+                href="https://linkedin.com/in/benedikt-schnupp-928112116"
+                icon={Linkedin}
+                label="LinkedIn"
+                external
+              />
+              <SocialActionButton
+                href="mailto:mail@benediktschnupp.com"
+                icon={Mail}
+                label="Email"
+              />
             </div>
           </div>
         </div>
@@ -130,38 +120,23 @@ const About = () => {
 
           {/* Magnetic CTA & Mobile Socials */}
           <div className="pt-12 border-t border-neutral-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
-            <MagneticButton>
-              <Link
-                href="/contact"
-                className="group relative inline-flex items-center justify-center px-8 py-4 bg-[#1C1D20] text-white rounded-full overflow-hidden transition-all hover:bg-black shadow-lg hover:shadow-xl"
-              >
-                <span className="relative z-10 font-medium text-lg mr-2 font-inter">Let's Work Together</span>
-                <ArrowUpRight className="w-5 h-5 relative z-10 group-hover:rotate-45 transition-transform duration-300" />
-              </Link>
-            </MagneticButton>
+            <PrimaryActionButton href="/contact" fullWidth>
+              Let's Work Together
+            </PrimaryActionButton>
 
             {/* Mobile Socials (Hidden on desktop) */}
-            <div className="flex lg:hidden gap-4">
-              <MagneticButton>
-                <a
-                  href="https://linkedin.com/in/benedikt-schnupp-928112116"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-14 h-14 rounded-full border border-neutral-200/80 flex items-center justify-center hover:bg-neutral-100 transition-colors text-black bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]"
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin className="w-5 h-5" />
-                </a>
-              </MagneticButton>
-              <MagneticButton>
-                <a
-                  href="mailto:mail@benediktschnupp.com"
-                  className="w-14 h-14 rounded-full border border-neutral-200/80 flex items-center justify-center hover:bg-neutral-100 transition-colors text-black bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]"
-                  aria-label="Email"
-                >
-                  <Mail className="w-5 h-5" />
-                </a>
-              </MagneticButton>
+            <div className="flex lg:hidden gap-4 w-full justify-center sm:w-auto sm:justify-start">
+              <SocialActionButton
+                href="https://linkedin.com/in/benedikt-schnupp-928112116"
+                icon={Linkedin}
+                label="LinkedIn"
+                external
+              />
+              <SocialActionButton
+                href="mailto:mail@benediktschnupp.com"
+                icon={Mail}
+                label="Email"
+              />
             </div>
           </div>
 

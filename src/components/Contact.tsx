@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react'
-import Link from 'next/link'
-import { motion, useInView } from 'framer-motion'
+import { motion, useAnimationControls, useInView } from 'framer-motion'
 import { Mail, Linkedin, ArrowUpRight } from 'lucide-react'
-import MagneticButton from './MagneticButton'
+import { PrimaryActionButton, SocialActionButton } from './ActionButtons'
 
 const Contact = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(containerRef, { once: true, margin: "-10%" })
+  const togetherControls = useAnimationControls()
 
   // Live Clock State
   const [time, setTime] = useState<Date | null>(null)
@@ -19,6 +19,31 @@ const Contact = () => {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    if (!isInView) return
+
+    let cancelled = false
+
+    const runTogetherSequence = async () => {
+      await togetherControls.start('visible')
+      if (cancelled) return
+
+      await new Promise((resolve) => setTimeout(resolve, 900))
+      if (cancelled) return
+
+      await togetherControls.start('hover')
+      if (cancelled) return
+
+      await togetherControls.start('visible')
+    }
+
+    runTogetherSequence()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isInView, togetherControls])
+
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat('en-GB', {
       hour: '2-digit',
@@ -26,6 +51,27 @@ const Contact = () => {
       second: '2-digit',
       timeZone: 'Europe/Berlin',
     }).format(date)
+  }
+
+  const togetherContainerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.04,
+        delayChildren: 0.1,
+      },
+    },
+    hover: {
+      transition: {
+        staggerChildren: 0.04,
+      },
+    },
+  }
+
+  const togetherLetterVariants = {
+    hidden: { color: '#d4d4d4', opacity: 0 },
+    visible: { color: '#d4d4d4', opacity: 0.8 },
+    hover: { color: '#000000', opacity: 1 },
   }
 
   return (
@@ -82,22 +128,16 @@ const Contact = () => {
                   </span>
                   <motion.span
                     className="flex cursor-default text-neutral-300"
-                    initial="rest"
+                    variants={togetherContainerVariants}
+                    initial="hidden"
                     whileHover="hover"
-                    animate="rest"
+                    animate={togetherControls}
                   >
                     {"TOGETHER.".split("").map((char, index) => (
                       <motion.span
                         key={index}
-                        variants={{
-                          rest: { color: "#d4d4d4", opacity: 0.8 },
-                          hover: { color: "#000000", opacity: 1 }
-                        }}
-                        transition={{
-                          duration: 0.25,
-                          delay: index * 0.04,
-                          ease: "easeOut"
-                        }}
+                        variants={togetherLetterVariants}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                       >
                         {char}
                       </motion.span>
@@ -140,40 +180,23 @@ const Contact = () => {
             <div className="flex flex-col items-center gap-4 lg:gap-6 w-full justify-center">
 
               {/* Primary CTA */}
-              <MagneticButton className="w-full sm:w-auto">
-                <Link
-                  href="/contact"
-                  className="group relative w-full sm:w-auto inline-flex items-center justify-center sm:justify-between px-8 py-4 sm:py-5 md:px-10 lg:py-6 bg-[#1C1D20] text-white rounded-full overflow-hidden transition-all duration-500 hover:bg-black shadow-[0_8px_20px_rgb(0,0,0,0.15)] hover:shadow-[0_12px_30px_rgb(0,0,0,0.25)] flex-grow"
-                >
-                  <span className="relative z-10 font-space-grotesk font-bold text-base sm:text-lg md:text-xl tracking-wide sm:mr-6 mr-3">Start a Project</span>
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white text-white group-hover:text-black transition-colors duration-500 relative z-10 shrink-0">
-                    <ArrowUpRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-45 transition-transform duration-500" />
-                  </div>
-                </Link>
-              </MagneticButton>
+              <PrimaryActionButton href="/contact" fullWidth>
+                Start a Project
+              </PrimaryActionButton>
 
               {/* Secondary Actions */}
               <div className="flex gap-3 sm:gap-4 w-auto justify-center">
-                <MagneticButton>
-                  <a
-                    href="https://linkedin.com/in/benedikt-schnupp-928112116"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col items-center justify-center w-[56px] h-[56px] sm:w-[60px] sm:h-[60px] md:w-[68px] md:h-[68px] rounded-full border border-neutral-200 hover:border-black hover:bg-black transition-all text-black hover:text-white bg-white shadow-sm"
-                    aria-label="LinkedIn"
-                  >
-                    <Linkedin className="w-5 h-5 lg:w-6 lg:h-6 mb-0.5" />
-                  </a>
-                </MagneticButton>
-                <MagneticButton>
-                  <a
-                    href="mailto:mail@benediktschnupp.com"
-                    className="group flex flex-col items-center justify-center w-[56px] h-[56px] sm:w-[60px] sm:h-[60px] md:w-[68px] md:h-[68px] rounded-full border border-neutral-200 hover:border-black hover:bg-black transition-all text-black hover:text-white bg-white shadow-sm"
-                    aria-label="Email"
-                  >
-                    <Mail className="w-5 h-5 lg:w-6 lg:h-6 mb-0.5" />
-                  </a>
-                </MagneticButton>
+                <SocialActionButton
+                  href="https://linkedin.com/in/benedikt-schnupp-928112116"
+                  icon={Linkedin}
+                  label="LinkedIn"
+                  external
+                />
+                <SocialActionButton
+                  href="mailto:mail@benediktschnupp.com"
+                  icon={Mail}
+                  label="Email"
+                />
               </div>
 
             </div>

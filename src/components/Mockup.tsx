@@ -36,10 +36,17 @@ export default function Mockup(props: MockupProps) {
 
     // Check if we are mixing devices, to allow bottom alignment
     const isMixedGroup = validItems.length > 1 && validItems.some(i => i.type === 'ipad' || i.type === 'macbook')
+    const isPhoneGroup = validItems.length > 1 && validItems.every(i => i.type === 'iphone' || i.type === 'android')
+
+    const containerGap = isPhoneGroup ? 'gap-3 sm:gap-5 md:gap-16' : 'gap-8 md:gap-16'
+    const containerPadding = isPhoneGroup ? 'px-2 sm:px-6 md:px-8' : 'px-4 sm:px-8'
+    const phoneWidth = isPhoneGroup
+        ? 'w-[46%] max-w-[210px] sm:max-w-[240px] md:w-[85%] md:max-w-[320px]'
+        : 'w-[85%] max-w-[320px]'
 
     return (
         <div
-            className={`w-full relative flex flex-wrap justify-center gap-8 md:gap-16 px-4 sm:px-8 rounded-3xl overflow-hidden shadow-sm ring-1 ring-black/5 ${isMixedGroup ? 'items-end' : 'items-center py-16 sm:py-24'}`}
+            className={`w-full relative flex flex-wrap justify-center ${containerGap} ${containerPadding} rounded-3xl overflow-hidden shadow-sm ring-1 ring-black/5 ${isMixedGroup ? 'items-end' : 'items-center py-16 sm:py-24'}`}
             style={{ backgroundColor: containerBg }}
         >
             {isMixedGroup && <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.02) 100%)' }} />}
@@ -52,10 +59,10 @@ export default function Mockup(props: MockupProps) {
                 return (
                     <React.Fragment key={index}>
                         {type === 'iphone' && (
-                            <div className={`relative w-[85%] max-w-[320px] aspect-[9/19.5] rounded-[2.75rem] sm:rounded-[3rem] p-1.5 sm:p-2 bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
-                                <div className="absolute top-0 inset-x-0 h-8 flex justify-center z-20 pointer-events-none mt-[16px] sm:mt-[18px]">
+                            <div className={`relative ${phoneWidth} aspect-[9/19.5] rounded-[2.75rem] sm:rounded-[3rem] p-1.5 sm:p-2 bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
+                                <div className="absolute inset-x-0 top-[2.6%] flex justify-center z-20 pointer-events-none">
                                     {/* Dynamic Island fake */}
-                                    <div className="w-[94px] sm:w-[100px] h-[28px] sm:h-[30px] bg-black rounded-full" />
+                                    <div className="w-[31.5%] min-w-[64px] max-w-[100px] aspect-[10/3] bg-black rounded-full" />
                                 </div>
                                 <div className="w-full h-full rounded-[2.5rem] sm:rounded-[2.75rem] overflow-hidden bg-neutral-900 relative z-10">
                                     {isVid ? (
@@ -122,7 +129,7 @@ export default function Mockup(props: MockupProps) {
                         )}
 
                         {type === 'android' && (
-                            <div className={`relative w-[85%] max-w-[300px] aspect-[9/20] rounded-[2.5rem] p-2 sm:p-2.5 bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
+                            <div className={`relative ${isPhoneGroup ? 'w-[46%] max-w-[200px] sm:max-w-[220px] md:w-[85%] md:max-w-[300px]' : 'w-[85%] max-w-[300px]'} aspect-[9/20] rounded-[2.5rem] p-2 sm:p-2.5 bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
                                 <div className="w-full h-full rounded-[2rem] overflow-hidden bg-neutral-900 relative z-10">
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-black rounded-full z-20 pointer-events-none" />
                                     {isVid ? (
