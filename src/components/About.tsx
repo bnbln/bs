@@ -39,7 +39,7 @@ const About = () => {
   const stats = [
     { label: "Years Experience", value: "10+" },
     { label: "Projects Delivered", value: "200+" },
-    { label: "Awards", value: "4+" },
+    { label: "Awards & Nominations", value: "8+" },
   ]
 
   return (
@@ -88,7 +88,7 @@ const About = () => {
         </div>
 
         {/* Right Column: Scrubbing Bio, Premium Stats, CTA */}
-        <div className="lg:w-[60%] flex flex-col gap-24">
+        <div className="lg:w-[60%] flex flex-col gap-12 md:gap-16 lg:gap-24">
 
           {/* Scroll-Driven Scrubbing Bio */}
           <div className="min-h-[40vh] lg:min-h-[60vh] flex items-start">
@@ -103,13 +103,13 @@ const About = () => {
             <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 font-inter px-2">
               The Impact
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="group relative bg-white border border-neutral-200/80 rounded-[2rem] p-8 sm:p-6 lg:p-5 xl:p-8 2xl:p-10 hover:bg-neutral-50 transition-all duration-500 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden sm:aspect-square flex flex-col justify-center"
+                  className="group relative bg-white border border-neutral-200/80 rounded-3xl sm:rounded-[2rem] p-5 sm:p-6 lg:p-5 xl:p-8 2xl:p-10 hover:bg-neutral-50 transition-all duration-500 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden aspect-square flex flex-col justify-center"
                 >
-                  <div className="text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold font-space-grotesk text-black mb-2 xl:mb-3 tracking-tighter">
+                  <div className="text-4xl sm:text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold font-space-grotesk text-black mb-1 sm:mb-2 xl:mb-3 tracking-tighter">
                     {stat.value}
                   </div>
                   <div className="text-sm md:text-base lg:text-sm xl:text-base text-neutral-500 font-inter font-medium tracking-wide">

@@ -861,7 +861,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     <div ref={scrollTrackRef} className="relative">
       <motion.div
         ref={containerRef}
-        className={`sticky w-full aspect-[3/4] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
+        className={`sticky w-full aspect-[16/10] md:h-auto md:aspect-video shadow-xl cursor-pointer group`}
         style={{
           zIndex: index + 1,
           top: stickyTop,
