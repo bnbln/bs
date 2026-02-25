@@ -34,6 +34,15 @@ export interface Project {
     basePath?: string
     startFrame?: number
     endFrame?: number
+    // Spritesheet sequence support (preferred)
+    spritesheetPath?: string
+    mobileSpritesheetPath?: string
+    safariSpritesheetPath?: string
+    spriteCount?: number
+    columnCount?: number
+    rowCount?: number
+    // Optional: control scrub speed in Work cards (lower = faster)
+    scrollPixelsPerFrame?: number
     // New video sequence support
     videoPath?: string
     mobileVideoPath?: string

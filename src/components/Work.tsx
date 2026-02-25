@@ -22,6 +22,9 @@ const NATIVE_FAST_SEEK_THRESHOLD_SECONDS = 0.45;
 const NATIVE_WARMUP_ROOT_MARGIN = '200% 0px';
 const VIDEO_SCROLL_START_OFFSET = '99%'; // start when card is about 1% visible
 const VIDEO_SCROLL_END_OFFSET = '-120%'; // continue scrubbing after the card starts transitioning away
+const VIDEO_SCROLL_START_RATIO = Number.parseFloat(VIDEO_SCROLL_START_OFFSET) / 100;
+const VIDEO_SCROLL_END_RATIO = Number.parseFloat(VIDEO_SCROLL_END_OFFSET) / 100;
+const SPRITESHEET_REVEAL_DELAY_MS = 70;
 
 interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   project: Project;
@@ -31,6 +34,8 @@ interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   totalCards: number;
   setHoveredProject: (project: Project | null) => void;
 }
+
+type CssVarsStyle = React.CSSProperties & Record<`--${string}`, string | number>;
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgress, pageMargin, totalCards, setHoveredProject }) => {
   const router = useRouter();
@@ -55,6 +60,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [spritesheetLoaded, setSpritesheetLoaded] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
   const [preferNativeVideoScrub, setPreferNativeVideoScrub] = useState(false);
@@ -65,6 +71,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const spritesheetSequenceRef = useRef<HTMLDivElement>(null);
+  const spritesheetImageRef = useRef<HTMLImageElement>(null);
   const scrollAnimationRef = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
   const loadedImageCount = useRef<number>(0);
@@ -81,9 +89,50 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const nativeLastSeekAtRef = useRef<number>(0);
   const nativeScrubRafRef = useRef<number | null>(null);
   const nativeWarmupDoneRef = useRef<boolean>(false);
+  const spritesheetFrameRef = useRef<number>(-1);
+  const spritesheetFrameAspectRef = useRef<number>(16 / 9);
+  const spritesheetFrameDisplaySizeRef = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
 
-  // Check if this project uses video scrubbing (has videoPath in animationSequence)
-  const useVideoScrubbing = project.animationSequence?.videoPath !== undefined;
+  const selectedSpritesheetPath = useMemo(() => {
+    if (!project.animationSequence) return undefined;
+
+    if (isIOS) {
+      return (
+        project.animationSequence.mobileSpritesheetPath ||
+        project.animationSequence.safariSpritesheetPath ||
+        project.animationSequence.spritesheetPath
+      );
+    }
+
+    if (isSafariDesktop) {
+      return (
+        project.animationSequence.safariSpritesheetPath ||
+        project.animationSequence.mobileSpritesheetPath ||
+        project.animationSequence.spritesheetPath
+      );
+    }
+
+    if (isMobileDevice) {
+      return project.animationSequence.mobileSpritesheetPath || project.animationSequence.spritesheetPath;
+    }
+
+    return project.animationSequence.spritesheetPath;
+  }, [isIOS, isMobileDevice, isSafariDesktop, project.animationSequence]);
+
+  const spriteCount = project.animationSequence?.spriteCount || 0;
+  const spriteColumnCount = project.animationSequence?.columnCount || 0;
+  const spriteRowCount = project.animationSequence?.rowCount || 0;
+  const scrollPixelsPerFrame = project.animationSequence?.scrollPixelsPerFrame;
+
+  // Preferred mode: spritesheet. Fallbacks: video scrub -> legacy image sequence.
+  const useSpritesheetScrubbing = Boolean(
+    selectedSpritesheetPath &&
+    spriteCount > 0 &&
+    spriteColumnCount > 0 &&
+    spriteRowCount > 0
+  );
+
+  const useVideoScrubbing = !useSpritesheetScrubbing && project.animationSequence?.videoPath !== undefined;
   const selectedScrubVideoPath = useMemo(() => {
     if (!project.animationSequence) return undefined;
 
@@ -109,6 +158,86 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
     return project.animationSequence.videoPath;
   }, [isIOS, isMobileDevice, isSafariDesktop, project.animationSequence]);
+
+  const spritesheetSequenceStyle = useMemo<CssVarsStyle>(() => ({
+    '--sprite-count': spriteCount,
+    '--column-count': spriteColumnCount,
+    '--row-count': spriteRowCount,
+  }), [spriteCount, spriteColumnCount, spriteRowCount]);
+
+  const spritesheetImageStyle = useMemo<React.CSSProperties>(() => ({
+    display: 'block',
+    maxWidth: 'none',
+    maxHeight: 'none',
+    transformOrigin: 'top left',
+    willChange: 'transform',
+    backfaceVisibility: 'hidden',
+    imageRendering: 'auto',
+  }), []);
+
+  const applySpritesheetFrameTransform = useCallback((frameIndex: number) => {
+    const imageEl = spritesheetImageRef.current;
+    if (!imageEl || spriteCount <= 0 || spriteColumnCount <= 0) return;
+
+    const clampedFrame = Math.max(0, Math.min(frameIndex, spriteCount - 1));
+    const frameWidth = spritesheetFrameDisplaySizeRef.current.width;
+    const frameHeight = spritesheetFrameDisplaySizeRef.current.height;
+    if (frameWidth <= 0 || frameHeight <= 0) return;
+
+    const column = clampedFrame % spriteColumnCount;
+    const row = Math.floor(clampedFrame / spriteColumnCount);
+
+    imageEl.style.transform = `translate3d(${-column * frameWidth}px, ${-row * frameHeight}px, 0)`;
+    spritesheetFrameRef.current = clampedFrame;
+  }, [spriteColumnCount, spriteCount]);
+
+  const updateSpritesheetViewportMetrics = useCallback(() => {
+    const sequenceEl = spritesheetSequenceRef.current;
+    const imageEl = spritesheetImageRef.current;
+    if (!sequenceEl || !imageEl || !useSpritesheetScrubbing || spriteColumnCount <= 0 || spriteRowCount <= 0) return;
+
+    const containerWidth = sequenceEl.clientWidth;
+    const containerHeight = sequenceEl.clientHeight;
+    if (containerWidth <= 0 || containerHeight <= 0) return;
+
+    const frameAspect = spritesheetFrameAspectRef.current;
+    if (!frameAspect || !Number.isFinite(frameAspect) || frameAspect <= 0) {
+      spritesheetFrameDisplaySizeRef.current = { width: containerWidth, height: containerHeight };
+      imageEl.style.left = '0px';
+      imageEl.style.top = '0px';
+      imageEl.style.width = `${containerWidth * spriteColumnCount}px`;
+      imageEl.style.height = `${containerHeight * spriteRowCount}px`;
+      const currentFrame = spritesheetFrameRef.current >= 0 ? spritesheetFrameRef.current : 0;
+      applySpritesheetFrameTransform(currentFrame);
+      return;
+    }
+
+    const containerAspect = containerWidth / containerHeight;
+    let frameDisplayWidth = containerWidth;
+    let frameDisplayHeight = containerHeight;
+
+    // Match object-cover behavior so the sequence keeps original frame proportions.
+    if (frameAspect > containerAspect) {
+      frameDisplayHeight = containerHeight;
+      frameDisplayWidth = containerHeight * frameAspect;
+    } else {
+      frameDisplayWidth = containerWidth;
+      frameDisplayHeight = containerWidth / frameAspect;
+    }
+
+    const left = (containerWidth - frameDisplayWidth) / 2;
+    const top = (containerHeight - frameDisplayHeight) / 2;
+
+    spritesheetFrameDisplaySizeRef.current = { width: frameDisplayWidth, height: frameDisplayHeight };
+
+    imageEl.style.left = `${left}px`;
+    imageEl.style.top = `${top}px`;
+    imageEl.style.width = `${frameDisplayWidth * spriteColumnCount}px`;
+    imageEl.style.height = `${frameDisplayHeight * spriteRowCount}px`;
+
+    const currentFrame = spritesheetFrameRef.current >= 0 ? spritesheetFrameRef.current : 0;
+    applySpritesheetFrameTransform(currentFrame);
+  }, [applySpritesheetFrameTransform, spriteColumnCount, spriteRowCount, useSpritesheetScrubbing]);
 
   const { scrollYProgress } = useScroll({
     target: scrollTrackRef,
@@ -158,6 +287,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     setVideoLoaded(false);
     setShowAnimation(false);
   }, [selectedScrubVideoPath, useVideoScrubbing]);
+
+  useEffect(() => {
+    if (!useSpritesheetScrubbing) return;
+
+    spritesheetFrameRef.current = -1;
+    setSpritesheetLoaded(false);
+    setShowAnimation(false);
+  }, [selectedSpritesheetPath, useSpritesheetScrubbing]);
 
   // For image sequences: start when card reaches ~50% visibility and complete
   // at the sticky top position.
@@ -341,6 +478,95 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
   }, [project.hasAnimation, project.animationSequence, selectedScrubVideoPath, useVideoScrubbing, handleVideoLoad, videoLoaded]);
 
+  // Preload spritesheet for scroll scrubbing
+  useEffect(() => {
+    if (!project.hasAnimation || !project.animationSequence || !useSpritesheetScrubbing || !selectedSpritesheetPath) {
+      return;
+    }
+
+    let cancelled = false;
+    setSpritesheetLoaded(false);
+    setShowAnimation(false);
+    spritesheetFrameRef.current = -1;
+
+    if (revealTimeoutRef.current) {
+      window.clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+
+    const spritesheetImage = new Image();
+    spritesheetImage.decoding = 'async';
+
+    const onReady = () => {
+      if (cancelled) return;
+
+      if (
+        spritesheetImage.naturalWidth > 0 &&
+        spritesheetImage.naturalHeight > 0 &&
+        spriteColumnCount > 0 &&
+        spriteRowCount > 0
+      ) {
+        const frameWidth = spritesheetImage.naturalWidth / spriteColumnCount;
+        const frameHeight = spritesheetImage.naturalHeight / spriteRowCount;
+        if (frameWidth > 0 && frameHeight > 0) {
+          spritesheetFrameAspectRef.current = frameWidth / frameHeight;
+        }
+      }
+
+      requestAnimationFrame(updateSpritesheetViewportMetrics);
+      setSpritesheetLoaded(true);
+
+      const revealDelay = isMobileRef.current ? 0 : SPRITESHEET_REVEAL_DELAY_MS;
+      revealTimeoutRef.current = window.setTimeout(() => {
+        if (!cancelled) {
+          setShowAnimation(true);
+        }
+        revealTimeoutRef.current = null;
+      }, revealDelay);
+    };
+
+    spritesheetImage.onload = onReady;
+    spritesheetImage.onerror = onReady;
+    spritesheetImage.src = selectedSpritesheetPath;
+
+    if (spritesheetImage.complete) {
+      onReady();
+    }
+
+    const fallbackTimeout = window.setTimeout(onReady, 1800);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fallbackTimeout);
+      if (revealTimeoutRef.current) {
+        window.clearTimeout(revealTimeoutRef.current);
+        revealTimeoutRef.current = null;
+      }
+    };
+  }, [project.hasAnimation, project.animationSequence, selectedSpritesheetPath, spriteColumnCount, spriteRowCount, updateSpritesheetViewportMetrics, useSpritesheetScrubbing]);
+
+  useEffect(() => {
+    if (!useSpritesheetScrubbing) return;
+
+    const sequenceEl = spritesheetSequenceRef.current;
+    if (!sequenceEl) return;
+
+    const onResize = () => {
+      requestAnimationFrame(updateSpritesheetViewportMetrics);
+    };
+
+    updateSpritesheetViewportMetrics();
+
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(sequenceEl);
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', onResize);
+    };
+  }, [spritesheetLoaded, updateSpritesheetViewportMetrics, useSpritesheetScrubbing]);
+
   useEffect(() => {
     if (!preferNativeVideoScrub || !useVideoScrubbing) return;
 
@@ -388,9 +614,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     };
   }, [preferNativeVideoScrub, selectedScrubVideoPath, useVideoScrubbing]);
 
-  // Preload animation sequence images (for legacy image sequences)
+  // Preload animation sequence images (legacy fallback)
   useEffect(() => {
-    if (project.hasAnimation && project.animationSequence && !useVideoScrubbing && project.animationSequence.basePath && project.animationSequence.startFrame !== undefined && project.animationSequence.endFrame !== undefined) {
+    if (project.hasAnimation && project.animationSequence && !useVideoScrubbing && !useSpritesheetScrubbing && project.animationSequence.basePath && project.animationSequence.startFrame !== undefined && project.animationSequence.endFrame !== undefined) {
       const images: string[] = [];
       const { startFrame, endFrame, basePath } = project.animationSequence;
 
@@ -443,7 +669,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       // Preload all images in parallel
       Promise.all(images.map((url, index) => preloadImage(url, index)));
     }
-  }, [project.hasAnimation, project.animationSequence, useVideoScrubbing]);
+  }, [project.hasAnimation, project.animationSequence, useSpritesheetScrubbing, useVideoScrubbing]);
 
   const getEffectiveVideoFrameCount = useCallback((video: HTMLVideoElement): number => {
     const sourceFrameCount = project.animationSequence?.frameCount || 501;
@@ -755,6 +981,60 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
   }, [loadedImages.length, showAnimation]);
 
+  const updateSpritesheetFrame = useCallback((scrollProgress: number) => {
+    if (!spritesheetImageRef.current || !useSpritesheetScrubbing || !showAnimation || spriteCount <= 0 || spriteColumnCount <= 0) {
+      return;
+    }
+
+    const progress = Math.max(0, Math.min(1, scrollProgress));
+    const totalFrames = spriteCount - 1;
+    let targetFrame = Math.round(progress * totalFrames);
+
+    // Optional speed control: define how many scroll pixels should advance one frame.
+    // Lower values play faster and reach the end frame sooner.
+    if (scrollPixelsPerFrame && scrollPixelsPerFrame > 0 && typeof window !== 'undefined') {
+      const trackHeight = scrollTrackRef.current?.offsetHeight || containerRef.current?.offsetHeight || window.innerHeight;
+      const scrollRangePx = trackHeight + (VIDEO_SCROLL_START_RATIO - VIDEO_SCROLL_END_RATIO) * window.innerHeight;
+      const defaultFramesPerPixel = totalFrames / Math.max(scrollRangePx, 1);
+      const desiredFramesPerPixel = 1 / scrollPixelsPerFrame;
+      const speedMultiplier = desiredFramesPerPixel / Math.max(defaultFramesPerPixel, 0.0001);
+      const adjustedProgress = Math.max(0, Math.min(1, progress * speedMultiplier));
+      targetFrame = Math.round(adjustedProgress * totalFrames);
+    }
+
+    if (targetFrame === spritesheetFrameRef.current) {
+      return;
+    }
+
+    applySpritesheetFrameTransform(targetFrame);
+  }, [applySpritesheetFrameTransform, scrollPixelsPerFrame, showAnimation, spriteColumnCount, spriteCount, useSpritesheetScrubbing]);
+
+  // High-performance scroll handler for spritesheet scrubbing
+  useEffect(() => {
+    if (!project.hasAnimation || !project.animationSequence || !useSpritesheetScrubbing || !spritesheetLoaded || !showAnimation) {
+      return;
+    }
+
+    const unsubscribe = videoScrollYProgress.on("change", (latest) => {
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current);
+      }
+
+      scrollAnimationRef.current = requestAnimationFrame(() => {
+        updateSpritesheetFrame(latest);
+      });
+    });
+
+    updateSpritesheetFrame(videoScrollYProgress.get());
+
+    return () => {
+      if (scrollAnimationRef.current) {
+        cancelAnimationFrame(scrollAnimationRef.current);
+      }
+      unsubscribe();
+    };
+  }, [project.hasAnimation, project.animationSequence, showAnimation, spritesheetLoaded, updateSpritesheetFrame, useSpritesheetScrubbing, videoScrollYProgress]);
+
   // High-performance scroll handler for video scrubbing
   useEffect(() => {
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoLoaded && showAnimation) {
@@ -807,7 +1087,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // High-performance scroll handler for image sequences (other projects)
   useEffect(() => {
-    if (project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && showAnimation) {
+    if (project.hasAnimation && project.animationSequence && !useVideoScrubbing && !useSpritesheetScrubbing && loadedImages.length > 0 && showAnimation) {
       const unsubscribe = scrollYProgress.on("change", (latest) => {
         // Use requestAnimationFrame for smooth updates
         if (scrollAnimationRef.current) {
@@ -826,7 +1106,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         unsubscribe();
       };
     }
-  }, [scrollYProgress, project.hasAnimation, project.animationSequence, useVideoScrubbing, loadedImages.length, showAnimation, updateImageFrame]);
+  }, [scrollYProgress, project.hasAnimation, project.animationSequence, useSpritesheetScrubbing, useVideoScrubbing, loadedImages.length, showAnimation, updateImageFrame]);
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
@@ -847,6 +1127,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       nativeSeekInFlightRef.current = false;
       nativeLastSeekAtRef.current = 0;
       nativeWarmupDoneRef.current = false;
+      spritesheetFrameRef.current = -1;
 
       // Stop video if playing
       if (videoRef.current) {
@@ -942,8 +1223,34 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           </div>
         )}
 
+        {/* Spritesheet Animation Sequence (Preferred) */}
+        {project.hasAnimation && project.animationSequence && useSpritesheetScrubbing && selectedSpritesheetPath && (
+          <div
+            className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{
+              opacity: showAnimation ? 1 : 0,
+              transition: 'opacity 0.5s ease-in-out'
+            }}
+          >
+            <div
+              ref={spritesheetSequenceRef}
+              className="relative w-full h-full overflow-hidden"
+              style={spritesheetSequenceStyle}
+            >
+              <img
+                ref={spritesheetImageRef}
+                src={selectedSpritesheetPath}
+                alt={`${project.title} animation sequence`}
+                className="absolute top-0 left-0 pointer-events-none select-none"
+                draggable={false}
+                style={spritesheetImageStyle}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Image Animation Sequence (Other Projects) */}
-        {project.hasAnimation && project.animationSequence && !useVideoScrubbing && loadedImages.length > 0 && (
+        {project.hasAnimation && project.animationSequence && !useVideoScrubbing && !useSpritesheetScrubbing && loadedImages.length > 0 && (
           <div
             className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
             style={{
@@ -1007,7 +1314,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
                 <path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               <span className="text-[11px] font-medium tracking-wide uppercase font-inter text-white/95">
-                {useVideoScrubbing ? 'Loading' : `Loading ${Math.round((loadedImageCount.current / (loadedImages.length || 1)) * 100)}%`}
+                {useSpritesheetScrubbing || useVideoScrubbing
+                  ? 'Loading'
+                  : `Loading ${Math.round((loadedImageCount.current / (loadedImages.length || 1)) * 100)}%`}
               </span>
             </div>
           </div>

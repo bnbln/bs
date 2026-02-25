@@ -15,6 +15,14 @@ bgColor: '#007EFF'
 image: assets/reminders+.png
 hasAnimation: true
 animationSequence:
+  spritesheetPath: assets/reminders/spritesheet.webp
+  mobileSpritesheetPath: assets/reminders/spritesheet.webp
+  spriteCount: 100
+  columnCount: 8
+  rowCount: 13
+  spriteWidth: 1920
+  spriteHeight: 1080
+  scrollPixelsPerFrame: 7
   videoPath: assets/reminders-8.mp4
   mobileVideoPath: assets/reminders-8-mobile-scrub.mp4
   safariVideoPath: assets/reminders-8-safari-scrub.mp4
