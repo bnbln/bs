@@ -35,6 +35,14 @@ export function resolveProjectAssets<T extends {
   heroLottie?: string;
   animationSequence?: {
     basePath?: string;
+    spritesheetPath?: string;
+    mobileSpritesheetPath?: string;
+    safariSpritesheetPath?: string;
+    spriteCount?: number;
+    columnCount?: number;
+    rowCount?: number;
+    scrollPixelsPerFrame?: number;
+    scrollStartOffsetPx?: number;
     videoPath?: string;
     mobileVideoPath?: string;
     safariVideoPath?: string;
@@ -82,6 +90,21 @@ export function resolveProjectAssets<T extends {
     // Resolve new video sequence path
     if (animation.videoPath) {
       animation.videoPath = resolveAssetPath(animation.videoPath)
+    }
+
+    // Resolve spritesheet sequence path
+    if (animation.spritesheetPath) {
+      animation.spritesheetPath = resolveAssetPath(animation.spritesheetPath)
+    }
+
+    // Resolve optional mobile-optimized spritesheet path
+    if (animation.mobileSpritesheetPath) {
+      animation.mobileSpritesheetPath = resolveAssetPath(animation.mobileSpritesheetPath)
+    }
+
+    // Resolve optional Safari-optimized spritesheet path
+    if (animation.safariSpritesheetPath) {
+      animation.safariSpritesheetPath = resolveAssetPath(animation.safariSpritesheetPath)
     }
 
     // Resolve optional mobile-optimized scrub video path

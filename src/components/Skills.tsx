@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, useGLTF } from '@react-three/drei'
@@ -272,71 +272,77 @@ const Skills = () => {
     // -1 signifies all drawers are closed
     const [expandedIndex, setExpandedIndex] = useState<number>(-1)
 
-    // Store refs for each drawer to handle scroll toggling
     const drawerRefs = useRef<(HTMLDivElement | null)[]>([])
 
-    const handleToggle = (index: number) => {
-        const isCurrentlyExpanded = expandedIndex === index
-        setExpandedIndex(isCurrentlyExpanded ? -1 : index)
+    const scrollDrawerIntoViewUpward = (index: number) => {
+        const element = drawerRefs.current[index]
+        if (!element || typeof window === 'undefined') return
 
-        // If we are opening a drawer, smoothly scroll to it dynamically tracking its
-        // position over the course of the exact 600ms layout animation.
-        if (!isCurrentlyExpanded) {
-            const element = drawerRefs.current[index]
-            if (element) {
-                const startY = window.scrollY;
-                const duration = 600; // Matches framer-motion transition
-                let startTime: number | null = null;
+        const duration = 420
+        const offset = 92
+        let startTime: number | null = null
 
-                const animateScroll = (currentTime: number) => {
-                    if (startTime === null) startTime = currentTime;
-                    const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
+        const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
-                    // Smooth easeOut cubic curve
-                    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-                    const easedProgress = easeOut(progress);
+        const animateScroll = (currentTime: number) => {
+            if (startTime === null) startTime = currentTime
 
-                    // Re-calculate target Y dynamically every frame as the layout above shrinks
-                    const targetY = element.getBoundingClientRect().top + window.scrollY - 100;
+            const elapsed = currentTime - startTime
+            const progress = Math.min(elapsed / duration, 1)
+            const eased = easeOutCubic(progress)
 
-                    // Interpolate between start and a moving target
-                    const nextY = startY + (targetY - startY) * easedProgress;
-                    window.scrollTo({ top: nextY, behavior: 'auto' });
+            const currentY = window.scrollY
+            const targetY = element.getBoundingClientRect().top + window.scrollY - offset
 
-                    if (progress < 1) {
-                        requestAnimationFrame(animateScroll);
-                    } else {
-                        // Final precision snap
-                        window.scrollTo({ top: element.getBoundingClientRect().top + window.scrollY - 100, behavior: 'auto' });
-                    }
+            // Scroll only upward to keep the user's reading position stable.
+            if (targetY < currentY - 1) {
+                const lerpStrength = 0.18 + eased * 0.16
+                const nextY = currentY + (targetY - currentY) * lerpStrength
+                window.scrollTo({ top: nextY, behavior: 'auto' })
+            }
+
+            if (progress < 1) {
+                requestAnimationFrame(animateScroll)
+            } else {
+                const finalTargetY = element.getBoundingClientRect().top + window.scrollY - offset
+                if (finalTargetY < window.scrollY - 1) {
+                    window.scrollTo({ top: finalTargetY, behavior: 'auto' })
                 }
-
-                requestAnimationFrame(animateScroll);
             }
         }
+
+        requestAnimationFrame(animateScroll)
+    }
+
+    const openDrawer = (index: number) => {
+        setExpandedIndex(index)
+        requestAnimationFrame(() => scrollDrawerIntoViewUpward(index))
+    }
+
+    const closeDrawer = () => {
+        setExpandedIndex(-1)
     }
 
     return (
         <section
             ref={containerRef}
-            className="bg-[#1C1D20] py-24 md:py-40 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden"
+            className="bg-[#1C1D20] py-20 md:py-32 px-4 sm:px-8 md:px-12 lg:px-[96px] xl:px-[128px] relative w-full overflow-hidden"
         >
-            <div className="max-w-[1400px] mx-auto relative z-10">
+            <div className="max-w-[1380px] mx-auto relative z-10">
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={isInView ? { y: 0, opacity: 1 } : {}}
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-16 md:mb-32 flex justify-between items-end"
+                    className="mb-12 md:mb-20 flex justify-between items-end"
                 >
-                    <h2 className="text-white text-4xl md:text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tight">
+                    <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-space-grotesk font-bold tracking-tight">
                         Technical<br />Skills
                     </h2>
                 </motion.div>
 
-                <div className="flex flex-col gap-4 md:gap-6">
+                <div className="flex flex-col gap-3 md:gap-4">
                     {skills.map((skill, index) => {
-                        const isExpanded = expandedIndex === index;
+                        const isExpanded = expandedIndex === index
 
                         return (
                             <motion.div
@@ -348,69 +354,115 @@ const Skills = () => {
                                     delay: index * 0.15,
                                     ease: [0.32, 0.72, 0, 1]
                                 }}
-                                ref={(el) => { drawerRefs.current[index] = el }}
-                                className={`relative rounded-3xl md:rounded-[40px] border border-neutral-800/80 bg-[#1C1D20]/80 overflow-hidden group transition-colors duration-500 ${isExpanded ? 'hover:border-neutral-700' : 'hover:border-neutral-600 cursor-pointer'}`}
-                                onClick={() => handleToggle(index)}
+                                ref={(el) => {
+                                    drawerRefs.current[index] = el
+                                }}
+                                className={`relative rounded-2xl md:rounded-[32px] overflow-hidden transition-colors duration-300 ${isExpanded ? 'bg-[#2A2C31]' : 'bg-[#24262A] hover:bg-[#2A2C31]'}`}
                             >
                                 {/* Collapsed Header Area (Always visible) */}
-                                <div className={`flex items-center justify-between px-6 md:px-12 lg:px-16 transition-all duration-500 ${isExpanded ? 'pt-10 md:pt-14 pb-4 md:pb-6' : 'py-6 md:py-8'}`}>
-                                    <div className="flex items-center gap-6 md:gap-12">
-                                        <div className={`font-space-grotesk font-medium transition-colors duration-300 ${isExpanded ? 'text-neutral-500 text-xl' : 'text-neutral-400 text-lg md:text-xl'}`}>
-                                            {skill.num}
-                                        </div>
-                                        <h3 className={`font-space-grotesk font-bold tracking-tight transition-all duration-300 ${isExpanded ? 'text-3xl md:text-4xl lg:text-5xl text-white' : 'text-2xl md:text-3xl text-neutral-300 group-hover:text-white'}`}>
-                                            {skill.title} {skill.subtitle}
-                                        </h3>
-                                    </div>
-
-                                    {/* Expand/Collapse Icon */}
-                                    <motion.div
-                                        animate={{ rotate: isExpanded ? 45 : 0 }}
-                                        transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                                        className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-neutral-700 flex items-center justify-center shrink-0"
+                                <div className="flex items-center justify-between gap-4 md:gap-6 px-5 md:px-9 lg:px-12 py-5 md:py-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (!isExpanded) openDrawer(index)
+                                        }}
+                                        aria-expanded={isExpanded}
+                                        aria-controls={`skill-panel-${index}`}
+                                        className={`flex-1 min-w-0 text-left ${isExpanded ? 'cursor-default' : 'cursor-pointer'}`}
                                     >
-                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                                            <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                        <div className="flex items-center gap-3 md:gap-7">
+                                            <div className="font-space-grotesk font-medium text-neutral-500 text-sm md:text-base">
+                                                {skill.num}
+                                            </div>
+                                            <h3 className="font-space-grotesk font-semibold tracking-tight text-xl md:text-2xl lg:text-[2.25rem] text-white leading-[1.08]">
+                                                {skill.title}
+                                                <span className="block md:inline text-neutral-300 md:ml-2">{skill.subtitle}</span>
+                                            </h3>
+                                        </div>
+                                    </button>
+
+                                    <motion.button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation()
+                                            if (isExpanded) {
+                                                closeDrawer()
+                                            } else {
+                                                openDrawer(index)
+                                            }
+                                        }}
+                                        animate={{ rotate: isExpanded ? 45 : 0 }}
+                                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                                        className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#353941] hover:bg-[#3F4450] flex items-center justify-center shrink-0 transition-colors"
+                                        aria-label={`${isExpanded ? 'Close' : 'Open'} ${skill.title} ${skill.subtitle}`}
+                                    >
+                                        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                                            <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                                         </svg>
-                                    </motion.div>
+                                    </motion.button>
                                 </div>
 
                                 {/* Expandable Content Area */}
                                 <AnimatePresence initial={false}>
                                     {isExpanded && (
                                         <motion.div
-                                            key="content"
+                                            id={`skill-panel-${index}`}
+                                            key={`content-${skill.num}`}
                                             initial={{ height: 0, opacity: 0 }}
                                             animate={{ height: 'auto', opacity: 1 }}
                                             exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+                                            transition={{
+                                                height: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
+                                                opacity: { duration: 0.2 }
+                                            }}
                                             className="overflow-hidden"
                                         >
-                                            {/* We apply the bottom padding HERE inside the animated layout, so it collapses to 0 height gracefully */}
-                                            <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start px-6 md:px-12 lg:px-16 pb-10 md:pb-14 mt-4 md:mt-6">
-
-                                                {/* 3D Canvas Background (Left Column) */}
-                                                <div className="relative col-span-1 lg:col-span-5 h-[300px] sm:h-[400px] lg:h-full lg:min-h-[450px] rounded-3xl overflow-hidden bg-[#151618]">
+                                            <div className="relative grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-start px-5 md:px-9 lg:px-12 pb-9 md:pb-11">
+                                                <div className="relative xl:col-span-4 2xl:col-span-3 h-[230px] sm:h-[280px] xl:h-[360px] 2xl:h-[380px] rounded-2xl md:rounded-3xl overflow-hidden bg-[#1A1B1F]">
                                                     <ThreeDScene index={index} isHovered={true} config={skill.shapeConfig} />
                                                 </div>
 
-                                                {/* Content Details (Right Column) */}
-                                                <div className="relative z-10 col-span-1 lg:col-span-7 flex flex-col gap-10 lg:gap-12 w-full">
-                                                    <p className="font-inter text-neutral-400 text-lg md:text-xl leading-relaxed max-w-[600px]">
-                                                        {skill.description}
-                                                    </p>
+                                                <div className="relative z-10 xl:col-span-8 2xl:col-span-9 flex flex-col gap-6 md:gap-7 w-full min-w-0">
+                                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 items-start">
+                                                        <p className="lg:col-span-8 font-inter text-neutral-200 text-sm md:text-[15px] lg:text-base leading-relaxed max-w-[72ch]">
+                                                            {skill.description}
+                                                        </p>
 
-                                                    <div className="flex flex-col xl:flex-row gap-12 lg:gap-8 pt-8 border-t border-neutral-800/50 w-full">
-                                                        {/* Core Skills (Pills) */}
-                                                        <div className="flex flex-col gap-5 w-full xl:w-1/2">
-                                                            <h4 className="text-white font-space-grotesk text-sm md:text-base font-semibold uppercase tracking-widest text-neutral-400">
+                                                        <div className="lg:col-span-4 rounded-2xl bg-white/[0.04] px-4 py-4 md:px-5 md:py-5">
+                                                            <p className="text-neutral-400 font-space-grotesk text-[11px] md:text-xs font-semibold uppercase tracking-[0.18em]">
+                                                                Snapshot
+                                                            </p>
+                                                            <div className="mt-3 grid grid-cols-2 gap-3">
+                                                                <div>
+                                                                    <p className="font-space-grotesk text-lg md:text-xl text-white leading-none">
+                                                                        {skill.skillPills.length}
+                                                                    </p>
+                                                                    <p className="mt-1 text-neutral-400 font-inter text-xs md:text-[13px]">
+                                                                        Core Methods
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-space-grotesk text-lg md:text-xl text-white leading-none">
+                                                                        {skill.deliverables.length}
+                                                                    </p>
+                                                                    <p className="mt-1 text-neutral-400 font-inter text-xs md:text-[13px]">
+                                                                        Deliverables
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 w-full">
+                                                        <div className="lg:col-span-8 flex flex-col gap-4 min-w-0 rounded-2xl bg-white/[0.03] p-4 md:p-5">
+                                                            <h4 className="text-neutral-400 font-space-grotesk text-[11px] md:text-xs font-semibold uppercase tracking-[0.18em]">
                                                                 Core Methods
                                                             </h4>
-                                                            <div className="flex flex-wrap gap-2">
+                                                            <div className="flex flex-wrap gap-2.5">
                                                                 {skill.skillPills.map((pill, i) => (
                                                                     <span
                                                                         key={i}
-                                                                        className="px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-neutral-800 bg-[#2A2B2F]/40 backdrop-blur-sm text-neutral-300 text-xs md:text-sm font-inter whitespace-nowrap"
+                                                                        className="px-3 md:px-3.5 py-1.5 rounded-full bg-white/[0.08] text-neutral-100 text-xs md:text-[13px] font-inter whitespace-nowrap"
                                                                     >
                                                                         {pill}
                                                                     </span>
@@ -418,17 +470,14 @@ const Skills = () => {
                                                             </div>
                                                         </div>
 
-                                                        {/* Deliverables */}
-                                                        <div className="flex flex-col gap-5 w-full xl:w-1/2">
-                                                            <h4 className="text-white font-space-grotesk text-sm md:text-base font-semibold uppercase tracking-widest text-neutral-400">
+                                                        <div className="lg:col-span-4 flex flex-col gap-4 rounded-2xl bg-white/[0.03] p-4 md:p-5">
+                                                            <h4 className="text-neutral-400 font-space-grotesk text-[11px] md:text-xs font-semibold uppercase tracking-[0.18em]">
                                                                 What I Build
                                                             </h4>
                                                             <ul className="flex flex-col gap-2.5">
                                                                 {skill.deliverables.map((item, i) => (
-                                                                    <li key={i} className="flex gap-3 items-start text-neutral-300 font-inter text-sm md:text-base leading-snug">
-                                                                        <svg className="w-5 h-5 text-neutral-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                        </svg>
+                                                                    <li key={i} className="grid grid-cols-[10px_minmax(0,1fr)] gap-2.5 items-start text-neutral-200 font-inter text-sm md:text-[15px] leading-snug">
+                                                                        <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-neutral-400" />
                                                                         {item}
                                                                     </li>
                                                                 ))}

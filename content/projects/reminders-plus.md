@@ -15,6 +15,15 @@ bgColor: '#007EFF'
 image: assets/reminders+.png
 hasAnimation: true
 animationSequence:
+  # spritesheetPath: assets/reminders/spritesheet.webp
+  # mobileSpritesheetPath: assets/reminders/spritesheet.webp
+  # spriteCount: 100
+  # columnCount: 8
+  # rowCount: 13
+  # spriteWidth: 1920
+  # spriteHeight: 1080
+  # scrollPixelsPerFrame: 8
+  # scrollStartOffsetPx: 150
   videoPath: assets/reminders-8.mp4
   mobileVideoPath: assets/reminders-8-mobile-scrub.mp4
   safariVideoPath: assets/reminders-8-safari-scrub.mp4
@@ -45,7 +54,7 @@ The streak isn’t a badge explosion — it’s just a calm, persistent signal: 
 ```
 ```mockup type="iphone" image="assets/light-00001.webp" bgColor="#F5F5F7"
 ```
-```mockup type="iphone" image="assets/Reminders+ Habit Image.webp" bgColor="#F5F5F7"
+```mockup type="iphone" image="assets/Reminders-habit.webp" bgColor="#F5F5F7"
 ```
 
 ## UX/UI: calm, modern, and focused

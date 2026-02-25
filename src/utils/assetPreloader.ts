@@ -181,14 +181,67 @@ export class AssetPreloader {
       
       // Animation sequences - load every Nth frame for faster loading
       if (project.hasAnimation && project.animationSequence) {
+        const sequence = project.animationSequence;
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+        const isIOSDevice =
+          /iPad|iPhone|iPod/i.test(ua) ||
+          (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isAndroidDevice = /Android/i.test(ua);
+        const coarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+        const finePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches;
+        const isMobileDevice = coarsePointer || isIOSDevice || isAndroidDevice;
+        const isSafariBrowser =
+          /Safari/i.test(ua) &&
+          !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS|Firefox|SamsungBrowser|Android/i.test(ua);
+        const isSafariDesktop = isSafariBrowser && !isIOSDevice && finePointer;
+
+        const hasSpritesheetScrubbing = Boolean(
+          sequence.spritesheetPath &&
+          sequence.spriteCount &&
+          sequence.columnCount &&
+          sequence.rowCount
+        );
+
+        if (hasSpritesheetScrubbing) {
+          let selectedSpritesheetPath = sequence.spritesheetPath;
+          if (isIOSDevice) {
+            selectedSpritesheetPath =
+              sequence.mobileSpritesheetPath ||
+              sequence.safariSpritesheetPath ||
+              sequence.spritesheetPath;
+          } else if (isSafariDesktop) {
+            selectedSpritesheetPath =
+              sequence.safariSpritesheetPath ||
+              sequence.mobileSpritesheetPath ||
+              sequence.spritesheetPath;
+          } else if (isMobileDevice) {
+            selectedSpritesheetPath = sequence.mobileSpritesheetPath || sequence.spritesheetPath;
+          }
+
+          if (selectedSpritesheetPath) {
+            assets.push({
+              url: selectedSpritesheetPath,
+              type: 'image',
+              projectId: project.id
+            });
+          }
+
+          return;
+        }
+
         // Check if this project uses video scrubbing (has videoPath)
-        const useVideoScrubbing = project.animationSequence.videoPath !== undefined;
+        const useVideoScrubbing = sequence.videoPath !== undefined;
         
         if (useVideoScrubbing) {
-          const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-          const scrubVideoPath = isTouchDevice && project.animationSequence.mobileVideoPath
-            ? project.animationSequence.mobileVideoPath
-            : project.animationSequence.videoPath;
+          let scrubVideoPath = sequence.videoPath;
+
+          if (isIOSDevice) {
+            scrubVideoPath = sequence.mobileVideoPath || sequence.safariVideoPath || sequence.videoPath;
+          } else if (isSafariDesktop) {
+            scrubVideoPath = sequence.safariVideoPath || sequence.mobileVideoPath || sequence.videoPath;
+          } else if (isMobileDevice) {
+            scrubVideoPath = sequence.mobileVideoPath || sequence.videoPath;
+          }
 
           // For video scrubbing projects, only load the video file
           if (scrubVideoPath) {
@@ -200,7 +253,7 @@ export class AssetPreloader {
           }
         } else {
           // For legacy image sequence projects, load the webp frames
-          const { startFrame, endFrame, basePath } = project.animationSequence;
+          const { startFrame, endFrame, basePath } = sequence;
           if (startFrame !== undefined && endFrame !== undefined && basePath) {
             const frameRange = getInitialFrameRange(startFrame, endFrame);
             

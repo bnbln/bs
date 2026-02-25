@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next build && next export"
+    "export": "next build && next export",
+    "make:spritesheet": "node scripts/make-spritesheet.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -44,6 +45,7 @@
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "postcss": "^8.5.6",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.0.0"
   }

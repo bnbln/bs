@@ -1,0 +1,8 @@
+{
+  "spriteCount": 100,
+  "columnCount": 8,
+  "rowCount": 13,
+  "spriteWidth": 1920,
+  "spriteHeight": 1080,
+  "spritesheetFile": "spritesheet.webp"
+}
