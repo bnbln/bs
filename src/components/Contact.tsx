@@ -25,7 +25,7 @@ const Contact = () => {
     let cancelled = false
 
     const runTogetherSequence = async () => {
-      await togetherControls.start('visible')
+      await togetherControls.start('rest')
       if (cancelled) return
 
       await new Promise((resolve) => setTimeout(resolve, 900))
@@ -34,7 +34,7 @@ const Contact = () => {
       await togetherControls.start('hover')
       if (cancelled) return
 
-      await togetherControls.start('visible')
+      await togetherControls.start('rest')
     }
 
     runTogetherSequence()
@@ -54,23 +54,22 @@ const Contact = () => {
   }
 
   const togetherContainerVariants = {
-    hidden: {},
-    visible: {
+    rest: {
       transition: {
         staggerChildren: 0.04,
-        delayChildren: 0.1,
+        staggerDirection: 1,
       },
     },
     hover: {
       transition: {
         staggerChildren: 0.04,
+        staggerDirection: 1,
       },
     },
   }
 
   const togetherLetterVariants = {
-    hidden: { color: '#d4d4d4', opacity: 0 },
-    visible: { color: '#d4d4d4', opacity: 0.8 },
+    rest: { color: '#d4d4d4', opacity: 0.8 },
     hover: { color: '#000000', opacity: 1 },
   }
 
@@ -129,9 +128,10 @@ const Contact = () => {
                   <motion.span
                     className="flex cursor-default text-neutral-300"
                     variants={togetherContainerVariants}
-                    initial="hidden"
-                    whileHover="hover"
+                    initial="rest"
                     animate={togetherControls}
+                    onHoverStart={() => togetherControls.start('hover')}
+                    onHoverEnd={() => togetherControls.start('rest')}
                   >
                     {"TOGETHER.".split("").map((char, index) => (
                       <motion.span

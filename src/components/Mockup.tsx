@@ -43,6 +43,18 @@ export default function Mockup(props: MockupProps) {
     const phoneWidth = isPhoneGroup
         ? 'w-[46%] max-w-[210px] sm:max-w-[240px] md:w-[85%] md:max-w-[320px]'
         : 'w-[85%] max-w-[320px]'
+    const iphoneFrameClass = isPhoneGroup
+        ? 'rounded-[1.5rem] sm:rounded-[2.25rem] md:rounded-[3rem] p-1 sm:p-1.5 md:p-2'
+        : 'rounded-[2.75rem] sm:rounded-[3rem] p-1.5 sm:p-2'
+    const iphoneScreenClass = isPhoneGroup
+        ? 'rounded-[1.35rem] sm:rounded-[2rem] md:rounded-[2.75rem]'
+        : 'rounded-[2.5rem] sm:rounded-[2.75rem]'
+    const androidFrameClass = isPhoneGroup
+        ? 'rounded-[1.4rem] sm:rounded-[2rem] md:rounded-[2.5rem] p-1 sm:p-1.5 md:p-2.5'
+        : 'rounded-[2.5rem] p-2 sm:p-2.5'
+    const androidScreenClass = isPhoneGroup
+        ? 'rounded-[1.1rem] sm:rounded-[1.6rem] md:rounded-[2rem]'
+        : 'rounded-[2rem]'
 
     return (
         <div
@@ -59,12 +71,12 @@ export default function Mockup(props: MockupProps) {
                 return (
                     <React.Fragment key={index}>
                         {type === 'iphone' && (
-                            <div className={`relative ${phoneWidth} aspect-[9/19.5] rounded-[2.75rem] sm:rounded-[3rem] p-1.5 sm:p-2 bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
+                            <div className={`relative ${phoneWidth} aspect-[9/19.5] ${iphoneFrameClass} bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
                                 <div className="absolute inset-x-0 top-[2.6%] flex justify-center z-20 pointer-events-none">
                                     {/* Dynamic Island fake */}
-                                    <div className="w-[31.5%] min-w-[64px] max-w-[100px] aspect-[10/3] bg-black rounded-full" />
+                                    <div className="w-[31.5%] min-w-0 md:min-w-[64px] max-w-[100px] aspect-[10/3] bg-black rounded-full" />
                                 </div>
-                                <div className="w-full h-full rounded-[2.5rem] sm:rounded-[2.75rem] overflow-hidden bg-neutral-900 relative z-10">
+                                <div className={`w-full h-full ${iphoneScreenClass} overflow-hidden bg-neutral-900 relative z-10`}>
                                     {isVid ? (
                                         <AdaptiveVideoPlayer videoUrl={path || ''} autoStart={true} color={accentColor} minimal loop muted />
                                     ) : (
@@ -129,8 +141,8 @@ export default function Mockup(props: MockupProps) {
                         )}
 
                         {type === 'android' && (
-                            <div className={`relative ${isPhoneGroup ? 'w-[46%] max-w-[200px] sm:max-w-[220px] md:w-[85%] md:max-w-[300px]' : 'w-[85%] max-w-[300px]'} aspect-[9/20] rounded-[2.5rem] p-2 sm:p-2.5 bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
-                                <div className="w-full h-full rounded-[2rem] overflow-hidden bg-neutral-900 relative z-10">
+                            <div className={`relative ${isPhoneGroup ? 'w-[46%] max-w-[200px] sm:max-w-[220px] md:w-[85%] md:max-w-[300px]' : 'w-[85%] max-w-[300px]'} aspect-[9/20] ${androidFrameClass} bg-black shadow-2xl ring-1 ring-white/10 shrink-0 ${isMixedGroup ? 'mt-16 sm:mt-24 mb-16 sm:mb-24' : ''}`}>
+                                <div className={`w-full h-full ${androidScreenClass} overflow-hidden bg-neutral-900 relative z-10`}>
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-black rounded-full z-20 pointer-events-none" />
                                     {isVid ? (
                                         <AdaptiveVideoPlayer videoUrl={path || ''} autoStart={true} color={accentColor} minimal loop muted />
