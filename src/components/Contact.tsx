@@ -57,11 +57,13 @@ const Contact = () => {
     rest: {
       transition: {
         staggerChildren: 0.04,
+        staggerDirection: 1,
       },
     },
     hover: {
       transition: {
         staggerChildren: 0.04,
+        staggerDirection: 1,
       },
     },
   }
@@ -127,8 +129,9 @@ const Contact = () => {
                     className="flex cursor-default text-neutral-300"
                     variants={togetherContainerVariants}
                     initial="rest"
-                    whileHover="hover"
                     animate={togetherControls}
+                    onHoverStart={() => togetherControls.start('hover')}
+                    onHoverEnd={() => togetherControls.start('rest')}
                   >
                     {"TOGETHER.".split("").map((char, index) => (
                       <motion.span
