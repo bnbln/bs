@@ -467,6 +467,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // Border radius transition: starts even later than the rest (at 0.85 instead of 0.7)
   const borderExpandT = useTransform(sectionProgress, [0.85, 0.98], [0, 1], { clamp: true });
+  // Safari mobile: end border-radius animation earlier (0.85→0.90) so we don't animate in the tail (0.90→0.98) and avoid scroll jank.
+  const borderExpandTSafariMobile = useTransform(sectionProgress, [0.85, 0.90], [0, 1], { clamp: true });
 
   // ── Derived values from both phases ──
 
@@ -479,6 +481,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const cardBorderRadius = useTransform([entranceT, borderExpandT] as any, ([e, bt]: number[]) => {
     const entranceRadius = 40 - 8 * e; // 20→12
     return entranceRadius * (1 - bt);   // →0
+  });
+  // Safari mobile: same formula but with earlier-ended input so radius is 0 from progress 0.90 onward (no animation in the janky tail).
+  const cardBorderRadiusSafariMobile = useTransform([entranceT, borderExpandTSafariMobile] as any, ([e, bt]: number[]) => {
+    const entranceRadius = 40 - 8 * e;
+    return entranceRadius * (1 - bt);
   });
 
   // Scale:  0.93 → 0.97 (entrance)  → 1.0 (expand),  per-card offset fades out
@@ -1306,7 +1313,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         style={{
           zIndex: index + 1,
           top: stickyTop,
-          borderRadius: useSafariClipPath ? 0 : cardBorderRadius,
+          borderRadius: useSafariClipPath ? 0 : (useZeroMargin ? cardBorderRadiusSafariMobile : cardBorderRadius),
           marginLeft: (useSafariClipPath || useZeroMargin) ? 0 : cardMargin,
           marginRight: (useSafariClipPath || useZeroMargin) ? 0 : cardMargin,
           clipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
