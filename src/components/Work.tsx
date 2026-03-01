@@ -14,13 +14,9 @@ const MOBILE_CANVAS_MAX_DPR = 1.5;
 const IOS_CANVAS_MAX_DPR = 1.25;
 const MOBILE_SCRUB_SEEK_INTERVAL_MS = 33;
 const IOS_SCRUB_SEEK_INTERVAL_MS = 42;
-/** Safari mobile: stronger throttle to reduce scroll jank (Plan 2). */
-const IOS_SCRUB_SEEK_INTERVAL_MS_SAFARI_MOBILE = 90;
 const SAFARI_DESKTOP_SCRUB_SEEK_INTERVAL_MS = 33;
 const MOBILE_NATIVE_MIN_SEEK_DELTA = 1 / 90;
 const IOS_NATIVE_MIN_SEEK_DELTA = 1 / 24;
-/** Safari mobile: larger min delta so we seek less often (Plan 2). */
-const IOS_NATIVE_MIN_SEEK_DELTA_SAFARI_MOBILE = 1 / 12;
 const SAFARI_DESKTOP_NATIVE_MIN_SEEK_DELTA = 1 / 30;
 const NATIVE_FAST_SEEK_THRESHOLD_SECONDS = 0.45;
 const NATIVE_WARMUP_ROOT_MARGIN = '200% 0px';
@@ -103,8 +99,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const previousSpritesheetPathRef = useRef<string | null>(null);
   const scrollRangePxRef = useRef<number>(0);
   const effectiveScrollRangePxRef = useRef<number>(0);
-  /** Safari mobile: throttle spritesheet frame updates (Plan 3). */
-  const lastSpritesheetFrameUpdateAtRef = useRef<number>(0);
 
   const selectedSpritesheetPath = useMemo(() => {
     if (!project.animationSequence) return undefined;
@@ -966,8 +960,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const getNativeSeekSettings = useCallback(() => {
     if (isIOSRef.current) {
       return {
-        minSeekIntervalMs: IOS_SCRUB_SEEK_INTERVAL_MS_SAFARI_MOBILE,
-        minSeekDeltaSeconds: IOS_NATIVE_MIN_SEEK_DELTA_SAFARI_MOBILE,
+        minSeekIntervalMs: IOS_SCRUB_SEEK_INTERVAL_MS,
+        minSeekDeltaSeconds: IOS_NATIVE_MIN_SEEK_DELTA,
       };
     }
 
