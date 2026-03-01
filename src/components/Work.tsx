@@ -1295,6 +1295,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // Only use clip-path crop on Safari desktop; on Safari mobile (iOS) it causes scroll lag when items scale/crop.
   const useSafariClipPath = isSafariDesktop && !useVideoScrubbing;
+  // Safari mobile: avoid animating margin (causes layout reflow and scroll lag); keep card full width.
+  const useZeroMargin = isIOS;
 
   return (
     <div ref={scrollTrackRef} className="relative w-full aspect-[16/10] md:aspect-video">
@@ -1305,8 +1307,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           zIndex: index + 1,
           top: stickyTop,
           borderRadius: useSafariClipPath ? 0 : cardBorderRadius,
-          marginLeft: useSafariClipPath ? 0 : cardMargin,
-          marginRight: useSafariClipPath ? 0 : cardMargin,
+          marginLeft: (useSafariClipPath || useZeroMargin) ? 0 : cardMargin,
+          marginRight: (useSafariClipPath || useZeroMargin) ? 0 : cardMargin,
           clipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           WebkitClipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           y: cardY,
