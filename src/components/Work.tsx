@@ -1293,7 +1293,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     };
   }, []);
 
-  const useSafariClipPath = isSafari && !useVideoScrubbing;
+  // Only use clip-path crop on Safari desktop; on Safari mobile (iOS) it causes scroll lag when items scale/crop.
+  const useSafariClipPath = isSafariDesktop && !useVideoScrubbing;
 
   return (
     <div ref={scrollTrackRef} className="relative w-full aspect-[16/10] md:aspect-video">
