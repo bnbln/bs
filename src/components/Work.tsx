@@ -1216,24 +1216,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     applySpritesheetFrameTransform(targetFrame);
   }, [applySpritesheetFrameTransform, getSpritesheetFrameFromScrollProgress, spriteColumnCount, spriteCount, useSpritesheetScrubbing]);
 
-  // High-performance scroll handler for spritesheet scrubbing (skipped on Safari mobile – freeze frame)
+  // High-performance scroll handler for spritesheet scrubbing
   useEffect(() => {
-    if (isIOSRef.current || !project.hasAnimation || !project.animationSequence || !useSpritesheetScrubbing || !spritesheetAssetReady) {
+    if (!project.hasAnimation || !project.animationSequence || !useSpritesheetScrubbing || !spritesheetAssetReady) {
       return;
     }
 
-    const spritesheetThrottleMs = 50;
     const unsubscribe = videoScrollYProgress.on("change", (latest) => {
       latestSpritesheetProgressRef.current = latest;
       if (scrollAnimationRef.current !== null) return;
 
       scrollAnimationRef.current = requestAnimationFrame(() => {
         scrollAnimationRef.current = null;
-        const now = performance.now();
-        if (isIOSRef.current && now - lastSpritesheetFrameUpdateAtRef.current < spritesheetThrottleMs) {
-          return;
-        }
-        if (isIOSRef.current) lastSpritesheetFrameUpdateAtRef.current = now;
         updateSpritesheetFrame(latestSpritesheetProgressRef.current);
       });
     });
@@ -1250,15 +1244,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     };
   }, [project.hasAnimation, project.animationSequence, spritesheetAssetReady, updateSpritesheetFrame, useSpritesheetScrubbing, videoScrollYProgress]);
 
-  // Snap immediately to the current scroll frame when card re-enters view (skipped on Safari mobile – freeze frame).
+  // Snap immediately to the current scroll frame when card re-enters view.
   useEffect(() => {
-    if (isIOSRef.current || !useSpritesheetScrubbing || !spritesheetAssetReady || !isCardNearViewport) return;
+    if (!useSpritesheetScrubbing || !spritesheetAssetReady || !isCardNearViewport) return;
     updateSpritesheetFrame(videoScrollYProgress.get());
   }, [isCardNearViewport, spritesheetAssetReady, updateSpritesheetFrame, useSpritesheetScrubbing, videoScrollYProgress]);
 
-  // High-performance scroll handler for video scrubbing (skipped on Safari mobile – freeze frame)
+  // High-performance scroll handler for video scrubbing
   useEffect(() => {
-    if (isIOSRef.current) return;
     if (project.hasAnimation && project.animationSequence && useVideoScrubbing && videoLoaded && showAnimation) {
       if (preferNativeVideoScrub) {
         const updateTargetTime = (rawProgress: number) => {
@@ -1360,8 +1353,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // Only use clip-path crop on Safari desktop; on Safari mobile (iOS) it causes scroll lag when items scale/crop.
   const useSafariClipPath = isSafariDesktop && !useVideoScrubbing;
-  // Safari mobile: show only static image (freeze frame), no video/spritesheet scrub to avoid scroll jank.
-  const useSafariMobileFreezeFrame = isIOS;
+  // Safari mobile: freeze frame disabled — stack perf is now handled by frozen MotionValue chain + single callback.
+  const useSafariMobileFreezeFrame = false;
 
   // iOS: static border radius (no animation) — value matches the desktop entrance radius.
   const iosBorderRadius = 20;
