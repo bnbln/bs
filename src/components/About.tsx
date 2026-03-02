@@ -36,7 +36,7 @@ const About = () => {
   })
 
   const stats = [
-    { label: "Years Experience", value: "10+" },
+    { label: "Years Experience", value: "7+" },
     { label: "Projects Delivered", value: "200+" },
     { label: "Awards & Nominations", value: "8+" },
   ]
@@ -83,7 +83,7 @@ const About = () => {
           {/* Scroll-Driven Scrubbing Bio */}
           <div className="min-h-[40vh] lg:min-h-[60vh] flex items-start">
             <ScrubText
-              text="As a freelance motion designer and developer, I bridge the gap between brand identity and digital product. I craft visual systems that span brand, motion, and UX — then engineer them in React and Next.js to ensure pixel-perfect execution at scale."
+              text="As a designer and developer, I bridge the gap between brand identity and digital product. I craft visual systems that span brand, motion, and UX — then engineer them in React to ensure pixel-perfect execution at scale."
               progress={scrollYProgress}
             />
           </div>

@@ -10,7 +10,7 @@ excerpts: >-
   world. My initial foray into Generative Images began a few months earlier with
   Midjourney. However, my real breakthrough came when I discovered Stable
   Diffusion.
-published: '2024-02-20'
+published: '2024-07-20'
 image: assets/qr.webp
 hasAnimation: false
 featured: true
@@ -18,9 +18,9 @@ heroImage: assets/qr-prev.png
 type: [Design, Development]
 ---
 
-The project was designed for the business department of the German news media brand WELT, aiming to attract young employees through an internal magazine by Axel Springer. The creative brief was to embody the claim "Erfolg beginnt mit neuem Denken" (Success begins with thinking new), integrating a QR-code.
+The project was designed for the business department of the German news media brand WELT, aiming to attract young employees through a magazine ad. The creative brief was to embody the claim "Erfolg beginnt mit neuem Denken" (Success begins with thinking new), integrating a QR-code.
 
-## Discovering Stable Diffusion
+# Discovering Stable Diffusion
 
 Just as this project came to my desk, I started exploring Stable Diffusion and Midjourney.
 
@@ -47,7 +47,7 @@ The last step was to outpaint, upscale, and composite the image using Photoshop.
 ![assets/qr-0.jpg]
 
 
-## Reflections on AI in Creative Design
+# Reflections on AI in Creative Design
 
 This project was a pivotal moment for me, demonstrating how AI can serve as a versatile tool in virtually any workflow. The thrill of integrating such cutting-edge technology into a printed magazine campaign continues to inspire my work.
 
