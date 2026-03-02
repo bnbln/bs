@@ -5,7 +5,7 @@ subtitle: A Frontend Developement Project opening Perspectives with three.js
 slug: btnhlz
 collaboration: [{Philippe Bietenholz, bietenholz.design}]
 category: Frontend-Developement
-published: '2024-05-21'
+published: '2022-05-21'
 image: assets/bt-3.jpg
 bgColor: '#00ECEB'
 hasAnimation: false

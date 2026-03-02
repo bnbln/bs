@@ -9,7 +9,7 @@ excerpts: >-
   Future-proof, performant, and editor-friendly: This Berlin law firm now runs
   on Gatsby with Netlify CMS, combining React components with simple content
   editing.
-published: '2024-01-10'
+published: '2023-04-10'
 image: assets/rk-4.jpg
 bgColor: '#47B7D7'
 hasAnimation: false
