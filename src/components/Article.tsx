@@ -726,7 +726,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const level = match ? match[0].length : 1
         const text = line.replace(/^#+\s*/, '')
         const sizes = {
-          1: "text-4xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-tighter font-bold text-black mt-16 md:mt-24 mb-8 md:mb-12",
+          1: "text-4xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-[-0.03em] font-bold text-black mt-16 md:mt-24 mb-8 md:mb-12",
           2: "text-[28px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-12 md:mt-16 mb-4 md:mb-6 text-[#1D1D1F]",
           3: "text-[22px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-8 md:mt-10 mb-3 md:mb-4 text-[#1D1D1F]"
         }

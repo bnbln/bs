@@ -9,7 +9,7 @@ excerpts: >-
   Reminders+ turns “too many to-dos” into daily momentum: finish at least one task
   per day, keep your streak alive, and build routines that actually stick —
   designed and built in React Native, 100% local-first.
-published: '2025-12-01'
+published: '2025-08-01'
 description: Habit-building task app for iOS, built with React Native
 bgColor: '#007EFF'
 image: assets/reminders+.png
@@ -44,20 +44,19 @@ Instead of pushing you into huge lists, Reminders+ is intentionally built around
 - **Tasks** for the stuff you need to get done
 - **Routines** for habits (daily / weekly / monthly)
 - **Projects** for bigger goals
-- **Streaks** as the motivator — your progress stays visible and tangible  [App Store](https://apps.apple.com/ng/app/reminders/id6758573672)
+- **Streaks** as the motivator — your progress stays visible and tangible
 
 That mechanic sounds small, but it changes how you use the app: you stop aiming for “finish everything” and start aiming for “show up today”.
 
-
-```insight title="Streaks as UX: motivation without gamification noise"
-The streak isn’t a badge explosion — it’s just a calm, persistent signal: “you’re building something.” The UI stays minimal so the feedback loop stays strong.
-```
 ```mockup type="iphone" image="assets/light-00001.webp" bgColor="#F5F5F7"
 ```
 ```mockup type="iphone" image="assets/Reminders-habit.webp" bgColor="#F5F5F7"
 ```
+```insight title="Motivation without gamification noise"
+The streak isn’t a badge explosion — it’s just a calm, persistent signal: “you’re building something.” The UI stays minimal so the feedback loop stays strong.
+```
 
-## UX/UI: calm, modern, and focused
+# Calm, modern, and focused UX/UI Design
 
 We designed Reminders+ around a few principles:
 - Fast capture (getting a task in should never feel like work)
@@ -74,28 +73,19 @@ videoPath: assets/reminders-8.mp4
 safariVideoPath: assets/reminders-8-safari-scrub.mp4
 frameCount: 5607
 ```
-## Development: React Native, local-first by design
+# Development
 
-From day one, we wanted the app to feel instant — and to be something you can trust with personal planning.
-
-So Reminders+ is built to be:
+So Reminders+ is built on React Native and local-first by design:
 - 100% local storage, no cloud dependency
 - “Data not collected” (App Store privacy)
 - Fast & lightweight, with smooth navigation and animations
 
-On the landing page we also made sure data is portable — including flows like download/import for your tasks.
 
-## Iteration shipped: what changed after launch
+# Keeping clarity from the first click in Marketing
 
-We kept polishing the core flow with real-world use in mind — especially around managing bigger task structures:
-- Compact subtasks
-- Improved drag & drop
-- Smoother animations & refined navigation
+```mockup type="macbook" image="/assets/reminders-plus-landingpage.png" bgColor="#F5F5F7"
+```
 
-We also expanded accessibility of the UI experience through broader language support (including RTL improvements and more locales).
-
-## Landing Page: clarity from the first click
-
-![Reminders+ Landing Page](/assets/reminders-plus-landingpage.png)
-
-The landing page serves as a visual extension of the app's minimalist philosophy. It was designed to communicate the value of privacy and simplicity immediately, using clean layouts and interactive previews to demonstrate the fluid navigation and the "no-account-required" onboarding flow. [Visit the landing page](https://reminders-plus.vercel.app/)
+The landing page serves as a visual extension of the app's minimalist philosophy. It was designed to communicate the value of privacy and simplicity immediately, using clean layouts and interactive previews to demonstrate the fluid navigation and the "no-account-required" onboarding flow. 
+[Visit the landing page](https://reminders-plus.vercel.app/) and
+[download in the App Store](https://apps.apple.com/ng/app/reminders/id6758573672).

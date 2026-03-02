@@ -455,70 +455,122 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const pageMarginRef = useRef(pageMargin);
   pageMarginRef.current = pageMargin;
 
-  // Entrance: 0 → 1  (settling into stack)
-  // Finish this phase earlier so the closed stack state is reached sooner.
-  const entranceT = useTransform(sectionProgress, [0, 0.18], [0, 1], { clamp: true });
-
-  // Expand: 0 → 1  (stack → fullscreen)
-  // Expand mapped over a larger distance to give the transition more time
-  const expandT = useTransform(sectionProgress, [0.35, 0.95], [0, 1], { clamp: true });
-  // Slight ease-in on unstack so movement ramps in more gently.
-  const expandTEased = useTransform(expandT, (v) => Math.pow(v, 1.5));
-
-  // Border radius transition: starts even later than the rest (at 0.85 instead of 0.7)
-  const borderExpandT = useTransform(sectionProgress, [0.85, 0.98], [0, 1], { clamp: true });
-
-  // ── Derived values from both phases ──
-
-  // Closed stack spacing controls.
-  // This is the direct, linear gap knob for closed stack spacing.
+  // Closed stack spacing controls (must be before stepped transforms that use STACK_GAP_PX).
   const STACK_GAP_PX = isMobileStackLayout ? 28 : 58;
   const stickyTop = 0;
 
-  // Border radius:  20 → 12 (entrance)  → 0 (borderExpand)
+  // ── Safari mobile: freeze the desktop reactive chain ──
+  // On iOS, feed a frozen (never-changing) MotionValue into all desktop useTransform hooks
+  // so their callbacks never fire during scroll. Instead, a single lightweight callback (below)
+  // computes y + scale and writes two MotionValues directly.
+  const frozenProgress = useMotionValue(0);
+  const desktopProgress = isIOS ? frozenProgress : sectionProgress;
+
+  // Entrance: 0 → 1  (settling into stack)
+  const entranceT = useTransform(desktopProgress, [0, 0.18], [0, 1], { clamp: true });
+
+  // Expand: 0 → 1  (stack → fullscreen)
+  const expandT = useTransform(desktopProgress, [0.35, 0.95], [0, 1], { clamp: true });
+  const expandTEased = useTransform(expandT, (v) => Math.pow(v, 1.5));
+
+  const borderExpandT = useTransform(desktopProgress, [0.85, 0.98], [0, 1], { clamp: true });
+
+  // ── Derived desktop values (frozen on iOS → computed once, never updated) ──
+
   const cardBorderRadius = useTransform([entranceT, borderExpandT] as any, ([e, bt]: number[]) => {
-    const entranceRadius = 40 - 8 * e; // 20→12
-    return entranceRadius * (1 - bt);   // →0
+    const entranceRadius = 40 - 8 * e;
+    return entranceRadius * (1 - bt);
   });
 
-  // Scale:  0.93 → 0.97 (entrance)  → 1.0 (expand),  per-card offset fades out
   const cardScale = useTransform([entranceT, expandTEased] as any, ([e, t]: number[]) => {
-    const entranceBase = 0.93 + 0.04 * e;            // 0.93→0.97
-    const base = entranceBase + 0.03 * t;             // 0.97→1.0
+    const entranceBase = 0.93 + 0.04 * e;
+    const base = entranceBase + 0.03 * t;
     const stackFactor = 1 - t;
     return base - stackScaleOffset * stackFactor;
   });
 
-  // Horizontal margin: pageMargin (stacked) → 0 (fullscreen), with scale compensation
   const cardMargin = useTransform([entranceT, expandTEased] as any, ([e, t]: number[]) => {
     const pm = pageMarginRef.current;
     const fraction = 1 - t;
     if (fraction <= 0) return 0;
-
     const entranceBase = 0.93 + 0.04 * e;
     const base = entranceBase + 0.03 * t;
-    const currentScale = base - stackScaleOffset * fraction;
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1440;
-
-    // Use `base` instead of `currentScale` to calculate identical DOM margins for all cards,
-    // so the scale difference becomes fully visible horizontally.
     const M = vw / 2 - (vw - 2 * pm * fraction) / (2 * base);
     return Math.max(0, M);
   });
 
-  // Calculate stack overlapped position
   const percentY = useTransform(expandTEased, [0, 1], [-100 * index, 0]);
-  // Closed state uses an exact linear pixel gap per card; expand collapses it to 0.
   const pixelY = useTransform(expandTEased, [0, 1], [STACK_GAP_PX * index, 0]);
   const cardY = useMotionTemplate`calc(${percentY}% + ${pixelY}px)`;
 
-  // Safari: animate crop via clip-path instead of margins/border radius to avoid
-  // layout-heavy repaints during the intro stack transition.
   const safariCardClipPath = useTransform([cardMargin, cardBorderRadius] as any, ([m, r]: number[]) => {
     const inset = Math.max(0, m);
     const radius = Math.max(0, r);
     return `inset(0px ${inset}px 0px ${inset}px round ${radius}px)`;
   });
+
+  // ── Safari mobile: single lightweight scroll callback ──
+  // Computes y (pure pixel number) + scale directly from sectionProgress.
+  // Numeric y avoids calc() string parsing → faster framer-motion style application.
+  const iosY = useMotionValue(0);
+  const iosScale = useMotionValue(0.97);
+  const iosCardHeightRef = useRef(0);
+
+  // Track card height for pure-pixel Y computation.
+  useEffect(() => {
+    if (!isIOSRef.current) return;
+    const el = scrollTrackRef.current;
+    if (!el) return;
+
+    const measure = () => { iosCardHeightRef.current = el.offsetHeight; };
+    measure();
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isIOSRef.current) return;
+
+    let rafId: number | null = null;
+    let latestProgress = sectionProgress.get();
+
+    const tick = () => {
+      rafId = null;
+      const p = latestProgress;
+
+      // expandT: [0.35, 0.95] → [0, 1], eased with pow(1.5)
+      const expandRaw = Math.max(0, Math.min(1, (p - 0.35) / 0.6));
+      const expand = expandRaw * expandRaw * Math.sqrt(expandRaw);
+
+      const scale = 0.97 + 0.03 * expand;
+
+      // Pure pixel Y: (pct% of card height) + gap pixels — no calc() string.
+      const h = iosCardHeightRef.current || 1;
+      const pctFraction = -index * (1 - expand);          // e.g. -2 when stacked, 0 when expanded
+      const gapPx = STACK_GAP_PX * index * (1 - expand);
+      const yPx = pctFraction * h + gapPx;
+
+      iosScale.set(scale);
+      iosY.set(yPx);
+    };
+
+    tick();
+
+    const unsubscribe = sectionProgress.on('change', (v) => {
+      latestProgress = v;
+      if (rafId === null) {
+        rafId = requestAnimationFrame(tick);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, [sectionProgress, index, STACK_GAP_PX, iosY, iosScale]);
 
 
 
@@ -1293,44 +1345,63 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     };
   }, []);
 
-  const useSafariClipPath = isSafari && !useVideoScrubbing;
+  // Only use clip-path crop on Safari desktop; on Safari mobile (iOS) it causes scroll lag when items scale/crop.
+  const useSafariClipPath = isSafariDesktop && !useVideoScrubbing;
+  // Safari mobile: freeze frame disabled — stack perf is now handled by frozen MotionValue chain + single callback.
+  const useSafariMobileFreezeFrame = false;
+
+  // iOS: static border radius (no animation) — value matches the desktop entrance radius.
+  const iosBorderRadius = 20;
+
+  // iOS: extra bottom gap between cards since they now have permanent margins + border-radius (not fullscreen).
+  const iosCardGap = 24;
 
   return (
-    <div ref={scrollTrackRef} className="relative w-full aspect-[16/10] md:aspect-video">
+    <div
+      ref={scrollTrackRef}
+      className="relative w-full aspect-[16/10] md:aspect-video"
+      style={isIOS ? { marginBottom: iosCardGap, width: 'auto', marginLeft: pageMargin, marginRight: pageMargin, aspectRatio: '16 / 9' } : undefined}
+    >
       <motion.div
         ref={containerRef}
-        className={`sticky w-full h-full shadow-xl cursor-pointer group`}
+        className={`sticky w-full h-full cursor-pointer group ${isIOS ? '' : 'shadow-xl'}`}
         style={{
           zIndex: index + 1,
           top: stickyTop,
-          borderRadius: useSafariClipPath ? 0 : cardBorderRadius,
-          marginLeft: useSafariClipPath ? 0 : cardMargin,
-          marginRight: useSafariClipPath ? 0 : cardMargin,
+          borderRadius: useSafariClipPath ? 0 : (isIOS ? iosBorderRadius : cardBorderRadius),
+          // iOS: permanent page margin (no animation) — cards always have horizontal inset.
+          marginLeft: useSafariClipPath ? 0 : (isIOS ? 0 : cardMargin),
+          marginRight: useSafariClipPath ? 0 : (isIOS ? 0 : cardMargin),
           clipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           WebkitClipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
-          y: cardY,
-          scale: cardScale,
+          y: isIOS ? iosY : cardY,
+          scale: isIOS ? iosScale : cardScale,
           transformOrigin: 'top center',
           overflow: 'hidden',
           width: 'auto',
           willChange: useSafariClipPath ? 'transform, clip-path' : 'transform',
+          ...(isIOS ? { contain: 'layout style' } : {}),
         }}
         onMouseEnter={hasFinePointer ? handleMouseEnter : undefined}
         onMouseLeave={hasFinePointer ? handleMouseLeave : undefined}
         onClick={handleProjectClick}
       >
-        {/* Static Background Image (Fallback) */}
+        {/* Static Background Image (Fallback); on Safari mobile freeze-frame this is the only visible layer for animations */}
         <div
           className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url('${project.image}')`,
-            opacity: useSpritesheetScrubbing ? (spritesheetDisplayReady ? 0 : 1) : (showAnimation ? 0 : 1),
+            opacity: useSafariMobileFreezeFrame
+              ? 1
+              : useSpritesheetScrubbing
+                ? (spritesheetDisplayReady ? 0 : 1)
+                : (showAnimation ? 0 : 1),
             transition: useSpritesheetScrubbing ? 'opacity 180ms ease-out' : animationOpacityTransition
           }}
         />
 
-        {/* Video Animation Sequence (Book Project Only) */}
-        {project.hasAnimation && project.animationSequence && useVideoScrubbing && (
+        {/* Video Animation Sequence (Book Project Only); not rendered on Safari mobile (freeze frame) */}
+        {project.hasAnimation && project.animationSequence && useVideoScrubbing && !useSafariMobileFreezeFrame && (
           <div
             className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
             style={{
@@ -1377,8 +1448,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           </div>
         )}
 
-        {/* Spritesheet Animation Sequence (Preferred) */}
-        {project.hasAnimation && project.animationSequence && useSpritesheetScrubbing && selectedSpritesheetPath && (
+        {/* Spritesheet Animation Sequence (Preferred); not rendered on Safari mobile (freeze frame) */}
+        {project.hasAnimation && project.animationSequence && useSpritesheetScrubbing && selectedSpritesheetPath && !useSafariMobileFreezeFrame && (
           <div
             className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
             style={{
@@ -1468,8 +1539,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           </video>
         )}
 
-        {/* Subtle loading indicator for animations */}
-        {project.hasAnimation && project.animationSequence && !isAnimationReady && !(useVideoScrubbing && preferNativeVideoScrub) && (
+        {/* Subtle loading indicator for animations (hidden on Safari mobile – freeze frame) */}
+        {project.hasAnimation && project.animationSequence && !useSafariMobileFreezeFrame && !isAnimationReady && !(useVideoScrubbing && preferNativeVideoScrub) && (
           <div className="absolute top-6 right-6 z-20 pointer-events-none">
             <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-2xl">
               <svg className="animate-spin h-3.5 w-3.5 text-white/90" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
