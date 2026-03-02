@@ -1360,7 +1360,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     <div
       ref={scrollTrackRef}
       className="relative w-full aspect-[16/10] md:aspect-video"
-      style={isIOS ? { marginBottom: iosCardGap } : undefined}
+      style={isIOS ? { marginBottom: iosCardGap, width: 'auto', marginLeft: pageMargin, marginRight: pageMargin, aspectRatio: '16 / 9' } : undefined}
     >
       <motion.div
         ref={containerRef}
@@ -1370,8 +1370,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           top: stickyTop,
           borderRadius: useSafariClipPath ? 0 : (isIOS ? iosBorderRadius : cardBorderRadius),
           // iOS: permanent page margin (no animation) — cards always have horizontal inset.
-          marginLeft: useSafariClipPath ? 0 : (isIOS ? pageMargin : cardMargin),
-          marginRight: useSafariClipPath ? 0 : (isIOS ? pageMargin : cardMargin),
+          marginLeft: useSafariClipPath ? 0 : (isIOS ? 0 : cardMargin),
+          marginRight: useSafariClipPath ? 0 : (isIOS ? 0 : cardMargin),
           clipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           WebkitClipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           y: isIOS ? iosY : cardY,
