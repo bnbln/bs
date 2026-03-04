@@ -5,7 +5,7 @@ subtitle: My Motion Design for the Earth Week 2023
 slug: earth-week
 category: Motion Design
 client: [WELT]
-published: '2024-03-20'
+published: '2022-01-20'
 description: Motion Design for Earth Week 2023
 bgColor: '#1e2331'
 image: assets/earthweek-01.jpg
