@@ -12,8 +12,8 @@ excerpts: >-
 published: '2025-08-01'
 description: Habit-building task app for iOS, built with React Native
 bgColor: '#007EFF'
-image: assets/reminders+.png
-hasAnimation: true
+image: assets/reminders-plus/reminders-promo.jpg
+hasAnimation: false
 animationSequence:
   # spritesheetPath: assets/reminders/spritesheet.webp
   # mobileSpritesheetPath: assets/reminders/spritesheet.webp
@@ -39,6 +39,12 @@ Some productivity apps are *too good* at letting you plan. You end up with perfe
 
 # The idea: “one task a day” beats “a perfect plan”
 
+```mockup type="iphone" image="assets/reminders-plus/IMG_3086.PNG" bgColor="#F5F5F7"
+```
+
+```mockup type="iphone" image="assets/reminders-plus/IMG_3087.PNG" bgColor="#F5F5F7"
+```
+
 Instead of pushing you into huge lists, Reminders+ is intentionally built around consistency:
 
 - **Tasks** for the stuff you need to get done
@@ -48,7 +54,7 @@ Instead of pushing you into huge lists, Reminders+ is intentionally built around
 
 That mechanic sounds small, but it changes how you use the app: you stop aiming for “finish everything” and start aiming for “show up today”.
 
-```mockup type="iphone" image="assets/reminders-plus/Simulator Screenshot - iPhone 17 Pro - 2026-03-03 at 16.39.12.png" bgColor="#F5F5F7"
+```mockup type="iphone" image="assets/reminders-plus/IMG_3090.PNG" bgColor="#F5F5F7"
 ```
 ```mockup type="iphone" image="assets/reminders-plus/Simulator Screenshot - iPhone 17 Pro - 2026-03-03 at 16.34.29.png" bgColor="#F5F5F7"
 ```
@@ -63,27 +69,29 @@ We designed Reminders+ around a few principles:
 - Clear hierarchy between Tasks / Routines / Projects
 - A UI that stays out of the way, so your attention stays on doing, not organizing
 
-```palette
-iOS-Blue #007EFF rgb(0,126,255) usage=Primary
-Off-White #F5F7FA rgb(245,247,250) usage=Background
-Ink #0B1220 rgb(11,18,32) usage=Text
+```mockup type="iphone" image="assets/reminders-plus/IMG_3089.PNG" bgColor="#F5F5F7"
 ```
-```animationSequence
-videoPath: assets/reminders-8.mp4
-safariVideoPath: assets/reminders-8-safari-scrub.mp4
-frameCount: 5607
+```mockup type="iphone" image="assets/reminders-plus/IMG_3088.PNG" bgColor="#F5F5F7"
 ```
+
 # Development
 
 So Reminders+ is built on React Native and local-first by design:
 - 100% local storage, no cloud dependency
 - “Data not collected” (App Store privacy)
 - Fast & lightweight, with smooth navigation and animations
-
+```palette
+iOS-Blue #007EFF rgb(0,126,255) usage=Primary
+Off-White #F5F7FA rgb(245,247,250) usage=Background
+Ink #0B1220 rgb(11,18,32) usage=Text
+Red #F4512C
+Orange #F97316
+Green #22C55E
+```
 
 # Keeping clarity from the first click in Marketing
 
-```mockup type="macbook" image="/assets/reminders-plus-landingpage.png" bgColor="#F5F5F7"
+```mockup type="macbook" image="/assets/reminders-plus/landing.png" bgColor="#F5F5F7"
 ```
 
 The landing page serves as a visual extension of the app's minimalist philosophy. It was designed to communicate the value of privacy and simplicity immediately, using clean layouts and interactive previews to demonstrate the fluid navigation and the "no-account-required" onboarding flow. 
