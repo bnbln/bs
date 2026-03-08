@@ -11,6 +11,7 @@ import Contact from '../components/Contact'
 import Footer from '../components/Footer'
 import Create from '../components/Create'
 import Skills from '../components/Skills'
+import { buildCanonical, buildPageSeo, getSeoConfig } from '../lib/seo'
 
 interface HomeProps {
   data: {
@@ -20,30 +21,22 @@ interface HomeProps {
 }
 
 export default function Home({ data }: HomeProps) {
+  const seoConfig = getSeoConfig()
+  const homeSeo = buildPageSeo(seoConfig, 'home')
+  const siteUrl = buildCanonical(seoConfig, '/')
+  const defaultOgImage = buildCanonical(seoConfig, seoConfig.assets.ogDefaultImage)
+
   return (
     <>
-      <NextSeo
-        description="Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany."
-        openGraph={{
-          title: 'Benedikt Schnupp - Motion Designer & Developer',
-          description: 'Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development.',
-          images: [
-            {
-              url: 'https://benediktschnupp.com/og-image.jpg',
-              width: 1200,
-              height: 630,
-              alt: 'Benedikt Schnupp Portfolio',
-            },
-          ],
-        }}
-      />
+      <NextSeo {...homeSeo} />
       <StructuredData
         type="person"
         data={{
           name: 'Benedikt Schnupp',
           jobTitle: 'Motion Designer & Developer',
-          description: 'Creative Motion Designer & Front-End Developer with 10+ years of experience in branding, motion design and modern web development.',
-          url: 'https://benediktschnupp.com',
+          description: seoConfig.site.defaultDescription,
+          url: siteUrl,
+          image: defaultOgImage,
           worksFor: {
             '@type': 'Organization',
             name: 'Freelance',

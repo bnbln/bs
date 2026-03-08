@@ -6,16 +6,16 @@ import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
 import ContactForm from '../components/ContactForm'
 import MagneticButton from '../components/MagneticButton'
+import { buildPageSeo, getSeoConfig } from '../lib/seo'
 
 const ContactPage = () => {
+  const seoConfig = getSeoConfig()
+  const seo = buildPageSeo(seoConfig, 'contact')
   const containerRef = useRef(null)
 
   return (
     <>
-      <NextSeo
-        title="Contact - Benedikt Schnupp"
-        description="Get in touch for freelance projects, collaborations, or just to say hi."
-      />
+      <NextSeo {...seo} />
 
       <div className="bg-[#1C1D20] min-h-screen">
         <div className="bg-white min-h-screen flex flex-col justify-between relative z-10 shadow-2xl mb-0 md:mb-[500px]">

@@ -11,6 +11,7 @@ import { brandLogos } from '../lib/brands'
 const Shuffle = dynamic(() => import('../components/Shuffle'), { ssr: false })
 import { getProjectsData, Project } from '../lib/markdown'
 import { ArrowUpRight, Linkedin, Copy, Calendar, Award, Briefcase, GraduationCap } from 'lucide-react'
+import { buildPageSeo, getSeoConfig } from '../lib/seo'
 
 interface AboutPageProps {
    data: {
@@ -29,6 +30,8 @@ interface TimelineEvent {
 }
 
 const AboutPage = ({ data }: AboutPageProps) => {
+   const seoConfig = getSeoConfig()
+   const seo = buildPageSeo(seoConfig, 'about')
    const [copied, setCopied] = React.useState(false)
 
    const copyEmail = () => {
@@ -122,23 +125,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
 
    return (
       <>
-         <NextSeo
-            title="About | Benedikt Schnupp"
-            description="Learn more about Benedikt Schnupp - a creative Motion Designer & Front-End Developer based in Berlin."
-            openGraph={{
-               title: 'About | Benedikt Schnupp',
-               description: 'Learn more about Benedikt Schnupp - a creative Motion Designer & Front-End Developer based in Berlin.',
-               url: 'https://benediktschnupp.com/about',
-               images: [
-                  {
-                     url: 'https://benediktschnupp.com/assets/portrait.webp',
-                     width: 1200,
-                     height: 630,
-                     alt: 'Benedikt Schnupp',
-                  },
-               ],
-            }}
-         />
+         <NextSeo {...seo} />
 
          <div className="min-h-screen bg-[#1C1D20] w-full">
             {/* Main Content - Slides over the footer on desktop, sits above it on mobile */}

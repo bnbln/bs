@@ -2,7 +2,6 @@ import type { AppProps } from 'next/app'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { DefaultSeo } from 'next-seo'
-import { defaultSEO } from '../config/seo'
 import '../index.css'
 import LoadingScreen from '../components/LoadingScreen'
 import { AssetPreloader } from '../utils/assetPreloader'
@@ -12,10 +11,12 @@ import { LOADING_CONFIG } from '../config/loading'
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { spaceGrotesk, inter } from '../lib/fonts'
+import { buildDefaultSeo, getSeoConfig } from '../lib/seo'
 
 // Global state to track if assets are loaded in memory
 let globalAssetsLoaded = false;
 let globalProjects: any[] = [];
+const seoConfig = getSeoConfig()
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
@@ -51,25 +52,16 @@ export default function App({ Component, pageProps }: AppProps) {
     setIsLoading(false);
   };
 
-  // Construct canonical URL
-  // Remove query params and ensure trailing slash matches next.config.js
   const path = router.asPath.split('?')[0];
-  const canonicalUrl = `https://benediktschnupp.com${path === '/' ? '/' : path.endsWith('/') ? path : path + '/'}`;
+  const defaultSeo = buildDefaultSeo(seoConfig, path);
 
   // Skip loading screen entirely
   return (
     <main className={`${spaceGrotesk.variable} ${inter.variable}`}>
-       <DefaultSeo 
-        {...defaultSEO} 
-        canonical={canonicalUrl}
-        openGraph={{
-          ...defaultSEO.openGraph,
-          url: canonicalUrl,
-        }}
-      />
+       <DefaultSeo {...defaultSeo} />
       <Component {...pageProps} />
       <Analytics />
       <SpeedInsights />
     </main>
   )
-} 
+}

@@ -6,6 +6,9 @@ import html from 'remark-html'
 import { resolveProjectAssets } from './assets'
 
 const projectsDirectory = path.join(process.cwd(), 'content/projects')
+const archiveProjectsDirectory = path.join(projectsDirectory, 'archive')
+
+export type ProjectFolder = 'projects' | 'archive'
 
 export interface Project {
   id: number
@@ -56,23 +59,19 @@ export interface Project {
   contentHtml?: string
 }
 
-export function getAllProjectSlugs(): string[] {
-  const fileNames = fs.readdirSync(projectsDirectory)
+function getAllProjectSlugsFromDirectory(directory: string): string[] {
+  if (!fs.existsSync(directory)) {
+    return []
+  }
+
+  const fileNames = fs.readdirSync(directory)
   return fileNames
     .filter(name => name.endsWith('.md'))
     .map(fileName => fileName.replace(/\.md$/, ''))
 }
 
-export function getAllProjects(): Project[] {
-  const slugs = getAllProjectSlugs()
-  const projects = slugs.map(slug => getProjectBySlug(slug))
-
-  // Sort by published date, newest first
-  return projects.sort((a, b) => (a.published > b.published ? -1 : 1))
-}
-
-export function getProjectBySlug(slug: string): Project {
-  const fullPath = path.join(projectsDirectory, `${slug}.md`)
+function getProjectBySlugFromDirectory(slug: string, directory: string): Project {
+  const fullPath = path.join(directory, `${slug}.md`)
   const fileContents = fs.readFileSync(fullPath, 'utf8')
   const { data, content } = matter(fileContents)
 
@@ -83,6 +82,40 @@ export function getProjectBySlug(slug: string): Project {
   } as Project
 
   return resolveProjectAssets(project)
+}
+
+function sortProjectsByPublishedDate(projects: Project[]): Project[] {
+  return projects.sort((a, b) => (a.published > b.published ? -1 : 1))
+}
+
+export function getAllProjectSlugs(): string[] {
+  return getAllProjectSlugsFromDirectory(projectsDirectory)
+}
+
+export function getAllProjects(): Project[] {
+  const slugs = getAllProjectSlugs()
+  const projects = slugs.map(slug => getProjectBySlugFromDirectory(slug, projectsDirectory))
+
+  // Sort by published date, newest first
+  return sortProjectsByPublishedDate(projects)
+}
+
+export function getAllArchivedProjectSlugs(): string[] {
+  return getAllProjectSlugsFromDirectory(archiveProjectsDirectory)
+}
+
+export function getAllArchivedProjects(): Project[] {
+  const slugs = getAllArchivedProjectSlugs()
+  const projects = slugs.map(slug => getProjectBySlugFromDirectory(slug, archiveProjectsDirectory))
+  return sortProjectsByPublishedDate(projects)
+}
+
+export function getProjectBySlug(slug: string): Project {
+  return getProjectBySlugFromDirectory(slug, projectsDirectory)
+}
+
+export function getArchivedProjectBySlug(slug: string): Project {
+  return getProjectBySlugFromDirectory(slug, archiveProjectsDirectory)
 }
 
 export async function getProjectWithHtml(slug: string): Promise<Project> {

@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://benediktschnupp.com/sitemap.xml 
+Sitemap: https://benediktschnupp.com/sitemap.xml

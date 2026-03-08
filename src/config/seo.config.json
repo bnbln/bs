@@ -1,0 +1,112 @@
+{
+  "site": {
+    "siteUrl": "https://benediktschnupp.com",
+    "defaultTitle": "Benedikt Schnupp - Motion Designer & Developer",
+    "titleTemplate": "%s | Benedikt Schnupp - Senior Designer & Developer",
+    "defaultDescription": "Senior Designer & Developer with 7+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany.",
+    "siteName": "Benedikt Schnupp - Senior Designer & Developer",
+    "locale": "en_US",
+    "twitter": {
+      "cardType": "summary_large_image",
+      "handle": "",
+      "site": ""
+    }
+  },
+  "assets": {
+    "ogDefaultImage": "/og-image.jpg",
+    "faviconIco": "/favicon.ico",
+    "favicon16": "/favicon-16x16.png",
+    "favicon32": "/favicon-32x32.png",
+    "appleTouchIcon": "/apple-touch-icon.png",
+    "android192": "/android-chrome-192x192.png",
+    "android512": "/android-chrome-512x512.png"
+  },
+  "app": {
+    "name": "Benedikt Schnupp - Motion Designer & Developer",
+    "shortName": "Benedikt Schnupp",
+    "themeColor": "#1C1D20",
+    "backgroundColor": "#1C1D20",
+    "display": "standalone",
+    "startUrl": "/",
+    "scope": "/"
+  },
+  "pages": {
+    "home": {
+      "title": "",
+      "description": "Senior Designer & Developer with 7+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany.",
+      "path": "/",
+      "ogImage": "/og-image.jpg",
+      "noindex": false,
+      "includeInSitemap": true,
+      "changefreq": "weekly",
+      "priority": 1
+    },
+    "about": {
+      "title": "About",
+      "description": "Learn more about Benedikt Schnupp - a creative Motion Designer & Front-End Developer based in Berlin.",
+      "path": "/about/",
+      "ogImage": "/assets/portrait.webp",
+      "noindex": false,
+      "includeInSitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.8
+    },
+    "work": {
+      "title": "Work",
+      "description": "Explore the portfolio of Benedikt Schnupp - Motion Design, Web Development, and Creative Coding projects.",
+      "path": "/work/",
+      "ogImage": "/og-image.jpg",
+      "noindex": false,
+      "includeInSitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.8
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "Get in touch for freelance projects, collaborations, or just to say hi.",
+      "path": "/contact/",
+      "ogImage": "/og-image.jpg",
+      "noindex": false,
+      "includeInSitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.8
+    },
+    "impressum": {
+      "title": "Impressum",
+      "description": "Impressum und rechtliche Informationen",
+      "path": "/impressum/",
+      "ogImage": "/og-image.jpg",
+      "noindex": true,
+      "includeInSitemap": false,
+      "changefreq": "monthly",
+      "priority": 0.3
+    },
+    "datenschutzerklaerung": {
+      "title": "Datenschutzerklaerung",
+      "description": "Datenschutzerklaerung und Informationen zum Datenschutz",
+      "path": "/datenschutzerklaerung/",
+      "ogImage": "/og-image.jpg",
+      "noindex": true,
+      "includeInSitemap": false,
+      "changefreq": "monthly",
+      "priority": 0.3
+    },
+    "project": {
+      "titleTemplate": "%s",
+      "descriptionFallback": "Project details and case study.",
+      "pathPrefix": "/project/",
+      "openGraphType": "article",
+      "ogImageFallback": "/og-image.jpg",
+      "includeInSitemap": true,
+      "changefreq": "monthly",
+      "priority": 0.8
+    }
+  },
+  "robots": {
+    "userAgent": "*",
+    "allow": "/",
+    "disallow": [],
+    "additionalDirectives": [],
+    "sitemapPath": "/sitemap.xml"
+  }
+}

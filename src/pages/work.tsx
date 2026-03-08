@@ -8,6 +8,7 @@ import { getAllProjects, Project } from '../lib/markdown'
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { buildPageSeo, getSeoConfig } from '../lib/seo'
 
 const LottiePlayer = dynamic(() => import('../components/LottiePlayer'), { ssr: false })
 
@@ -16,6 +17,8 @@ interface WorkPageProps {
 }
 
 const WorkPage = ({ projects }: WorkPageProps) => {
+    const seoConfig = getSeoConfig()
+    const seo = buildPageSeo(seoConfig, 'work')
     const [filter, setFilter] = useState<'All' | 'Design' | 'Development'>('All')
     const [mounted, setMounted] = useState(false)
 
@@ -55,15 +58,7 @@ const WorkPage = ({ projects }: WorkPageProps) => {
 
     return (
         <>
-            <NextSeo
-                title="Work | Benedikt Schnupp"
-                description="Explore the portfolio of Benedikt Schnupp - Motion Design, Web Development, and Creative Coding projects."
-                openGraph={{
-                    title: 'Work | Benedikt Schnupp',
-                    description: 'Explore the portfolio of Benedikt Schnupp - Motion Design, Web Development, and Creative Coding projects.',
-                    url: 'https://benediktschnupp.com/work',
-                }}
-            />
+            <NextSeo {...seo} />
 
             <div className="min-h-screen bg-[#1C1D20] w-full">
                 <div className="relative z-10 bg-[#F5F5F5] shadow-2xl mb-0 md:mb-[500px] min-h-screen flex flex-col">

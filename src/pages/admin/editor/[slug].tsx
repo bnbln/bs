@@ -670,7 +670,13 @@ function FrontmatterEditor({ block, updateBlock }: { block: Block; updateBlock: 
 // --- Main Editor Component ---
 export default function EditorPage() {
     const router = useRouter();
-    const { slug } = router.query;
+    const slugParam = router.query.slug;
+    const folderParam = router.query.folder;
+    const slug = Array.isArray(slugParam) ? slugParam[0] : slugParam;
+    const folder = Array.isArray(folderParam)
+        ? (folderParam[0] === 'archive' ? 'archive' : 'projects')
+        : (folderParam === 'archive' ? 'archive' : 'projects');
+    const folderQuery = folder === 'archive' ? '?folder=archive' : '';
 
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [initialProject, setInitialProject] = useState<Project | null>(null);
@@ -702,13 +708,17 @@ export default function EditorPage() {
         fetch('/api/admin/projects')
             .then(res => res.json())
             .then(data => {
-                setAllProjects(data.projects || []);
-                const proj = (data.projects || []).find((p: Project) => p.slug === slug);
+                const liveProjects = data.projects || [];
+                const archivedProjects = data.archivedProjects || [];
+                const combinedProjects = [...liveProjects, ...archivedProjects];
+                setAllProjects(combinedProjects);
+                const activeList = folder === 'archive' ? archivedProjects : liveProjects;
+                const proj = activeList.find((p: Project) => p.slug === slug) || combinedProjects.find((p: Project) => p.slug === slug);
                 if (proj) setInitialProject(proj);
             });
 
         // Fetch raw markdown
-        fetch(`/api/admin/project/${slug}`)
+        fetch(`/api/admin/project/${slug}${folderQuery}`)
             .then(res => res.json())
             .then(data => {
                 if (data.content) {
@@ -716,12 +726,13 @@ export default function EditorPage() {
                 }
                 setLoading(false);
             });
-    }, [slug]);
+    }, [slug, folder, folderQuery]);
 
     const handleSave = async () => {
+        if (!slug) return;
         setSaving(true);
         const md = serializeBlocksToMarkdown(blocks);
-        await fetch(`/api/admin/project/${slug}`, {
+        await fetch(`/api/admin/project/${slug}${folderQuery}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: md })
@@ -1710,7 +1721,12 @@ export default function EditorPage() {
                         <button onClick={() => router.push('/admin')} className="text-neutral-400 hover:text-black transition-colors shrink-0">
                             <ArrowLeft size={18} />
                         </button>
-                        <h1 className="font-bold text-sm lg:text-base truncate">{initialProject?.title || slug}</h1>
+                        <h1 className="font-bold text-sm lg:text-base truncate">
+                            {initialProject?.title || slug || 'Untitled'}
+                            <span className="ml-2 text-xs uppercase tracking-wider text-neutral-400 font-medium">
+                                {folder === 'archive' ? 'Archive' : 'Live'}
+                            </span>
+                        </h1>
                     </div>
 
                     <div className="flex gap-1 bg-neutral-100 p-1 mx-2 lg:mx-4 rounded-lg shrink-0">
@@ -1848,7 +1864,7 @@ export default function EditorPage() {
                             )}
                             <iframe
                                 ref={iframeRef}
-                                src={`/admin/preview/${slug}`}
+                                src={`/admin/preview/${slug || ''}`}
                                 className="w-full h-full border-none pointer-events-none" // We don't interact with the iframe physically just yet, unless we want to, so we keep events passed or disabled. Let's make it interactive.
                                 style={{ pointerEvents: 'auto' }}
                                 title="Device Simulator"

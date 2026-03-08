@@ -3,6 +3,7 @@ import { NextSeo } from 'next-seo'
 import { getStaticProjectPaths, getProjectWithHtml, Project, getAllProjects } from '../../lib/markdown'
 import StructuredData from '../../components/StructuredData'
 import Article from '../../components/Article'
+import { buildCanonical, buildProjectSeo, getSeoConfig } from '../../lib/seo'
 
 interface ProjectPageProps {
   project: Project
@@ -10,43 +11,23 @@ interface ProjectPageProps {
 }
 
 export default function ProjectPage({ project, allProjects }: ProjectPageProps) {
-  const siteUrl = 'https://benediktschnupp.com'
-  const heroImage = project.heroImage || project.image
-  const toAbsoluteUrl = (url: string) =>
-    url?.startsWith('http') ? url : `${siteUrl}${url?.startsWith('/') ? '' : '/'}${url}`
-
-  const absoluteHeroImage = toAbsoluteUrl(heroImage)
+  const seoConfig = getSeoConfig()
+  const projectSeo = buildProjectSeo(seoConfig, project)
+  const heroImage = project.heroImage || project.image || seoConfig.pages.project.ogImageFallback || seoConfig.assets.ogDefaultImage
+  const absoluteHeroImage = buildCanonical(seoConfig, heroImage)
+  const articleDescription = project.excerpts || seoConfig.pages.project.descriptionFallback || seoConfig.site.defaultDescription
 
   return (
     <>
-      <NextSeo
-        title={project.title}
-        description={project.excerpts}
-        openGraph={{
-          title: project.title,
-          description: project.excerpts,
-          images: [
-            {
-              url: absoluteHeroImage,
-              width: 1200,
-              height: 630,
-              alt: project.title,
-            },
-          ],
-          type: 'article',
-          article: {
-            publishedTime: project.published,
-            section: Array.isArray(project.category) ? project.category[0] : project.category,
-          },
-        }}
-      />
+      <NextSeo {...projectSeo} />
       <StructuredData
         type="article"
         data={{
           headline: project.title,
-          description: project.excerpts,
+          description: articleDescription,
           image: absoluteHeroImage,
           datePublished: project.published,
+          mainEntityOfPage: projectSeo.canonical,
           author: {
             '@type': 'Person',
             name: 'Benedikt Schnupp',

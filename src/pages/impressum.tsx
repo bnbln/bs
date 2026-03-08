@@ -2,15 +2,15 @@ import React from 'react'
 import { NextSeo } from 'next-seo'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
+import { buildPageSeo, getSeoConfig } from '../lib/seo'
 
 const Impressum = () => {
+  const seoConfig = getSeoConfig()
+  const seo = buildPageSeo(seoConfig, 'impressum')
+
   return (
     <>
-      <NextSeo
-        title="Impressum"
-        description="Impressum und rechtliche Informationen"
-        noindex={true}
-      />
+      <NextSeo {...seo} />
       
       <div className="bg-[#1C1D20] min-h-screen">
         <div className="bg-white min-h-screen flex flex-col justify-between relative z-10 shadow-2xl mb-0 md:mb-[500px]">
