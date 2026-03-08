@@ -46,3 +46,10 @@ export default function AdminDashboard() {
         </div>
     );
 }
+
+export const getStaticProps = async () => {
+    if (process.env.NODE_ENV !== 'development' || !process.env.NEXT_PUBLIC_ADMIN) {
+        return { notFound: true };
+    }
+    return { props: {} };
+};

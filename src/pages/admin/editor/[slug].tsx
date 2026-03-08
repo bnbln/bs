@@ -321,6 +321,206 @@ function AddMenu({ onAdd }: { onAdd: (type: BlockType) => void }) {
 
 
 // --- Main Editor Component ---
+function FrontmatterEditor({ block, updateBlock }: { block: Block; updateBlock: (id: string, updates: Partial<Block>) => void }) {
+    const [data, setData] = useState<Record<string, any> | null>(null);
+    const [rawMode, setRawMode] = useState(false);
+
+    useEffect(() => {
+        const cleanYaml = block.content.replace(/^---\n|\n---$/g, '').trim();
+        fetch('/api/admin/yaml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'parse', payload: cleanYaml })
+        })
+            .then(r => r.json())
+            .then(res => {
+                if (res.data && typeof res.data === 'object') {
+                    setData(res.data);
+                } else {
+                    setRawMode(true);
+                }
+            })
+            .catch(() => setRawMode(true));
+    }, [block.id]);
+
+    const handleChange = (key: string, value: any) => {
+        if (!data) return;
+        const newData = { ...data, [key]: value };
+        setData(newData);
+        saveToBlock(newData);
+    };
+
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const saveToBlock = (newData: any) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(async () => {
+            const res = await fetch('/api/admin/yaml', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'stringify', payload: newData })
+            });
+            const json = await res.json();
+            if (json.data) {
+                updateBlock(block.id, { content: `---\n${json.data}---` });
+            }
+        }, 500);
+    };
+
+    if (rawMode || !data) {
+        return (
+            <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center text-sm font-medium mb-2">
+                    <span className="text-neutral-500">Raw YAML Code</span>
+                    <button onClick={() => { if (data) setRawMode(false) }} className="text-blue-500 hover:text-blue-600 underline">Try Form View</button>
+                </div>
+                <AutoResizeTextarea
+                    className="w-full bg-[#1D1D1F] text-[#E5E5EA] border border-[#333336] rounded-xl p-5 text-sm font-mono leading-relaxed focus:ring-2 focus:ring-white/20 focus:border-white transition-all shadow-inner"
+                    value={block.content}
+                    onChange={(val) => updateBlock(block.id, { content: val })}
+                    rows={15}
+                />
+            </div>
+        );
+    }
+
+    const {
+        title = '',
+        subtitle = '',
+        slug = '',
+        category = [],
+        collaboration = [],
+        excerpts = '',
+        published = '',
+        description = '',
+        bgColor = '',
+        image = '',
+        video = '',
+        hasAnimation = false,
+        animationSequence = {},
+        featured = false,
+        type = [],
+        id = 0,
+        awards = []
+    } = data;
+
+    const toCommaStr = (arr: any) => Array.isArray(arr) ? arr.join(', ') : (typeof arr === 'string' ? arr : '');
+    const fromCommaStr = (str: string) => str.split(',').map(s => s.trim()).filter(Boolean);
+
+    return (
+        <div className="flex flex-col gap-6 text-neutral-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Project Title</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm font-semibold focus:bg-white focus:ring-black focus:border-black transition-colors" value={title} onChange={e => handleChange('title', e.target.value)} />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Project ID</label>
+                    <input type="number" className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={id} onChange={e => handleChange('id', parseInt(e.target.value) || 0)} />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Subtitle</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={subtitle} onChange={e => handleChange('subtitle', e.target.value)} />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">URL Slug</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={slug} onChange={e => handleChange('slug', e.target.value)} />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Publish Date (YYYY-MM-DD)</label>
+                    <input type="text" className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={published} onChange={e => handleChange('published', e.target.value)} />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Excerpt (Hero Parallax Intro)</label>
+                    <AutoResizeTextarea className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={excerpts} onChange={val => handleChange('excerpts', val)} rows={3} />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">SEO Description</label>
+                    <AutoResizeTextarea className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={description} onChange={val => handleChange('description', val)} rows={2} />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Cover / Hero Image Path</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={image} onChange={e => handleChange('image', e.target.value)} placeholder="assets/..." />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Cover Video Loop (Optional override)</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={video} onChange={e => handleChange('video', e.target.value)} placeholder="assets/..." />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Project Brand Color</label>
+                    <div className="flex gap-2 items-center bg-neutral-50 border rounded-lg pr-2.5 overflow-hidden focus-within:ring-1 focus-within:ring-black">
+                        <input type="color" className="w-10 h-10 border-r border-transparent p-0 bg-transparent object-cover cursor-pointer" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} />
+                        <input className="flex-1 bg-transparent border-none p-2.5 text-sm font-mono focus:ring-0" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} placeholder="#007EFF" />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Collaboration JSON</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm font-mono focus:bg-white focus:ring-black focus:border-black transition-colors" value={JSON.stringify(collaboration)} onChange={e => {
+                        try { handleChange('collaboration', JSON.parse(e.target.value)); } catch (err) { /* ignore invalid json while typing */ }
+                    }} placeholder='[{"Name": null}]' />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Awards List (Comma Seperated)</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={toCommaStr(awards)} onChange={e => handleChange('awards', fromCommaStr(e.target.value))} />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Category (Comma Seperated)</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={toCommaStr(category)} onChange={e => handleChange('category', fromCommaStr(e.target.value))} />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Type Tags (Comma Seperated)</label>
+                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={toCommaStr(type)} onChange={e => handleChange('type', fromCommaStr(e.target.value))} />
+                </div>
+
+                <div className="col-span-1 md:col-span-2 flex flex-col gap-2 mt-4">
+                    <div className="flex items-center gap-3 bg-neutral-50 p-3 rounded-lg border">
+                        <input type="checkbox" id="featured" className="w-4 h-4 rounded border-neutral-300 focus:ring-black text-black" checked={featured} onChange={e => handleChange('featured', e.target.checked)} />
+                        <label htmlFor="featured" className="text-sm font-bold text-neutral-700 select-none cursor-pointer">Featured Project (Large Grid Display)</label>
+                    </div>
+                    <div className="flex items-center gap-3 bg-neutral-50 p-3 rounded-lg border">
+                        <input type="checkbox" id="hasAnimation" className="w-4 h-4 rounded border-neutral-300 focus:ring-black text-black" checked={hasAnimation} onChange={e => handleChange('hasAnimation', e.target.checked)} />
+                        <label htmlFor="hasAnimation" className="text-sm font-bold text-neutral-700 select-none cursor-pointer">Use Hero Scroll Animation Sequence</label>
+                    </div>
+                </div>
+
+                {hasAnimation && (
+                    <div className="col-span-1 md:col-span-2 bg-neutral-50 border border-neutral-200 p-5 rounded-2xl flex flex-col gap-4 mt-2 shadow-sm">
+                        <div className="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-1 flex items-center gap-2"><Video size={16} /> Animation Paths (Video Scrubbing)</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Desktop Video Path (.mp4)</label>
+                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.videoPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, videoPath: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Safari Native Video Path</label>
+                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.safariVideoPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, safariVideoPath: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Mobile Video Path</label>
+                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.mobileVideoPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, mobileVideoPath: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Total Frame Count (Critical for scrubbing)</label>
+                                <input type="number" className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.frameCount || 0} onChange={e => handleChange('animationSequence', { ...animationSequence, frameCount: parseInt(e.target.value) })} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Legacy Spritesheet Path (Optional)</label>
+                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.spritesheetPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, spritesheetPath: e.target.value })} />
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="border-t mt-4 pt-4">
+                <button onClick={() => setRawMode(true)} className="text-xs font-medium text-neutral-400 hover:text-black transition-colors flex items-center gap-1.5">
+                    <Code size={12} /> View Raw Context
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// --- Main Editor Component ---
 export default function EditorPage() {
     const router = useRouter();
     const { slug } = router.query;
@@ -914,3 +1114,17 @@ export default function EditorPage() {
         </div>
     );
 }
+
+export const getStaticPaths = async () => {
+    return {
+        paths: [],
+        fallback: process.env.NODE_ENV === 'development' ? 'blocking' : false,
+    };
+};
+
+export const getStaticProps = async () => {
+    if (process.env.NODE_ENV !== 'development' || process.env.NEXT_PUBLIC_ADMIN !== 'true') {
+        return { notFound: true };
+    }
+    return { props: {} };
+};

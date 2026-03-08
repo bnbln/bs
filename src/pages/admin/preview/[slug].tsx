@@ -46,3 +46,17 @@ export default function PreviewPage() {
         </div>
     );
 }
+
+export const getStaticPaths = async () => {
+    return {
+        paths: [],
+        fallback: process.env.NODE_ENV === 'development' ? 'blocking' : false,
+    };
+};
+
+export const getStaticProps = async () => {
+    if (process.env.NODE_ENV !== 'development' || process.env.NEXT_PUBLIC_ADMIN !== 'true') {
+        return { notFound: true };
+    }
+    return { props: {} };
+};
