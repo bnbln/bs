@@ -3,8 +3,28 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { Mail, Linkedin } from 'lucide-react'
 
 import { PrimaryActionButton, SocialActionButton } from './ActionButtons'
-import Brands from './Brands'
-import { brandLogos } from '../lib/brands'
+
+const ScrubWord = ({
+  word,
+  index,
+  total,
+  progress,
+}: {
+  word: string
+  index: number
+  total: number
+  progress: any
+}) => {
+  const start = index / total
+  const end = start + (1 / total)
+  const opacity = useTransform(progress, [start, end], [0.15, 1])
+
+  return (
+    <motion.span style={{ opacity }} className="relative text-black">
+      {word}
+    </motion.span>
+  )
+}
 
 // Word-by-word scroll reveal component
 const ScrubText = ({ text, progress }: { text: string, progress: any }) => {
@@ -12,14 +32,14 @@ const ScrubText = ({ text, progress }: { text: string, progress: any }) => {
   return (
     <p className="text-[1.75rem] md:text-4xl lg:text-5xl text-black font-medium leading-[1.3] md:leading-[1.4] max-w-4xl flex flex-wrap gap-x-[0.25em] gap-y-[0.1em] tracking-tight">
       {words.map((word, i) => {
-        const start = i / words.length
-        const end = start + (1 / words.length)
-        // Ensure text is faded before it hits the scroll range, then fully opaque after
-        const opacity = useTransform(progress, [start, end], [0.15, 1])
         return (
-          <motion.span key={i} style={{ opacity }} className="relative text-black">
-            {word}
-          </motion.span>
+          <ScrubWord
+            key={`${word}-${i}`}
+            word={word}
+            index={i}
+            total={words.length}
+            progress={progress}
+          />
         )
       })}
     </p>
@@ -118,7 +138,7 @@ const About = () => {
           {/* Magnetic CTA & Mobile Socials */}
           <div className="pt-12 border-t border-neutral-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
             <PrimaryActionButton href="/contact" fullWidth>
-              Let's Work Together
+              Let&apos;s Work Together
             </PrimaryActionButton>
 
             {/* Mobile Socials (Hidden on desktop) */}

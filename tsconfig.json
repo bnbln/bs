@@ -25,5 +25,13 @@
     }
   },
   "include": ["next-env.d.ts", "src/types/global.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
+    "src/stories/**/*",
+    ".storybook/**/*",
+    "vitest.config.ts",
+    "vitest.shims.d.ts"
+  ]
 }

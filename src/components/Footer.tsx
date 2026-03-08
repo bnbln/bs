@@ -136,8 +136,8 @@ const Footer = () => {
         {/* Links Column: Legal */}
         <motion.div className="md:col-span-2 flex flex-col gap-4" variants={itemVariants}>
             <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Legal</h3>
-            <a href="/datenschutzerklaerung" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Privacy</a>
-            <a href="/impressum" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Imprint</a>
+            <Link href="/datenschutzerklaerung" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Privacy</Link>
+            <Link href="/impressum" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Imprint</Link>
         </motion.div>
 
       </motion.div>

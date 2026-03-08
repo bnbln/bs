@@ -236,7 +236,7 @@ function ProjectRefEditor({ block, updateBlock, allProjects }: { block: Block, u
 
                 {slugs.map((s, idx) => {
                     const p = allProjects.find(ap => ap.slug === s);
-                    if (!p) return <div key={s} className="text-xs text-red-500 p-2 border border-red-200 rounded">Project "{s}" not found. <button onClick={() => removeSlug(s)} className="underline font-bold">Remove</button></div>;
+                    if (!p) return <div key={s} className="text-xs text-red-500 p-2 border border-red-200 rounded">Project &quot;{s}&quot; not found. <button onClick={() => removeSlug(s)} className="underline font-bold">Remove</button></div>;
 
                     const img = p.heroImage || p.image;
 

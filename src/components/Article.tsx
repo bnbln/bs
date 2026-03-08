@@ -1320,7 +1320,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 </div>
               ) : (
                 <Callout variant="warning" title="Lottie block missing path" accentColor={accentColor}>
-                  <p>Add <code>path="assets/your-animation.json"</code> to this block.</p>
+                  <p>Add <code>{'path="assets/your-animation.json"'}</code> to this block.</p>
                 </Callout>
               )}
             </div>

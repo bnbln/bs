@@ -36,11 +36,11 @@ const ContactPage = () => {
                     <div className="w-[60px] h-[60px] rounded-full bg-cover bg-center mb-8" style={{ backgroundImage: `url('/assets/portrait.webp')` }} />
 
                     <h1 className="text-[12vw] sm:text-[9vw] md:text-[7vw] lg:text-[5.5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mb-8 mix-blend-exclusion">
-                      Let's start a project.
+                      Let&apos;s start a project.
                     </h1>
 
                     <p className="text-xl font-inter text-neutral-600 max-w-md leading-relaxed mb-12">
-                      I'm currently available for freelance projects. Open to discuss new opportunities, collaborations, or just connecting.
+                      I&apos;m currently available for freelance projects. Open to discuss new opportunities, collaborations, or just connecting.
                     </p>
 
                     <div className="flex flex-col gap-6">

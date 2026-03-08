@@ -111,7 +111,7 @@ const Contact = () => {
 
               {/* Massive Dynamic Headline with Inline Images */}
               <h2 className="text-[10vw] sm:text-[7vw] md:text-[7vw] leading-[1.05] tracking-tighter font-bold font-space-grotesk text-black mb-6 w-full max-w-[1200px] flex flex-wrap justify-center items-center gap-x-[2vw] gap-y-1 sm:gap-y-2">
-                <span>LET'S</span>
+                <span>LET&apos;S</span>
                 <span>CREATE</span>
                 <span>SOMETHING</span>
                 <span className="flex items-center text-neutral-300 w-full justify-center mt-2 gap-[2vw]">

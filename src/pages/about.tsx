@@ -182,11 +182,11 @@ const AboutPage = ({ data }: AboutPageProps) => {
                               </p>
                               <br />
                               <p>
-                                 I specialize in crafting and implementing innovative visual concepts, bridging the gap between aesthetic beauty and functional code. Whether it's 3D motion graphics, complex frontend logic in React and Next.js, or integrating generative AI into modern web technologies, I approach every project with a solution-oriented mindset.
+                                 I specialize in crafting and implementing innovative visual concepts, bridging the gap between aesthetic beauty and functional code. Whether it&apos;s 3D motion graphics, complex frontend logic in React and Next.js, or integrating generative AI into modern web technologies, I approach every project with a solution-oriented mindset.
                               </p>
                               <br />
                               <p>
-                                 I am highly committed and enthusiastic about driving impactful, brand-defining projects. Outside of work, I'm a maker at heart. You'll find me experimenting with <strong>3D printing</strong>, whipping up new recipes in the kitchen, or enjoying movie nights.
+                                 I am highly committed and enthusiastic about driving impactful, brand-defining projects. Outside of work, I&apos;m a maker at heart. You&apos;ll find me experimenting with <strong>3D printing</strong>, whipping up new recipes in the kitchen, or enjoying movie nights.
                               </p>
                            </div>
                         </motion.div>

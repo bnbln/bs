@@ -31,3 +31,6 @@ dist-ssr
 ae-frames
 .vercel
 .env*.local
+
+*storybook.log
+storybook-static

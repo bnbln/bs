@@ -9,7 +9,10 @@
     "lint": "next lint",
     "export": "next build && next export",
     "backend": "rm -rf .next-backend && NEXT_PUBLIC_ADMIN=true next dev",
-    "make:spritesheet": "node scripts/make-spritesheet.mjs"
+    "make:spritesheet": "node scripts/make-spritesheet.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test-storybook": "vitest run --project storybook"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -52,6 +55,25 @@
     "postcss": "^8.5.6",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "storybook": "^10.2.16",
+    "@storybook/nextjs-vite": "^10.2.16",
+    "@chromatic-com/storybook": "^5.0.1",
+    "@storybook/addon-vitest": "^10.2.16",
+    "@storybook/addon-a11y": "^10.2.16",
+    "@storybook/addon-docs": "^10.2.16",
+    "@storybook/addon-onboarding": "^10.2.16",
+    "vite": "^7.3.1",
+    "eslint-plugin-storybook": "^10.2.16",
+    "vitest": "^4.0.18",
+    "playwright": "^1.58.2",
+    "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18"
+  },
+  "eslintConfig": {
+    "extends": [
+      "next/core-web-vitals",
+      "plugin:storybook/recommended"
+    ]
   }
 }
