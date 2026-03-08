@@ -36,7 +36,7 @@ Turquoise #00728f rgb(0,114,143) usage=Brand Color
 EU-Gold #E6A105 rgb(230,161,5) usage=Sterne/Highlight
 ```
 
-```font name="Inter" styles="Medium, SemiBold, Bold" bgColor="#F5F5F7" color="#E6A105"
+```font name="Mark OT" styles="Medium, SemiBold, Bold" bgColor="#F5F5F7" color="#E6A105" svgAa="assets/fonts/mark-ot-aa.svg" svgTitle="assets/fonts/mark-ot-title.svg"
 ```
 
 One standout detail: the twelve stars. They rotate in opposition to the overall scene while staying perfectly horizontal within the viewport. It's a subtle effect powered by After Effects expressions – but visually, it makes all the difference.
@@ -59,8 +59,8 @@ One standout detail: the twelve stars. They rotate in opposition to the overall 
 
 ![assets/Europawahl Trailer Frame 290.jpg]
 
-
 The result? A motion-driven trailer full of structure, rhythm and European energy – and yes, it got nominated for the **2024 Eyes & Ears Award**.
 
 # The Trailer
+
 [video](assets/TR000X5A.mp4|assets/EU_wahl.webp)

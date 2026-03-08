@@ -1,4 +1,5 @@
 import React from 'react'
+import { resolveAssetPath } from '../lib/assets'
 
 interface FontSpecimenProps {
     name: string
@@ -6,6 +7,8 @@ interface FontSpecimenProps {
     sample?: string
     bgColor?: string
     color?: string
+    svgAa?: string
+    svgTitle?: string
 }
 
 export default function FontSpecimen({
@@ -13,8 +16,25 @@ export default function FontSpecimen({
     styles = "Regular, Medium, Bold",
     sample,
     bgColor = "#1D1D1F",
-    color = "#FFFFFF"
+    color = "#FFFFFF",
+    svgAa,
+    svgTitle
 }: FontSpecimenProps) {
+    const resolveSvgReference = (svgRef?: string) => {
+        if (!svgRef) return undefined
+        const trimmed = svgRef.trim()
+        if (!trimmed) return undefined
+        if (trimmed.startsWith('<svg')) {
+            return `data:image/svg+xml;utf8,${encodeURIComponent(trimmed)}`
+        }
+        if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+            return trimmed
+        }
+        return resolveAssetPath(trimmed)
+    }
+
+    const aaSvgUrl = resolveSvgReference(svgAa)
+    const titleSvgUrl = resolveSvgReference(svgTitle)
 
     return (
         <div
@@ -26,12 +46,29 @@ export default function FontSpecimen({
 
                 {/* Abstract typographic element (The "Aa") */}
                 <div className="hidden md:flex items-center justify-center p-8 md:p-16 border-r border-current/20 w-1/4 flex-shrink-0">
-                    <span
-                        className="text-[8rem] lg:text-[10rem] leading-none font-bold tracking-tighter opacity-90 select-none pb-4"
-                        style={{ fontFamily: name, color: color }}
-                    >
-                        Aa
-                    </span>
+                    {aaSvgUrl ? (
+                        <div
+                            className="w-32 h-32 lg:w-48 lg:h-48"
+                            style={{
+                                backgroundColor: color,
+                                WebkitMaskImage: `url("${aaSvgUrl}")`,
+                                WebkitMaskPosition: 'center',
+                                WebkitMaskRepeat: 'no-repeat',
+                                WebkitMaskSize: 'contain',
+                                maskImage: `url("${aaSvgUrl}")`,
+                                maskPosition: 'center',
+                                maskRepeat: 'no-repeat',
+                                maskSize: 'contain'
+                            }}
+                        />
+                    ) : (
+                        <span
+                            className="text-[8rem] lg:text-[10rem] leading-none font-bold tracking-tighter opacity-90 select-none pb-4"
+                            style={{ fontFamily: name, color: color }}
+                        >
+                            Aa
+                        </span>
+                    )}
                 </div>
 
                 {/* Main Name & Meta */}
@@ -42,9 +79,26 @@ export default function FontSpecimen({
                         </h3>
                         <h2
                             className="text-5xl sm:text-7xl md:text-[6rem] lg:text-[7rem] leading-[0.9] font-bold tracking-tighter"
-                            style={{ fontFamily: name }}
+                            style={{ fontFamily: name, color: color }}
                         >
-                            {name}
+                            {titleSvgUrl ? (
+                                <div
+                                    className="w-full h-20 sm:h-28 md:h-32 lg:h-40"
+                                    style={{
+                                        backgroundColor: color,
+                                        WebkitMaskImage: `url("${titleSvgUrl}")`,
+                                        WebkitMaskPosition: 'left center',
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        WebkitMaskSize: 'contain',
+                                        maskImage: `url("${titleSvgUrl}")`,
+                                        maskPosition: 'left center',
+                                        maskRepeat: 'no-repeat',
+                                        maskSize: 'contain'
+                                    }}
+                                />
+                            ) : (
+                                name
+                            )}
                         </h2>
                     </div>
 

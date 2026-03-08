@@ -1002,6 +1002,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 sample={attrs.sample}
                 bgColor={attrs.bgColor}
                 color={attrs.color}
+                svgAa={attrs.svgAa}
+                svgTitle={attrs.svgTitle}
               />
             </div>
           )

@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo, useLayoutEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { Reorder, motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, Type, LayoutTemplate, Palette, Video, Code, List as ListIcon, Link as LinkIcon, Play, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { GripVertical, Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, Type, LayoutTemplate, Palette, Video, Code, List as ListIcon, Link as LinkIcon, Play, Monitor, Smartphone, Tablet, BarChart } from 'lucide-react';
 import { Block, parseMarkdownToBlocks, serializeBlocksToMarkdown, generateId, BlockType, parseFenceAttributes, serializeFenceAttributes } from '../../../lib/editor-blocks';
+import { resolveAssetPath } from '../../../lib/assets';
 import Article from '../../../components/Article';
 import type { Project } from '../../../lib/markdown';
 
@@ -136,6 +137,11 @@ function ProjectRefEditor({ block, updateBlock, allProjects }: { block: Block, u
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
+    const getProjectImageSrc = (imagePath?: string) => {
+        if (!imagePath) return '';
+        return resolveAssetPath(imagePath);
+    };
+
     const updateSlugs = (newSlugs: string[]) => {
         if (newSlugs.length === 0) {
             updateBlock(block.id, { content: '[project:]' });
@@ -190,7 +196,7 @@ function ProjectRefEditor({ block, updateBlock, allProjects }: { block: Block, u
                         <div key={s} className="flex gap-4 items-center bg-[#F5F5F7] p-2 rounded-xl group/proj relative overflow-hidden">
                             {img ? (
                                 <div className="w-16 h-12 shrink-0 bg-neutral-200 border rounded-lg overflow-hidden shadow-inner flex items-center justify-center">
-                                    <img src={img?.startsWith('http') ? img : `/${img}`} className="w-full h-full object-cover" />
+                                    <img src={getProjectImageSrc(img)} alt={p.title || p.slug} className="w-full h-full object-cover" />
                                 </div>
                             ) : (
                                 <div className="w-16 h-12 shrink-0 bg-neutral-200 border rounded-lg shadow-inner flex items-center justify-center text-[10px] text-neutral-400">No Img</div>
@@ -233,7 +239,7 @@ function ProjectRefEditor({ block, updateBlock, allProjects }: { block: Block, u
                                     >
                                         {img ? (
                                             <div className="w-10 h-8 shrink-0 bg-neutral-200 rounded overflow-hidden">
-                                                <img src={img?.startsWith('http') ? img : `/${img}`} className="w-full h-full object-cover" />
+                                                <img src={getProjectImageSrc(img)} alt={p.title || p.slug} className="w-full h-full object-cover" />
                                             </div>
                                         ) : (
                                             <div className="w-10 h-8 shrink-0 bg-neutral-200 rounded" />
@@ -302,6 +308,12 @@ function AddMenu({ onAdd }: { onAdd: (type: BlockType) => void }) {
                         <button onClick={() => { onAdd('palette'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
                             <Palette size={16} className="text-neutral-400" /> Color Palette
                         </button>
+                        <button onClick={() => { onAdd('stats'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
+                            <BarChart size={16} className="text-neutral-400" /> Stats List
+                        </button>
+                        <button onClick={() => { onAdd('font'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
+                            <Type size={16} className="text-neutral-400" /> Font Specimen
+                        </button>
                         <button onClick={() => { onAdd('code'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
                             <Code size={16} className="text-neutral-400" /> Code Block
                         </button>
@@ -315,6 +327,87 @@ function AddMenu({ onAdd }: { onAdd: (type: BlockType) => void }) {
                 )}
             </AnimatePresence>
             {open && <div className="fixed inset-0" style={{ zIndex: -10 }} onClick={() => setOpen(false)} />}
+        </div>
+    );
+}
+
+function FontBlockEditor({ block, updateBlock }: { block: Block, updateBlock: (id: string, updates: Partial<Block>) => void }) {
+    const attrs = parseFenceAttributes(block.fenceInfo || '');
+    const [localFontPath, setLocalFontPath] = useState('');
+    const [generating, setGenerating] = useState(false);
+
+    const handleGenerateSVG = async () => {
+        if (!localFontPath || !attrs.name) {
+            alert('Font Name and Local Font Path are required.');
+            return;
+        }
+        setGenerating(true);
+        try {
+            const res = await fetch('/api/admin/generate-font-svg', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fontPath: localFontPath,
+                    fontName: attrs.name,
+                    generateSpecimen: true
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                updateBlock(block.id, {
+                    fenceInfo: serializeFenceAttributes('font', {
+                        ...attrs,
+                        svgAa: data.files.aa,
+                        svgTitle: data.files.title
+                    })
+                });
+                setLocalFontPath('');
+            } else {
+                alert(data.error || 'Failed to generate SVG');
+            }
+        } catch (e: any) {
+            alert('Error: ' + e.message);
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    return (
+        <div className="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-3">
+            <div className="flex items-center gap-2 font-bold text-sm text-neutral-800 uppercase tracking-wider"><Type size={16} /> Font Specimen</div>
+            <div className="grid grid-cols-2 gap-3">
+                <div>
+                    <label className="text-xs text-neutral-500 mb-1 block">Font Name</label>
+                    <input type="text" className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors" value={attrs.name || 'Inter'} onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('font', { ...attrs, name: e.target.value }) })} />
+                </div>
+                <div>
+                    <label className="text-xs text-neutral-500 mb-1 block">Styles</label>
+                    <input type="text" className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors" value={attrs.styles || 'Regular, Medium, Bold'} onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('font', { ...attrs, styles: e.target.value }) })} />
+                </div>
+                <div>
+                    <label className="text-xs text-neutral-500 mb-1 block">Background Color</label>
+                    <input type="text" className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors" value={attrs.bgColor || '#F5F5F7'} onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('font', { ...attrs, bgColor: e.target.value }) })} />
+                </div>
+                <div>
+                    <label className="text-xs text-neutral-500 mb-1 block">Text Color</label>
+                    <input type="text" className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors" value={attrs.color || '#E6A105'} onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('font', { ...attrs, color: e.target.value }) })} />
+                </div>
+
+                <div className="col-span-2 mt-2 pt-3 border-t flex flex-col gap-2">
+                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">Local SVG Generator</label>
+                    <p className="text-xs text-neutral-400">Generate path SVGs for text directly from a local font file. Useful for self-hosting custom fonts.</p>
+                    <div className="flex gap-2 items-center">
+                        <input type="text" className="flex-1 bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors" placeholder="e.g. /Library/Fonts/SFPro.ttf" value={localFontPath} onChange={(e) => setLocalFontPath(e.target.value)} />
+                        <button
+                            disabled={generating || !localFontPath}
+                            onClick={handleGenerateSVG}
+                            className="bg-black text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50 hover:bg-neutral-800 transition-colors shrink-0"
+                        >
+                            {generating ? 'Generating...' : 'Generate SVG'}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -818,6 +911,60 @@ export default function EditorPage() {
                     </div>
                 </div>
             );
+        }
+
+        if (block.type === 'stats') {
+            const lines = block.content.split('\n').filter(l => l.trim() !== '');
+            const updateLine = (idx: number, newLine: string) => {
+                const newLines = [...lines];
+                newLines[idx] = newLine;
+                updateBlock(block.id, { content: newLines.join('\n') });
+            };
+            const addLine = () => {
+                updateBlock(block.id, { content: [...lines, '1.2M::Daily active users'].join('\n') });
+            };
+            const removeLine = (idx: number) => {
+                const newLines = lines.filter((_, i) => i !== idx);
+                updateBlock(block.id, { content: newLines.join('\n') });
+            };
+
+            return (
+                <div className="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                    <div className="flex items-center gap-2 font-bold text-sm text-neutral-800 uppercase tracking-wider"><BarChart size={16} /> Stats Highlight</div>
+                    <div className="flex flex-col gap-2">
+                        {lines.map((line, idx) => {
+                            const [val, ...descParts] = line.split('::');
+                            const label = descParts.join('::');
+                            return (
+                                <div key={idx} className="flex gap-2 items-center bg-neutral-50 border rounded-lg p-2 group/stat">
+                                    <input
+                                        className="w-1/3 bg-transparent border-r text-lg font-bold font-space-grotesk focus:ring-0 px-2 py-1"
+                                        value={val}
+                                        onChange={(e) => updateLine(idx, `${e.target.value}::${label}`)}
+                                        placeholder="Value"
+                                    />
+                                    <input
+                                        className="flex-1 bg-transparent border-none text-sm text-neutral-500 font-medium focus:ring-0 px-2 py-1"
+                                        value={label}
+                                        onChange={(e) => updateLine(idx, `${val}::${e.target.value}`)}
+                                        placeholder="Label Description"
+                                    />
+                                    <button onClick={() => removeLine(idx)} className="opacity-0 group-hover/stat:opacity-100 text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-all shrink-0">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                        <button onClick={addLine} className="mt-2 text-xs text-neutral-500 bg-neutral-50 hover:bg-neutral-100 border border-dashed rounded-lg py-2 flex items-center justify-center gap-2 transition-colors">
+                            <Plus size={14} /> Add Stat Row
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        if (block.type === 'font') {
+            return <FontBlockEditor block={block} updateBlock={updateBlock} />;
         }
 
         if (block.type === 'code' || block.type === 'animation-sequence') {

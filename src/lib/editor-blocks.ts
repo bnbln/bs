@@ -1,16 +1,4 @@
-export type BlockType =
-    | 'frontmatter'
-    | 'text'
-    | 'header'
-    | 'list'
-    | 'mockup'
-    | 'callout'
-    | 'palette'
-    | 'gallery'
-    | 'video'
-    | 'project-ref'
-    | 'animation-sequence'
-    | 'code';
+export type BlockType = 'frontmatter' | 'text' | 'header' | 'list' | 'mockup' | 'callout' | 'palette' | 'gallery' | 'project-ref' | 'video' | 'code' | 'animation-sequence' | 'stats' | 'font';
 
 export interface Block {
     id: string;
@@ -127,6 +115,8 @@ export function parseMarkdownToBlocks(markdown: string): Block[] {
             else if (['insight', 'note', 'warning', 'context', 'result', 'callout'].includes(typeStr)) blockType = 'callout';
             else if (typeStr === 'palette' || fenceInfo.includes('type="palette"')) blockType = 'palette';
             else if (typeStr.includes('animation') || typeStr.includes('video')) blockType = 'animation-sequence';
+            else if (['stats', 'stat'].includes(typeStr)) blockType = 'stats';
+            else if (typeStr === 'font') blockType = 'font';
 
             blocks.push({
                 id: generateId(),
