@@ -21,7 +21,6 @@ type: Design
 ---
 
 For the 2024 EU election campaign, I created a trailer that frames Europe as a vibrant, forward-looking idea. The color palette is rooted in the EU flag: a deep blue with a turquoise twist and that unmistakable golden yellow.
-
 ```stats
 12::Rotating Stars
 20+::European Cities
@@ -31,9 +30,10 @@ For the 2024 EU election campaign, I created a trailer that frames Europe as a v
 ![assets/Europawahl Trailer Frame 182.jpg]
 
 ```palette title="EU Color Palette" description="Primäre Trailer-Farben (Blau, Türkis & Gold)"
-Deep-Navy #003a5a rgb(0,58,90) usage=Brand Color
-Turquoise #00728f rgb(0,114,143) usage=Brand Color
-EU-Gold #E6A105 rgb(230,161,5) usage=Sterne/Highlight
+Deep-Navy #003a5a rgb(0,58,90) usage=Brand Color rank=2
+Turquoise #00728f rgb(0,114,143) usage=Brand Color rank=1
+EU-Gold #E6A105 rgb(230,161,5) usage=Sterne/Highlight rank=1
+White #F5F5F7 rank=2
 ```
 
 ```font name="Mark OT" styles="Medium, SemiBold, Bold" bgColor="#F5F5F7" color="#E6A105" svgAa="assets/fonts/mark-ot-aa.svg" svgTitle="assets/fonts/mark-ot-title.svg"

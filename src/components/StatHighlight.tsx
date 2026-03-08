@@ -15,9 +15,6 @@ export default function StatHighlight({ stats, accentColor = '#000' }: StatHighl
 
     return (
         <div className="flex flex-col gap-6 w-full py-8">
-            <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 font-inter px-2">
-                The Impact
-            </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {stats.map((stat, index) => (
                     <div

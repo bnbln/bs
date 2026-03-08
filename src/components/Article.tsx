@@ -41,29 +41,116 @@ const ScrubParagraph = ({ children, className = '' }: { children: React.ReactNod
   )
 }
 
+type SeniorListStyle = 'numbered' | 'plain'
+type SeniorListSplitMode = 'none' | 'count' | 'height'
+
+const normalizeListStyle = (raw?: string): SeniorListStyle => {
+  const value = (raw || '').trim().toLowerCase()
+  if (['plain', 'minimal', 'bullet', 'unnumbered', 'no-numbers', 'nonumbered'].includes(value)) {
+    return 'plain'
+  }
+  return 'numbered'
+}
+
+const normalizeListSplitMode = (raw?: string): SeniorListSplitMode => {
+  const value = (raw || '').trim().toLowerCase()
+  if (value === 'count') return 'count'
+  if (value === 'height') return 'height'
+  return 'none'
+}
+
+const parsePositiveInt = (raw: string | number | undefined, fallback: number): number => {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return Math.floor(raw)
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return Math.floor(parsed)
+}
+
+const countWords = (text: string): number => text.trim().split(/\s+/).filter(Boolean).length
+
 // Senior UX/UI styled list with scroll scrub
-const SeniorList = ({ items, accentColor }: { items: React.ReactNode[], accentColor: string }) => {
-  const ref = useRef<HTMLUListElement>(null)
+const SeniorList = ({
+  items,
+  rawItems,
+  accentColor,
+  styleVariant = 'numbered',
+  splitMode = 'none',
+  splitAfter = 6,
+  shortWords = 4,
+  className = '',
+}: {
+  items: React.ReactNode[]
+  rawItems: string[]
+  accentColor: string
+  styleVariant?: SeniorListStyle
+  splitMode?: SeniorListSplitMode
+  splitAfter?: number
+  shortWords?: number
+  className?: string
+}) => {
+  const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start 95%", "end 80%"]
   })
 
   const opacity = useTransform(scrollYProgress, [0, 1], [0.2, 1])
+  const normalizedSplitAfter = parsePositiveInt(splitAfter, splitMode === 'height' ? 12 : 6)
+  const normalizedShortWords = parsePositiveInt(shortWords, 4)
+  const isShortList = rawItems.every((entry) => countWords(entry) <= normalizedShortWords)
+
+  let splitIndex = -1
+  if (splitMode === 'count' && isShortList && items.length > normalizedSplitAfter) {
+    splitIndex = normalizedSplitAfter
+  } else if (splitMode === 'height' && isShortList) {
+    let estimatedHeight = 0
+    for (let idx = 0; idx < rawItems.length; idx++) {
+      const words = Math.max(1, countWords(rawItems[idx]))
+      estimatedHeight += Math.max(1, Math.ceil(words / normalizedShortWords))
+      if (estimatedHeight >= normalizedSplitAfter) {
+        splitIndex = idx + 1
+        break
+      }
+    }
+  }
+  const hasDesktopSplit = splitIndex > 0 && splitIndex < items.length
+
+  const renderColumn = (columnItems: React.ReactNode[], startIndex: number) => (
+    <ul className="w-full flex flex-col border-t border-black/10">
+      {columnItems.map((item, idx) => {
+        const absoluteIndex = startIndex + idx
+        const numberLabel = (absoluteIndex + 1).toString().padStart(2, '0')
+        return (
+          <li key={absoluteIndex} className="flex items-start gap-6 py-6 border-b border-black/10 group hover:bg-neutral-50/50 transition-colors duration-300">
+            {styleVariant === 'numbered' ? (
+              <span className="text-neutral-300 font-mono text-sm tracking-widest pt-1" style={{ color: accentColor }}>
+                {numberLabel}
+              </span>
+            ) : (
+              <span className="mt-3 h-[2px] w-6 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
+            )}
+            <span className={styleVariant === 'numbered'
+              ? 'text-[20px] md:text-[24px] leading-[1.4] text-neutral-800 font-medium tracking-tight'
+              : 'text-[19px] md:text-[22px] leading-[1.45] text-neutral-800 font-semibold tracking-[-0.01em]'}>
+              {item}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
 
   return (
-    <motion.ul ref={ref} style={{ opacity }} className="w-full flex flex-col border-t border-black/10 mt-8 mb-16">
-      {items.map((item, idx) => (
-        <li key={idx} className="flex items-start gap-6 py-6 border-b border-black/10 group hover:bg-neutral-50/50 transition-colors duration-300">
-          <span className="text-neutral-300 font-mono text-sm tracking-widest pt-1" style={{ color: accentColor }}>
-            {(idx + 1).toString().padStart(2, '0')}
-          </span>
-          <span className="text-[20px] md:text-[24px] leading-[1.4] text-neutral-800 font-medium tracking-tight">
-            {item}
-          </span>
-        </li>
-      ))}
-    </motion.ul>
+    <motion.div ref={ref} style={{ opacity }} className={`w-full ${className}`}>
+      {hasDesktopSplit ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10">
+          {renderColumn(items.slice(0, splitIndex), 0)}
+          {renderColumn(items.slice(splitIndex), splitIndex)}
+        </div>
+      ) : (
+        renderColumn(items, 0)
+      )}
+    </motion.div>
   )
 }
 
@@ -97,6 +184,54 @@ const parseFenceAttributes = (attr: string): Record<string, string> => {
   return attrs
 }
 
+type MediaFrameOptions = {
+  shadow: boolean
+  radius: boolean
+  padding: number
+}
+
+const DEFAULT_MEDIA_FRAME_OPTIONS: MediaFrameOptions = {
+  shadow: true,
+  radius: true,
+  padding: 0,
+}
+
+const parseMediaLineWithAttrs = (raw: string): { content: string; attrs: Record<string, string> } => {
+  const trimmed = (raw || '').trim()
+  const attrsMatch = trimmed.match(/\{([^{}]+)\}\s*$/)
+  if (!attrsMatch) return { content: trimmed, attrs: {} }
+
+  const attrs = parseFenceAttributes(`media ${attrsMatch[1]}`)
+  const content = trimmed.slice(0, attrsMatch.index).trim()
+  return { content: content || trimmed, attrs }
+}
+
+const parseMediaFrameOptions = (attrs: Record<string, string>): MediaFrameOptions => {
+  const normalizeBoolean = (raw: string | undefined, fallback: boolean) => {
+    if (!raw) return fallback
+    const value = raw.trim().toLowerCase()
+    if (['false', '0', 'off', 'no'].includes(value)) return false
+    if (['true', '1', 'on', 'yes'].includes(value)) return true
+    return fallback
+  }
+
+  const rawPadding = Number(attrs.padding || attrs.pad || attrs.framePadding || '0')
+  const padding = Number.isFinite(rawPadding) && rawPadding > 0 ? Math.round(rawPadding) : 0
+
+  return {
+    shadow: normalizeBoolean(attrs.shadow, DEFAULT_MEDIA_FRAME_OPTIONS.shadow),
+    radius: normalizeBoolean(attrs.radius, DEFAULT_MEDIA_FRAME_OPTIONS.radius),
+    padding,
+  }
+}
+
+const getMediaFrameClassName = (options: MediaFrameOptions, widthMode: 'full' | 'fit' = 'full') => {
+  const widthClass = widthMode === 'fit' ? 'w-fit max-w-full mx-auto' : 'w-full'
+  const radiusClass = options.radius ? 'rounded-2xl overflow-hidden' : 'rounded-none overflow-visible'
+  const shadowClass = options.shadow ? 'shadow-xl shadow-black/10 ring-1 ring-black/5' : 'shadow-none ring-0'
+  return `${widthClass} ${radiusClass} ${shadowClass} flex items-center justify-center`
+}
+
 const parseVector3 = (val: string | undefined): [number, number, number] | undefined => {
   if (!val) return undefined;
   const parts = val.split(/[,\s]+/).filter(Boolean).map(Number);
@@ -128,6 +263,17 @@ const ANIMATION_SEQUENCE_FENCE_TYPES = new Set([
   'scroll-animation',
   'scrollvideo',
   'scroll-video',
+])
+const MOCKUP_FENCE_TYPES = new Set([
+  'mockup',
+  'iphone',
+  'macbook',
+  'tv',
+  'ipad',
+  'android',
+  'safari',
+  'safari-tab',
+  'safaritab',
 ])
 
 const parseOptionalNumber = (value?: string): number | undefined => {
@@ -187,14 +333,24 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
   type RowGalleryItem = { url: string; caption?: string }
 
-  const DraggableRowGallery = ({ items, className = '' }: { items: RowGalleryItem[]; className?: string }) => {
+  const DraggableRowGallery = ({
+    items,
+    className = '',
+    frameOptions = DEFAULT_MEDIA_FRAME_OPTIONS,
+  }: {
+    items: RowGalleryItem[]
+    className?: string
+    frameOptions?: MediaFrameOptions
+  }) => {
     const scrollerRef = useRef<HTMLDivElement | null>(null)
     const [isDragging, setIsDragging] = useState(false)
+    const [disableSnap, setDisableSnap] = useState(false)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
     const [canScrollRight, setCanScrollRight] = useState(false)
     const [activeIndex, setActiveIndex] = useState(0)
 
     const [visibleDots, setVisibleDots] = useState(items.length)
+    const snapTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const isDownRef = useRef(false)
     const startXRef = useRef(0)
@@ -298,6 +454,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       isDownRef.current = true
       didMoveRef.current = false
       setIsDragging(true)
+      setDisableSnap(true)
+      if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current)
       startXRef.current = e.pageX
       startScrollLeftRef.current = el.scrollLeft
 
@@ -341,8 +499,19 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const projected = currentScroll - velocity * inertia
         const targetIdx = getNearestIndex(projected)
         scrollToIndex(targetIdx)
+        snapTimeoutRef.current = setTimeout(() => {
+          setDisableSnap(false)
+        }, 600)
+      } else {
+        setDisableSnap(false)
       }
     }
+
+    useEffect(() => {
+      return () => {
+        if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current)
+      }
+    }, [])
 
     const onClickCapture = (e: React.MouseEvent) => {
       // Prevent accidental clicks (e.g. on video controls) when it was a drag
@@ -359,7 +528,8 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             ref={scrollerRef}
             className={[
               'scrollbar-hide flex gap-4 sm:gap-6 overflow-x-auto pb-2',
-              'snap-x snap-mandatory scroll-px-4 sm:scroll-px-8 md:scroll-px-10 lg:scroll-px-16 xl:scroll-px-20 2xl:scroll-px-24',
+              disableSnap ? '' : 'snap-x snap-mandatory',
+              'scroll-px-4 sm:scroll-px-8 md:scroll-px-10 lg:scroll-px-16 xl:scroll-px-20 2xl:scroll-px-24',
               '[scroll-snap-stop:always] [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch]',
               'cursor-grab select-none',
               isDragging ? 'cursor-grabbing' : '',
@@ -379,15 +549,18 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                   data-row-gallery-item="1"
                   className="snap-start snap-always shrink-0 first:ml-4 sm:first:ml-8 md:first:ml-10 lg:first:ml-16 xl:first:ml-20 2xl:first:ml-24 last:mr-4 sm:last:mr-8 md:last:mr-10 lg:last:mr-16 xl:last:mr-20 2xl:last:mr-24"
                 >
-                  <div className="rounded-2xl overflow-hidden bg-neutral-50 shadow-sm border border-black/5 ring-1 ring-black/5">
+                  <div
+                    className={getMediaFrameClassName(frameOptions, isV ? 'full' : 'fit')}
+                    style={frameOptions.padding > 0 ? { padding: `${frameOptions.padding}px` } : undefined}
+                  >
                     {isV ? (
-                      <div className="w-[92vw] sm:w-[78vw] md:w-[720px] lg:w-[840px] aspect-video">
-                        <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} />
+                      <div className="w-[92vw] sm:w-[78vw] md:w-[720px] lg:w-[840px] max-h-[90vh]">
+                        <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} aspect="aspect-video" className="max-h-[90vh]" />
                       </div>
                     ) : (
                       <img
                         src={path}
-                        className="block h-[56vh] sm:h-[60vh] md:h-[66vh] w-auto max-w-[92vw] sm:max-w-[78vw] md:max-w-[720px] lg:max-w-[840px] object-contain"
+                        className="block h-auto max-h-[90vh] w-auto max-w-[92vw] sm:max-w-[78vw] md:max-w-[720px] lg:max-w-[840px] object-contain"
                         loading="lazy"
                         draggable={false}
                       />
@@ -413,7 +586,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                     onClick={scrollPrev}
                     disabled={!canScrollLeft}
                     aria-label="Previous image"
-                    className="h-12 w-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-colors shadow-sm"
+                    className="w-12 h-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group text-black shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -448,7 +621,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                     onClick={scrollNext}
                     disabled={!canScrollRight}
                     aria-label="Next image"
-                    className="h-12 w-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-colors shadow-sm"
+                    className="w-12 h-12 rounded-full border border-neutral-200 bg-white hover:bg-black hover:text-white hover:border-black flex items-center justify-center transition-all group text-black shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -470,6 +643,14 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
     let currentTitle: React.ReactNode | null = null
     let textBuffer: string[] = []
     let lastElementType: 'text' | 'compact' | 'block' | 'none' = 'none'
+    type ParsedListBlock = {
+      rawItems: string[]
+      styleVariant: SeniorListStyle
+      splitMode: SeniorListSplitMode
+      splitAfter: number
+      shortWords: number
+    }
+    let pendingListBlock: ParsedListBlock | null = null
 
     const flushSection = () => {
       if (currentElements.length > 0 || currentTitle) {
@@ -477,6 +658,92 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       }
       currentElements = []
       currentTitle = null
+    }
+
+    const parseListItems = (inputLines: string[]): string[] => {
+      return inputLines
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .map((entry) => entry.replace(/^(?:[-*+]\s+|\d+\.\s+)/, '').trim())
+        .filter(Boolean)
+    }
+
+    const parseListBlock = (inputLines: string[], attrs: Record<string, string>, typeHint?: string): ParsedListBlock | null => {
+      const rawItems = parseListItems(inputLines)
+      if (rawItems.length === 0) return null
+
+      const hintedStyle =
+        typeHint === 'unordered-list' || typeHint === 'ulist'
+          ? 'plain'
+          : 'numbered'
+      const splitMode = normalizeListSplitMode(attrs.split || attrs.columns || attrs.break)
+      return {
+        rawItems,
+        styleVariant: normalizeListStyle(attrs.style || attrs.variant || attrs.view || hintedStyle),
+        splitMode,
+        splitAfter: parsePositiveInt(attrs.splitAfter || attrs.breakAfter || attrs.columnAfter, splitMode === 'height' ? 12 : 6),
+        shortWords: parsePositiveInt(attrs.shortWords || attrs.short || attrs.shortMax || attrs.maxWords, 4),
+      }
+    }
+
+    const flushPendingListBlock = () => {
+      if (!pendingListBlock) return
+      const listToRender = pendingListBlock
+      pendingListBlock = null
+
+      currentElements.push(
+        <div key={`list-${currentIndex++}`} className={colText}>
+          <SeniorList
+            items={listToRender.rawItems.map(item => parseInlineElements(item))}
+            rawItems={listToRender.rawItems}
+            accentColor={accentColor}
+            styleVariant={listToRender.styleVariant}
+            splitMode={listToRender.splitMode}
+            splitAfter={listToRender.splitAfter}
+            shortWords={listToRender.shortWords}
+            className="mt-8 mb-16"
+          />
+        </div>
+      )
+      lastElementType = 'text'
+    }
+
+    const pushListBlock = (nextList: ParsedListBlock) => {
+      if (!pendingListBlock) {
+        pendingListBlock = nextList
+        return
+      }
+
+      const firstList = pendingListBlock
+      pendingListBlock = null
+
+      currentElements.push(
+        <div key={`list-pair-${currentIndex++}`} className={`${colWide} mt-8 mb-16`}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
+            <SeniorList
+              items={firstList.rawItems.map(item => parseInlineElements(item))}
+              rawItems={firstList.rawItems}
+              accentColor={accentColor}
+              styleVariant={firstList.styleVariant}
+              splitMode={firstList.splitMode}
+              splitAfter={firstList.splitAfter}
+              shortWords={firstList.shortWords}
+              className="mt-0 mb-0"
+            />
+            <SeniorList
+              items={nextList.rawItems.map(item => parseInlineElements(item))}
+              rawItems={nextList.rawItems}
+              accentColor={accentColor}
+              styleVariant={nextList.styleVariant}
+              splitMode={nextList.splitMode}
+              splitAfter={nextList.splitAfter}
+              shortWords={nextList.shortWords}
+              className="mt-0 mb-0"
+            />
+          </div>
+        </div>
+      )
+      lastElementType = 'block'
     }
 
     const isTwoUpGalleryLine = (raw: string): boolean => {
@@ -620,39 +887,71 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
     }
 
     const parseInlineElements = (text: string) => {
-      // Basic Bold, Italic & Link parsing
-      const boldRegex = /\*\*(.*?)\*\*/g
-      const parts = text.split(boldRegex)
+      const renderLinks = (input: string, keyPrefix: string): React.ReactNode[] => {
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+        const nodes: React.ReactNode[] = []
+        let lastIndex = 0
+        let match: RegExpExecArray | null
 
-      return parts.map((part, index) => {
-        if (index % 2 === 1) {
-          return <strong key={index} className="font-semibold text-black">{part}</strong>
+        while ((match = linkRegex.exec(input)) !== null) {
+          if (match.index > lastIndex) nodes.push(input.slice(lastIndex, match.index))
+          nodes.push(
+            <a
+              key={`${keyPrefix}-link-${match.index}`}
+              href={match[2]}
+              target="_blank"
+              rel="noopener"
+              className="underline decoration-2 underline-offset-2 transition-colors font-medium hover:opacity-70"
+              style={{ color: accentColor, textDecorationColor: `${accentColor}40` }}
+            >
+              {match[1]}
+            </a>
+          )
+          lastIndex = match.index + match[0].length
         }
 
-        // Split by Italic
-        const italicParts = part.split(/\*([^*]+)\*/g)
-        return italicParts.map((subPart, subIndex) => {
-          if (subIndex % 2 === 1) {
-            return <em key={`${index}-${subIndex}`} className="italic">{subPart}</em>
-          }
+        if (lastIndex < input.length) nodes.push(input.slice(lastIndex))
+        return nodes
+      }
 
-          // Handle links
-          const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-          const nodes: React.ReactNode[] = []
-          let lastIndex = 0
-          let m: RegExpExecArray | null
-          while ((m = linkRegex.exec(subPart)) !== null) {
-            if (m.index > lastIndex) nodes.push(subPart.slice(lastIndex, m.index))
-            nodes.push(
-              <a key={`${index}-${subIndex}-${m.index}`} href={m[2]} target="_blank" rel="noopener" className="underline decoration-2 underline-offset-2 transition-colors font-medium hover:opacity-70" style={{ color: accentColor, textDecorationColor: `${accentColor}40` }}>
-                {m[1]}
-              </a>
+      const renderItalicAndLinks = (input: string, keyPrefix: string): React.ReactNode[] => {
+        const italicParts = input.split(/\*([^*]+)\*/g)
+        return italicParts.flatMap((part, idx) => {
+          if (idx % 2 === 1) {
+            return (
+              <em key={`${keyPrefix}-italic-${idx}`} className="italic">
+                {renderLinks(part, `${keyPrefix}-italic-${idx}`)}
+              </em>
             )
-            lastIndex = m.index + m[0].length
           }
-          if (lastIndex < subPart.length) nodes.push(subPart.slice(lastIndex))
-          return <React.Fragment key={`${index}-${subIndex}`}>{nodes}</React.Fragment>
+          return renderLinks(part, `${keyPrefix}-plain-${idx}`)
         })
+      }
+
+      const renderSmallItalicAndLinks = (input: string, keyPrefix: string): React.ReactNode[] => {
+        const smallParts = input.split(/~([^~]+)~/g)
+        return smallParts.flatMap((part, idx) => {
+          if (idx % 2 === 1) {
+            return (
+              <small key={`${keyPrefix}-small-${idx}`} className="text-[0.72em] leading-[1]">
+                {renderItalicAndLinks(part, `${keyPrefix}-small-${idx}`)}
+              </small>
+            )
+          }
+          return renderItalicAndLinks(part, `${keyPrefix}-part-${idx}`)
+        })
+      }
+
+      const boldParts = text.split(/\*\*(.*?)\*\*/g)
+      return boldParts.flatMap((part, idx) => {
+        if (idx % 2 === 1) {
+          return (
+            <strong key={`strong-${idx}`} className="font-semibold text-black">
+              {renderSmallItalicAndLinks(part, `strong-${idx}`)}
+            </strong>
+          )
+        }
+        return renderSmallItalicAndLinks(part, `text-${idx}`)
       })
     }
 
@@ -661,6 +960,17 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       const rawLine = lines[i]
       const line = rawLine.trim()
       const isTwoUpGallery = isTwoUpGalleryLine(rawLine)
+      const isListFenceStart = (() => {
+        if (!line.startsWith('```')) return false
+        const type = line.replace(/^```+/, '').trim().split(/\s+/)[0]?.toLowerCase() || ''
+        return ['list', 'ulist', 'unordered-list', 'ordered-list'].includes(type)
+      })()
+      const isCurrentListStart = line.startsWith('- ') || isListFenceStart
+
+      // Keep pending list blocks pairable across blank lines, but flush as soon as a real non-list block starts.
+      if (!isCurrentListStart && line.length > 0) {
+        flushPendingListBlock()
+      }
 
       // Any non-empty, non-2up-gallery line breaks the "consecutive 2-up gallery rows" chain.
       // Empty lines are ignored so authors can separate rows with blank lines.
@@ -674,7 +984,11 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         if (match) {
           const listRaw = match[2].trim()
           const slugs = listRaw.split(/[,|]/).map(s => s.trim()).filter(Boolean)
-          const refs = (allProjects || []).filter(p => slugs.includes(p.slug) && p.slug !== project.slug)
+          const refs = slugs
+            .filter((slug, idx, arr) => arr.indexOf(slug) === idx)
+            .map(slug => (allProjects || []).find(p => p.slug === slug))
+            .filter((p): p is Project => p != null)
+            .filter(p => p.slug !== project.slug)
           if (refs.length > 0) {
             const nextMeta = getLineType(nextNonEmptyLine(i + 1))
             const margins = getBlockMargins(false, nextMeta === 'compact')
@@ -726,10 +1040,12 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const level = match ? match[0].length : 1
         const text = line.replace(/^#+\s*/, '')
         const sizes = {
-          1: "text-4xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-[-0.03em] font-bold text-black mt-16 md:mt-24 mb-8 md:mb-12",
-          2: "text-[28px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-bold font-space-grotesk mt-12 md:mt-16 mb-4 md:mb-6 text-[#1D1D1F]",
-          3: "text-[22px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-8 md:mt-10 mb-3 md:mb-4 text-[#1D1D1F]"
+          1: "text-4xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-[-0.03em] font-bold text-black mt-16 md:mt-24 mb-6 md:mb-12",
+          2: "text-4xl md:text-7xl lg:text-[6vw] leading-[1.05] tracking-[-0.03em] font-bold text-black mt-16 md:mt-24 mb-0",
+          3: "text-[28px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-black font-space-grotesk mt-12 md:mt-16 mb-0",
+          4: "text-[22px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-8 md:mt-10 mb-3 md:mb-4 text-[#1D1D1F]"
         }
+        const headerStyle = level === 3 ? { color: accentColor || '#1D1D1F' } : undefined
 
         // @ts-ignore
         let headerClass = sizes[level] || sizes[1]
@@ -741,7 +1057,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
         currentElements.push(
           // @ts-ignore
-          <div key={`h-${currentIndex++}`} className={`${colText} ${headerClass}`}>
+          <div key={`h-${currentIndex++}`} className={`${colText} ${headerClass}`} style={headerStyle}>
             {text}
           </div>
         )
@@ -750,18 +1066,16 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       // Lists
       else if (line.startsWith('- ')) {
         flushCurrentSection()
-        const listItems: string[] = []
+        const listLines: string[] = []
         while (i < lines.length && lines[i].trim().startsWith('- ')) {
-          listItems.push(lines[i].trim().replace('- ', ''))
+          listLines.push(lines[i])
           i++
         }
         i--
-        currentElements.push(
-          <div key={`list-${currentIndex++}`} className={colText}>
-            <SeniorList items={listItems.map(item => parseInlineElements(item))} accentColor={accentColor} />
-          </div>
-        )
-        lastElementType = 'text'
+        const parsedList = parseListBlock(listLines, {})
+        if (parsedList) {
+          pushListBlock(parsedList)
+        }
       }
       // Code Blocks
       else if (line.startsWith('```')) {
@@ -771,6 +1085,9 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const attrs = parseFenceAttributes(restAttrParts.join(' '))
         const type = maybeType || ''
         const typeLower = type.toLowerCase()
+        const attrType = (attrs.type || attrs.language || '').toLowerCase()
+        const effectiveTypeLower = typeLower === 'code' && attrType ? attrType : typeLower
+        const codeLanguage = typeLower === 'code' ? (attrs.type || attrs.language || 'text') : (type || 'text')
         i++
         const bodyLines: string[] = []
         while (i < lines.length && !lines[i].trim().startsWith('```')) { bodyLines.push(lines[i]); i++ }
@@ -798,8 +1115,15 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           sequenceBodyConfig.frameCount ??
           project.animationSequence?.frameCount
 
-        const calloutVariant = normalizeCalloutVariant(typeLower, attrs.type)
-        if (calloutVariant) {
+        const calloutVariant = normalizeCalloutVariant(effectiveTypeLower, attrs.type)
+        if (['list', 'ulist', 'unordered-list', 'ordered-list'].includes(typeLower)) {
+          const parsedList = parseListBlock(bodyLines, attrs, typeLower)
+          if (parsedList) {
+            pushListBlock(parsedList)
+          }
+          lastElementType = 'text'
+        }
+        else if (calloutVariant) {
           const paragraphs = paragraphsFromLines(bodyLines)
           const nextMeta = getLineType(nextNonEmptyLine(i + 1)) // i is closing fence now? wait. loop stops at closing fence. so lines[i] is closing. loop check lines[i].startsWith.
           // Correct, i is at closing fence. next content is i+1.
@@ -820,7 +1144,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           )
           lastElementType = 'block'
         }
-        else if (ANIMATION_SEQUENCE_FENCE_TYPES.has(typeLower)) {
+        else if (ANIMATION_SEQUENCE_FENCE_TYPES.has(effectiveTypeLower)) {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
 
@@ -852,12 +1176,50 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
           lastElementType = 'block'
         }
-        else if (typeLower === 'palette') {
-          // Parse palette data... simple version for now
+        else if (['small', 'small-text', 'smalltext'].includes(effectiveTypeLower)) {
+          const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+          const margins = getBlockMargins(false, nextMeta === 'compact')
+
+          const paragraphs = body
+            .split(/\n{2,}/)
+            .map(p => p.trim())
+            .filter(Boolean)
+
+          currentElements.push(
+            <div key={`small-${currentIndex++}`} className={`${colText} ${margins}`}>
+              <div className="flex flex-col gap-8">
+                {paragraphs.map((p, idx) => (
+                  <ScrubParagraph key={idx} className="text-[15px] md:text-[18px] lg:text-[20px] text-[#1D1D1F] font-inter tracking-[-0.01em] max-w-[600px]">
+                    {parseInlineElements(p)}
+                  </ScrubParagraph>
+                ))}
+              </div>
+            </div>
+          )
+          lastElementType = 'text'
+        }
+        else if (effectiveTypeLower === 'palette') {
           const parsePaletteLines = (lines: string[]) => {
-            return lines.filter(l => l.trim()).map(l => {
-              const parts = l.split(/\s+/)
-              return { name: parts[0], hex: parts.find(p => p.startsWith('#')) || '#000' }
+            return lines.filter(l => l.trim()).map((line, idx) => {
+              const attrs = parseFenceAttributes(line)
+              const hexMatch = line.match(/#([0-9a-fA-F]{3,8})/)
+              const rgbFnMatch = line.match(/rgb\s*\(([^)]+)\)/i)
+              const usageMatch = line.match(/usage\s*=\s*(?:"([^"]+)"|(.+?))(?:\s+(?:rank|priority)\s*=|$)/i)
+              const rankMatch = line.match(/(?:rank|priority)\s*=\s*("?)([1-5])\1/i)
+              const firstHexIndex = line.indexOf('#')
+              const fallbackName = firstHexIndex > 0 ? line.slice(0, firstHexIndex).trim() : `Color ${idx + 1}`
+
+              const rankRaw = attrs.rank || attrs.priority || rankMatch?.[2]
+              const parsedRank = rankRaw ? Number(rankRaw) : NaN
+              const rank = Number.isFinite(parsedRank) ? Math.max(1, Math.min(5, parsedRank)) : undefined
+
+              return {
+                name: attrs.name || fallbackName || `Color ${idx + 1}`,
+                hex: attrs.hex || (hexMatch ? `#${hexMatch[1]}` : '#000000'),
+                rgb: attrs.rgb || rgbFnMatch?.[1],
+                usage: attrs.usage || (usageMatch?.[1] || usageMatch?.[2] || '').trim(),
+                rank,
+              }
             })
           }
           // @ts-ignore
@@ -889,8 +1251,13 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             </React.Fragment>
           )
           lastElementType = 'compact'
-        } else if (typeLower === 'mockup') {
-          const mockups = [attrs]
+        } else if (MOCKUP_FENCE_TYPES.has(typeLower)) {
+          const toMockupAttrs = (rawType: string, rawAttrs: Record<string, string>) => {
+            const normalizedType = rawType === 'safaritab' ? 'safari-tab' : rawType
+            if (normalizedType === 'mockup') return rawAttrs
+            return { ...rawAttrs, type: rawAttrs.type || normalizedType }
+          }
+          const mockups = [toMockupAttrs(typeLower, attrs)]
 
           while (i + 1 < lines.length) {
             let nextNonEmpty = i + 1
@@ -902,14 +1269,15 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             if (peekLine.startsWith('```')) {
               const fenceInfo = peekLine.replace(/^```+/, '').trim()
               const [nextType, ...nextRest] = fenceInfo.split(/\s+/)
-              if (nextType.toLowerCase() === 'mockup') {
+              const nextTypeLower = nextType.toLowerCase()
+              if (MOCKUP_FENCE_TYPES.has(nextTypeLower)) {
                 const nextAttrs = parseFenceAttributes(nextRest.join(' '))
                 // skip lines inside the body
                 let j = nextNonEmpty + 1
                 while (j < lines.length && !lines[j].trim().startsWith('```')) {
                   j++
                 }
-                mockups.push(nextAttrs)
+                mockups.push(toMockupAttrs(nextTypeLower, nextAttrs))
                 i = j // Advance the main index to the closing fence of this newly consumed block
                 continue
               }
@@ -958,7 +1326,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             </div>
           )
           lastElementType = 'block'
-        } else if (typeLower === 'three') {
+        } else if (effectiveTypeLower === 'three') {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
 
@@ -990,7 +1358,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             </div>
           )
           lastElementType = 'block'
-        } else if (typeLower === 'font') {
+        } else if (effectiveTypeLower === 'font') {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
 
@@ -1008,7 +1376,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             </div>
           )
           lastElementType = 'block'
-        } else if (typeLower === 'stats' || typeLower === 'stat') {
+        } else if (effectiveTypeLower === 'stats' || effectiveTypeLower === 'stat') {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
 
@@ -1026,7 +1394,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             </div>
           )
           lastElementType = 'block'
-        } else if (typeLower === 'reveal') {
+        } else if (effectiveTypeLower === 'reveal') {
           const nextMeta = getLineType(nextNonEmptyLine(i + 1))
           const margins = getBlockMargins(false, nextMeta === 'compact')
 
@@ -1056,7 +1424,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                   title={attrs.title}
                   description={attrs.description}
                   code={body}
-                  language={type || 'text'}
+                  language={codeLanguage}
                   filename={attrs.filename}
                   githubUrl={attrs.githubUrl}
                   liveUrl={attrs.liveUrl}
@@ -1070,14 +1438,16 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       // Images / Videos
       else if (line.startsWith('![') || line.includes('[video')) {
         flushCurrentSection()
+        const { content: mediaLine, attrs: mediaInlineAttrs } = parseMediaLineWithAttrs(line)
+        const mediaFrameOptions = parseMediaFrameOptions(mediaInlineAttrs)
         let mediaUrl = ''
         let thumbnailUrl = ''
         let isVid = false
 
         let loop = false
 
-        if (line.includes('[video')) {
-          const match = line.match(/\[(video.*?)\]\((.*?)\)/)
+        if (mediaLine.includes('[video')) {
+          const match = mediaLine.match(/\[(video.*?)\]\((.*?)\)/)
           if (match) {
             const label = match[1].toLowerCase()
             if (label.includes('loop')) loop = true
@@ -1088,7 +1458,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             isVid = true
           }
         } else {
-          const match = line.match(/!\[.*?\]\((.*?)\)/) || line.match(/!\[(.*?)\]/)
+          const match = mediaLine.match(/!\[.*?\]\((.*?)\)/) || mediaLine.match(/!\[(.*?)\]/)
           if (match) mediaUrl = match[1]
         }
 
@@ -1100,52 +1470,69 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
               const [u, c] = entry.split('::')
               return { url: (u || '').trim(), caption: (c || '').trim() }
             }).filter(item => item.url)
+            const shouldUseCarousel = mediaList.length >= 4 || (mediaList.length === 3 && mediaList.some((item) => isVideoFile(item.url)))
+            const isThreeImageRow = mediaList.length === 3 && mediaList.every((item) => !isVideoFile(item.url))
 
-            // <=2 images: keep clean 2-up grid
-            if (mediaList.length <= 2) {
+            // Prefer side-by-side layout and only switch to carousel when really needed.
+            if (!shouldUseCarousel) {
               const nextMeta = getLineType(nextNonEmptyLine(i + 1))
               const margins = getBlockMargins(true, nextMeta === 'compact')
-
-              currentElements.push(
-                <div key={`gallery-${currentIndex++}`} className={`${colWide} grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 ${margins}`}>
-                  {mediaList.map((item, idx) => {
-                    const path = resolveAssetPath(item.url)
-                    const isV = isVideoFile(item.url)
-                    return (
-                      <figure key={idx} className="w-full">
-                        <div className="w-full rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 ring-1 ring-black/5">
-                          {isV ? (
-                            <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} />
-                          ) : (
-                            <img src={path} className="w-full h-auto object-cover" loading="lazy" />
-                          )}
+              const renderGalleryFigure = (item: RowGalleryItem, idx: number) => {
+                const path = resolveAssetPath(item.url)
+                const isV = isVideoFile(item.url)
+                const frameClass = getMediaFrameClassName(mediaFrameOptions, isV ? 'full' : 'fit')
+                return (
+                  <figure key={idx} className="w-full">
+                    <div className={frameClass} style={mediaFrameOptions.padding > 0 ? { padding: `${mediaFrameOptions.padding}px` } : undefined}>
+                      {isV ? (
+                        <div className="w-full max-h-[90vh]">
+                          <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} aspect="aspect-video" className="max-h-[90vh]" />
                         </div>
-                        {item.caption && (
-                          <figcaption className="mt-3 text-[12px] leading-snug text-[#86868b] font-inter tracking-[-0.01em]">
-                            {item.caption}
-                          </figcaption>
-                        )}
-                      </figure>
-                    )
-                  })}
-                </div>
-              )
-              lastElementType = 'compact'
-            } else {
-              // >2 images: full-bleed horizontal row gallery (clean + minimal)
-              const nextMeta = getLineType(nextNonEmptyLine(i + 1))
-              // Row Gallery is FULL WIDTH. Usually treating it as Block.
-              const margins = getBlockMargins(false, nextMeta === 'compact')
+                      ) : (
+                        <img
+                          src={path}
+                          className="block w-auto max-w-full h-auto max-h-[90vh] object-contain"
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+                    {item.caption && (
+                      <figcaption className="mt-3 text-[12px] leading-snug text-[#86868b] font-inter tracking-[-0.01em]">
+                        {item.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                )
+              }
 
-              // Row Gallery needs full control over its container width to do breakout logic.
-              // The DraggableRowGallery component handles the breakout internally using w-screen etc.
-              // But it must be placed in a container that allows it to "exist" in the grid flow properly.
-              // We apply `colFull` here to the wrapper, and margins via the component prop.
+              if (isThreeImageRow) {
+                currentElements.push(
+                  <div key={`gallery-3-${currentIndex++}`} className={`${colWide} ${margins}`}>
+                    <div className="hidden lg:grid grid-cols-3 gap-4 md:gap-6">
+                      {mediaList.map(renderGalleryFigure)}
+                    </div>
+                    <DraggableRowGallery items={mediaList} className="lg:hidden" frameOptions={mediaFrameOptions} />
+                  </div>
+                )
+              } else {
+                const gridCols = mediaList.length <= 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
+                currentElements.push(
+                  <div key={`gallery-${currentIndex++}`} className={`${colWide} grid ${gridCols} gap-4 md:gap-6 ${margins}`}>
+                    {mediaList.map(renderGalleryFigure)}
+                  </div>
+                )
+              }
+              lastElementType = mediaList.length <= 2 ? 'compact' : 'block'
+            } else {
+              // Carousel only when a side-by-side layout would become too cramped.
+              const nextMeta = getLineType(nextNonEmptyLine(i + 1))
+              const margins = getBlockMargins(false, nextMeta === 'compact')
               currentElements.push(
                 <DraggableRowGallery
                   key={`gallery-row-${currentIndex++}`}
                   items={mediaList}
                   className={`${colFull} ${margins}`}
+                  frameOptions={mediaFrameOptions}
                 />
               )
               lastElementType = 'block'
@@ -1158,7 +1545,10 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
             currentElements.push(
               <figure key={`media-${currentIndex++}`} className={`${colWide} ${margins}`}>
-                <div className="w-full rounded-2xl overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 ring-1 ring-black/5 relative group">
+                <div
+                  className={`${getMediaFrameClassName(mediaFrameOptions, isV ? 'full' : 'fit')} relative group`}
+                  style={mediaFrameOptions.padding > 0 ? { padding: `${mediaFrameOptions.padding}px` } : undefined}
+                >
                   {isV ? (
                     <AdaptiveVideoPlayer
                       videoUrl={path}
@@ -1168,9 +1558,14 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                       muted={loop}
                       minimal={loop}
                       color={accentColor}
+                      className="max-h-[90vh]"
                     />
                   ) : (
-                    <img src={path} className="w-full h-auto object-cover" loading="lazy" />
+                    <img
+                      src={path}
+                      className="block w-auto max-w-full h-auto max-h-[90vh] object-contain mx-auto"
+                      loading="lazy"
+                    />
                   )}
                 </div>
               </figure>
@@ -1186,6 +1581,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       }
       i++
     }
+    flushPendingListBlock()
     flushCurrentSection()
     flushSection()
 

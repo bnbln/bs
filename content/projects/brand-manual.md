@@ -41,14 +41,20 @@ The goal of the Brand Manual was to reduce ambiguity and speed up confident deci
 
 The centerpiece is the WELT logo - including the characteristic lowercase “e” - treated as a system, not just a mark. The guide defines when to use the positive, negative, or tile version, and makes the don’ts explicit (no recoloring, distortion, decorative misuse, or improvised tiles). This matters because the logo appears in countless contexts, often produced quickly, often by different teams. Clear guardrails protect recognition.
 
-![/assets/brands/Welt-logo.png]
+![/assets/brands/Welt-logo.png] {shadow="false" radius="false" padding="40"}
 
 Color is handled with the same intent. WELT Blue remains the anchor, supported by WELT Orange as an activating accent and a structured set of secondary colors for charts, formats, and thematic content - with values that hold up reliably across media.
 
 ```palette
-WELT-Blue #003A5A rgb(0,58,90) usage=Primary
-WELT-Orange #F18825 rgb(241,136,37) usage=Accent
-Blue-Light #246EA7 rgb(36,110,167) usage=Secondary
+WELT-Blue #003A5A rgb(0,58,90) usage=Primary rank=1
+WELT-Orange #F18825 rgb(241,136,37) usage=Accent rank=2
+Blue-Light #246EA7 rgb(36,110,167) usage=Secondary rank=2
+Greige-Fond #edece8 rgb(237,233,225) usage=Fond rank=3
+Türkis #00728f rank=4
+Koralle #e8461e rank=4
+Sky-Blau #428ce5 rank=4
+Lila #8836bf rank=4
+
 ```
 
 Typography adds the editorial voice: a modern, clear grotesk for precision paired with a display serif for weight and storytelling - with concrete usage rules so the system works for everything from TV graphics to digital UI and long-form text.

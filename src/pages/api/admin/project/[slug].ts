@@ -5,7 +5,7 @@ import path from 'path'
 const projectsDirectory = path.join(process.cwd(), 'content/projects')
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (process.env.NODE_ENV !== 'development' || !process.env.NEXT_PUBLIC_ADMIN) {
+    if (process.env.NODE_ENV !== 'development' || process.env.NEXT_PUBLIC_ADMIN !== 'true') {
         return res.status(403).json({ error: 'Forbidden' })
     }
 

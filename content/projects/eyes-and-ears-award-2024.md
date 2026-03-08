@@ -17,21 +17,27 @@ type: Design
 
 The Eyes and Ears Awards are among the most respected recognitions in European audiovisual design, celebrating strong ideas, thoughtful craft, and collaborative work across motion graphics, broadcast design, and digital media. Being part of this community alone already means a lot.
 
-## The Projects
+# The Projects
 
+```small
 I was very grateful to see our work nominated across several categories, including **Best programme lead-in: Culture & Documentary**, **Best programme spot: News**, and **Best promotion of election coverage**.
 
-Together with an amazing team, two projects were ultimately awarded: the **EU Election trailer**, recognized for *Best promotion of election coverage*, and **Zeitreise**, which received *Best programme lead-in: Culture & Documentary*. Both projects are very different in tone and purpose, but they share a common foundation – curiosity, trust in the process, and a lot of teamwork.
 
-The EU Election trailer was about translating a complex, political topic into a clear and energetic visual language. *Zeitreise*, on the other hand, was a passion project rooted in storytelling, history, and a strong editorial look. Seeing both approaches appreciated side by side was especially meaningful.
+Together with an amazing team, two projects were ultimately awarded: the **EU Election trailer**, recognized for *Best promotion of election coverage*, and **Zeitreise**, which received *Best programme lead-in: Culture & Documentary*. Both projects are very different in tone and purpose, but they share a common foundation – curiosity, trust in the process, and a lot of teamwork.
+```
 
 [projects:history-documentary-design, eu-election-trailer]
 
+```small
+The EU Election trailer was about translating a complex, political topic into a clear and energetic visual language. *Zeitreise*, on the other hand, was a passion project rooted in storytelling, history, and a strong editorial look. Seeing both approaches appreciated side by side was especially meaningful.
+```
+
 # What This Means to Me
 
-Awards are never the goal, but they are a wonderful moment to pause and reflect. These projects represent many conversations, iterations, late tweaks, shared references, and collective problem-solving. They wouldn’t exist without the trust of colleagues, editors, producers, and everyone involved along the way.
-
+Awards are a wonderful moment to pause and reflect. These projects represent many conversations, iterations, late tweaks, shared references, and collective problem-solving. They wouldn’t exist without the trust of colleagues, editors, producers, and everyone involved along the way.
 
 ![assets/eaea/eaea.jpg]
 
+```small
 I’m genuinely thankful for the recognition—and even more for the people I get to work with. It’s motivating to know that careful design, strong concepts, and collaborative thinking are seen and valued. I’m excited to keep building on this, exploring new ideas, and creating work that feels relevant, thoughtful, and fun to make.
+```

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "export": "next build && next export",
-    "backend": "NEXT_PUBLIC_ADMIN=true next dev",
+    "backend": "rm -rf .next-backend && NEXT_PUBLIC_ADMIN=true next dev",
     "make:spritesheet": "node scripts/make-spritesheet.mjs"
   },
   "dependencies": {

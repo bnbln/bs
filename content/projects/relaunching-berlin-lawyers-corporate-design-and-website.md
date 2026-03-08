@@ -55,10 +55,10 @@ The result is a site that looks professional, performs brilliantly, and is easy 
 The visual language is simple and strong: A deep blue establishes trust and reliability, while subtle turquoise accents add a modern twist. The logo feels calm and confident, designed for flexible use across all media. The typography is clean and structured, ensuring excellent readability – especially on mobile.
 
 ```palette
-Dark-Blue #172340 rgb(23,35,64) usage=Primary
-Cyan-Blue #258EA6 rgb(37, 142, 166) usage=Secondary
-Light-Blue #33457C rgb(51,69,124) usage=Highlight
-Paper #E9ECF6 rgb(233,236,246) usage=Fond/Background
+Dark-Blue #172340 rgb(23,35,64) usage=Primary rank=1
+Cyan-Blue #258EA6 rgb(37, 142, 166) usage=Secondary rank=1
+Light-Blue #33457C rgb(51,69,124) usage=Highlight rank=3
+Paper #E9ECF6 rgb(233,236,246) usage=Fond/Background rank=3
 ```
 
 The design system is modular, allowing dynamic layouts for service pages, legal content, or blog posts. The site is built with Next.js, hosted via Vercel for top performance, and content can be edited easily via a lightweight CMS.

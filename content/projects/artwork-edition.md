@@ -25,9 +25,9 @@ Designing a film that behaves like a moving exhibition - that was the task for t
 The visual language places front pages of DIE WELT in minimalist, architectural interiors: illuminated cubes, suspended frames, and open gallery halls. Clean geometry and generous negative space give each edition the presence of a standalone artwork while keeping the environment quiet and unobtrusive.
 
 ```palette
-Deep-Navy #003a5a rgb(0,58,90) usage=Brand Color
-Gallery-White #F2F2F2 rgb(242,242,242) usage=Background
-Neutral-Gray #A9A9A9 rgb(169,169,169) usage=Accents
+Deep-Navy #003a5a rgb(0,58,90) usage=Brand Color rank=1
+Gallery-White #F2F2F2 rgb(242,242,242) usage=Background rank=2
+Neutral-Gray #A9A9A9 rgb(169,169,169) usage=Accents rank=2
 ```
 
 

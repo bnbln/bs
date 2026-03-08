@@ -90,9 +90,6 @@ const About = () => {
 
           {/* Elevated Glass UI Stats */}
           <div className="flex flex-col gap-6">
-            <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 font-inter px-2">
-              The Impact
-            </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               {stats.map((stat, index) => (
                 <div

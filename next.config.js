@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
+const isAdminBackend =
+  process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_ADMIN === 'true'
+
 const nextConfig = {
+  // Keep backend/editor dev artifacts separate from the regular frontend dev server.
+  distDir: isAdminBackend ? '.next-backend' : '.next',
   reactStrictMode: true,
   images: {
     unoptimized: true

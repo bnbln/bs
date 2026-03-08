@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { GetServerSideProps } from 'next';
 import { Project } from '../../lib/markdown';
 
 export default function AdminDashboard() {
@@ -47,8 +48,8 @@ export default function AdminDashboard() {
     );
 }
 
-export const getStaticProps = async () => {
-    if (process.env.NODE_ENV !== 'development' || !process.env.NEXT_PUBLIC_ADMIN) {
+export const getServerSideProps: GetServerSideProps = async () => {
+    if (process.env.NODE_ENV !== 'development' || process.env.NEXT_PUBLIC_ADMIN !== 'true') {
         return { notFound: true };
     }
     return { props: {} };

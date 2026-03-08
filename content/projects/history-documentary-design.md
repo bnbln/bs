@@ -33,9 +33,9 @@ The color palette leans into black and white images and warm rust tones – like
 
 ![assets/Zeitreise_4.avif|assets/Zeitreise_5.avif]
 ```palette
-Rust-Red #CD412D rgb(205,65,45) usage=Primary
-Off-White #F5F5F5 rgb(245,245,245) usage=Background
-Charcoal #121212 rgb(18,18,18) usage=TextBG
+Rust-Red #CD412D rgb(205,65,45) usage=Primary rank=1
+Off-White #F5F5F5 rgb(245,245,245) usage=Background rank=2
+Charcoal #121212 rgb(18,18,18) usage=TextBG rank=2
 ```
 
 For the typeface, I chose **Berthold Block** – bold, boxy, full of character. It screams “headline” in the best way. And whether it’s in the opener, lower thirds, or on the site, it holds its ground.

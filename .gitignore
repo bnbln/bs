@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 
 .next
+.next-backend
 .env
 
 *.tsbuildinfo

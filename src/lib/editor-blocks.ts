@@ -1,4 +1,4 @@
-export type BlockType = 'frontmatter' | 'text' | 'header' | 'list' | 'mockup' | 'callout' | 'palette' | 'gallery' | 'project-ref' | 'video' | 'code' | 'animation-sequence' | 'stats' | 'font';
+export type BlockType = 'frontmatter' | 'text' | 'header' | 'list' | 'small-text' | 'mockup' | 'callout' | 'palette' | 'gallery' | 'project-ref' | 'video' | 'code' | 'animation-sequence' | 'stats' | 'font' | 'three';
 
 export interface Block {
     id: string;
@@ -109,14 +109,29 @@ export function parseMarkdownToBlocks(markdown: string): Block[] {
 
             const fenceInfo = fenceStart.replace(/^```+/, '').trim();
             const typeStr = fenceInfo.split(/\s+/)[0].toLowerCase();
+            const fenceAttrs = parseFenceAttributes(fenceStart.trim());
+            const attrType = (fenceAttrs.type || fenceAttrs.language || '').toLowerCase();
+            const effectiveType = typeStr === 'code' && attrType ? attrType : typeStr;
 
             let blockType: BlockType = 'code';
-            if (['mockup', 'iphone', 'macbook'].includes(typeStr) || fenceInfo.includes('type="iphone"') || fenceInfo.includes('type="macbook"')) blockType = 'mockup';
-            else if (['insight', 'note', 'warning', 'context', 'result', 'callout'].includes(typeStr)) blockType = 'callout';
-            else if (typeStr === 'palette' || fenceInfo.includes('type="palette"')) blockType = 'palette';
-            else if (typeStr.includes('animation') || typeStr.includes('video')) blockType = 'animation-sequence';
-            else if (['stats', 'stat'].includes(typeStr)) blockType = 'stats';
-            else if (typeStr === 'font') blockType = 'font';
+            if (
+                ['mockup', 'iphone', 'macbook', 'tv', 'ipad', 'android', 'safari', 'safari-tab', 'safaritab'].includes(effectiveType) ||
+                fenceInfo.includes('type="iphone"') ||
+                fenceInfo.includes('type="macbook"') ||
+                fenceInfo.includes('type="tv"') ||
+                fenceInfo.includes('type="ipad"') ||
+                fenceInfo.includes('type="android"') ||
+                fenceInfo.includes('type="safari"') ||
+                fenceInfo.includes('type="safari-tab"')
+            ) blockType = 'mockup';
+            else if (['list', 'ulist', 'unordered-list', 'ordered-list'].includes(typeStr)) blockType = 'list';
+            else if (['insight', 'note', 'warning', 'context', 'result', 'callout'].includes(effectiveType)) blockType = 'callout';
+            else if (effectiveType === 'palette' || fenceInfo.includes('type="palette"')) blockType = 'palette';
+            else if (effectiveType.includes('animation') || effectiveType.includes('video')) blockType = 'animation-sequence';
+            else if (['small', 'smalltext', 'small-text'].includes(effectiveType)) blockType = 'small-text';
+            else if (effectiveType === 'three') blockType = 'three';
+            else if (['stats', 'stat'].includes(effectiveType)) blockType = 'stats';
+            else if (effectiveType === 'font') blockType = 'font';
 
             blocks.push({
                 id: generateId(),
@@ -142,7 +157,14 @@ export function serializeBlocksToMarkdown(blocks: Block[]): string {
         const b = blocks[i];
         if (b.type === 'frontmatter') {
             parts.push(b.content);
-        } else if (b.type === 'text' || b.type === 'header' || b.type === 'list' || b.type === 'gallery' || b.type === 'video' || b.type === 'project-ref') {
+        } else if (b.type === 'list') {
+            const listFenceType = (b.fenceInfo || '').replace(/^```+/, '').trim().split(/\s+/)[0]?.toLowerCase();
+            if (listFenceType && ['list', 'ulist', 'unordered-list', 'ordered-list'].includes(listFenceType)) {
+                parts.push(`${b.fenceInfo}\n${b.content}${b.content && !b.content.endsWith('\n') ? '\n' : ''}\`\`\``);
+            } else {
+                parts.push(b.content);
+            }
+        } else if (b.type === 'text' || b.type === 'header' || b.type === 'gallery' || b.type === 'video' || b.type === 'project-ref') {
             parts.push(b.content);
         } else {
             // code blocks
