@@ -31,7 +31,7 @@ export default function Callout({ variant, accentColor, title, children }: Callo
         <div className="w-full md:w-[35%] lg:w-[30%] flex-shrink-0 flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }} />
-            <span className="text-[12px] font-bold uppercase tracking-[0.2em] text-[#86868b] font-inter">
+            <span className="text-[12px] font-bold uppercase tracking-[0.2em] text-[#6e6e73] font-inter">
               {label}
             </span>
           </div>

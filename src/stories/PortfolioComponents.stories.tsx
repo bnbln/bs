@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import { expect, fn, waitFor } from 'storybook/test'
 import { Linkedin, Mail } from 'lucide-react'
 
 import About from '../components/About'
@@ -38,6 +39,7 @@ import StructuredData from '../components/StructuredData'
 import ThreeScene from '../components/ThreeScene'
 import Work from '../components/Work'
 import { brandLogos } from '../lib/brands'
+import type { Project } from '../lib/markdown'
 import { sampleArticleProject, sampleProjects } from './storybook-fixtures'
 
 const meta: Meta = {
@@ -45,6 +47,9 @@ const meta: Meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    backgrounds: {
+      default: 'portfolio-light',
+    },
     controls: {
       expanded: true,
       sort: 'requiredFirst',
@@ -54,9 +59,113 @@ const meta: Meta = {
 
 export default meta
 
-const Padded = ({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) => (
-  <div className={dark ? 'min-h-screen bg-[#1C1D20] p-8' : 'min-h-screen bg-[#F5F5F7] p-8'}>{children}</div>
+const lightBackground = { backgrounds: { default: 'portfolio-light' } }
+const darkBackground = { backgrounds: { default: 'portfolio-dark' } }
+
+const Padded = ({ children }: { children: React.ReactNode }) => (
+  <div className="relative min-h-screen p-8">{children}</div>
 )
+
+type StoryProjectFeaturedPattern = 'source' | 'alternating' | 'all-featured' | 'all-standard'
+type StoryProjectAnimationMode = 'source' | 'none' | 'video' | 'spritesheet'
+type StoryProjectHeroMediaMode = 'source' | 'none' | 'lottie' | 'video'
+
+const ScrollHarness = ({
+  topSpacerVh,
+  bottomSpacerVh,
+  children,
+}: {
+  topSpacerVh: number
+  bottomSpacerVh: number
+  children: React.ReactNode
+}) => (
+  <div className="relative w-full">
+    <div aria-hidden="true" style={{ minHeight: `${Math.max(0, topSpacerVh)}vh` }} />
+    {children}
+    <div aria-hidden="true" style={{ minHeight: `${Math.max(0, bottomSpacerVh)}vh` }} />
+  </div>
+)
+
+const buildProjectsForStories = ({
+  data,
+  projectCount,
+  featuredPattern,
+  animationMode,
+  heroMediaMode,
+}: {
+  data: Project[]
+  projectCount: number
+  featuredPattern: StoryProjectFeaturedPattern
+  animationMode: StoryProjectAnimationMode
+  heroMediaMode: StoryProjectHeroMediaMode
+}) => {
+  const source = data.length > 0 ? data : sampleProjects
+  const count = Math.max(1, Math.floor(projectCount))
+
+  return Array.from({ length: count }, (_, index) => {
+    const base = source[index % source.length]
+    const storyIndex = index + 1
+
+    const featured =
+      featuredPattern === 'source'
+        ? Boolean(base.featured)
+        : featuredPattern === 'alternating'
+          ? index % 2 === 0
+          : featuredPattern === 'all-featured'
+
+    const hasAnimation = animationMode === 'source' ? Boolean(base.hasAnimation) : animationMode !== 'none'
+    const animationSequence = !hasAnimation
+      ? undefined
+      : animationMode === 'spritesheet'
+        ? {
+            spritesheetPath: '/assets/reminders/spritesheet.webp',
+            mobileSpritesheetPath: '/assets/reminders/spritesheet-mobile.webp',
+            safariSpritesheetPath: '/assets/reminders/spritesheet-mobile.webp',
+            spriteCount: 100,
+            columnCount: 8,
+            rowCount: 13,
+            scrollPixelsPerFrame: 18,
+            scrollStartOffsetPx: 0,
+          }
+        : animationMode === 'video'
+          ? {
+              videoPath: '/assets/reminders-8.mp4',
+              mobileVideoPath: '/assets/reminders-8-mobile-scrub.mp4',
+              safariVideoPath: '/assets/reminders-8-safari-scrub.mp4',
+              frameCount: 501,
+            }
+          : base.animationSequence || {
+              videoPath: '/assets/reminders-8.mp4',
+              mobileVideoPath: '/assets/reminders-8-mobile-scrub.mp4',
+              safariVideoPath: '/assets/reminders-8-safari-scrub.mp4',
+              frameCount: 501,
+            }
+
+    const heroLottie = heroMediaMode === 'source'
+      ? base.heroLottie
+      : heroMediaMode === 'lottie'
+        ? '/assets/sample-lottie.json'
+        : undefined
+
+    const video = heroMediaMode === 'source'
+      ? base.video
+      : heroMediaMode === 'video'
+        ? '/assets/book.mp4'
+        : undefined
+
+    return {
+      ...base,
+      id: base.id * 100 + storyIndex,
+      slug: `${base.slug}-storybook-${storyIndex}`,
+      title: `${base.title} ${String(storyIndex).padStart(2, '0')}`,
+      featured,
+      hasAnimation,
+      animationSequence,
+      heroLottie,
+      video: heroLottie ? undefined : video,
+    }
+  })
+}
 
 type ActionButtonsArgs = {
   primaryHref: string
@@ -71,6 +180,7 @@ type ActionButtonsArgs = {
 }
 
 export const ActionButtons: StoryObj<ActionButtonsArgs> = {
+  parameters: lightBackground,
   args: {
     primaryHref: '/contact',
     primaryLabel: 'Start a Project',
@@ -117,6 +227,20 @@ export const ActionButtons: StoryObj<ActionButtonsArgs> = {
       </div>
     </Padded>
   ),
+  play: async ({ canvas, args }) => {
+    const primary = canvas.getByRole('link', { name: args.primaryLabel })
+    const social = canvas.getByRole('link', { name: args.socialLabel })
+
+    await expect(primary.getAttribute('href')).toContain(args.primaryHref.replace(/\/$/, ''))
+    await expect(social.getAttribute('href')).toContain(args.socialHref.replace(/\/$/, ''))
+
+    if (args.socialExternal) {
+      await expect(social).toHaveAttribute('target', '_blank')
+      await expect(social).toHaveAttribute('rel', 'noopener noreferrer')
+    } else {
+      await expect(social).not.toHaveAttribute('target')
+    }
+  },
 }
 
 export const AboutSection: StoryObj = {
@@ -136,6 +260,7 @@ type AdaptiveVideoArgs = {
 }
 
 export const AdaptiveVideoPlayerComponent: StoryObj<AdaptiveVideoArgs> = {
+  parameters: darkBackground,
   args: {
     videoUrl: '/assets/book.mp4',
     thumbnailUrl: '/assets/book.avif',
@@ -159,7 +284,7 @@ export const AdaptiveVideoPlayerComponent: StoryObj<AdaptiveVideoArgs> = {
     minimal: { control: 'boolean' },
   },
   render: (args) => (
-    <Padded dark>
+    <Padded>
       <div className="max-w-5xl mx-auto">
         <AdaptiveVideoPlayer {...args} />
       </div>
@@ -194,6 +319,7 @@ type ArticlePlaygroundArgs = {
 }
 
 export const ArticleMarkdownPlayground: StoryObj<ArticlePlaygroundArgs> = {
+  parameters: lightBackground,
   args: {
     slug: sampleArticleProject.slug,
     title: sampleArticleProject.title,
@@ -280,6 +406,15 @@ export const ArticleMarkdownPlayground: StoryObj<ArticlePlaygroundArgs> = {
 
     return <Article project={project} allProjects={args.allProjects} heroPriority={args.heroPriority} />
   },
+  play: async ({ canvas, userEvent }) => {
+    await expect(await canvas.findByText('Storybook Artikel-Demo')).toBeInTheDocument()
+    await expect(canvas.getByText('Wichtiger Hinweis')).toBeInTheDocument()
+
+    const nextImageButtons = canvas.queryAllByRole('button', { name: /next image/i })
+    if (nextImageButtons.length > 0) {
+      await userEvent.click(nextImageButtons[0])
+    }
+  },
 }
 
 export const BrandExperienceSection: StoryObj = {
@@ -316,6 +451,7 @@ type BubbleArgs = {
 }
 
 export const BubbleRotatingTextComponent: StoryObj<BubbleArgs> = {
+  parameters: darkBackground,
   args: {
     texts: ['Design', 'Code', 'Motion'],
     interval: 1800,
@@ -327,7 +463,7 @@ export const BubbleRotatingTextComponent: StoryObj<BubbleArgs> = {
     className: { control: 'text' },
   },
   render: (args) => (
-    <Padded dark>
+    <Padded>
       <BubbleRotatingText {...args} />
     </Padded>
   ),
@@ -445,6 +581,7 @@ export const ContactSection: StoryObj = {
 }
 
 export const ContactFormComponent: StoryObj = {
+  parameters: lightBackground,
   render: () => (
     <Padded>
       <div className="max-w-3xl mx-auto bg-white rounded-3xl p-8">
@@ -452,6 +589,45 @@ export const ContactFormComponent: StoryObj = {
       </div>
     </Padded>
   ),
+  play: async ({ canvas, userEvent }) => {
+    const nameInput = canvas.getByLabelText('Name')
+    const emailInput = canvas.getByLabelText('Email')
+    const messageInput = canvas.getByLabelText('Message')
+    const privacyCheckbox = canvas.getByRole('checkbox')
+    const submitButton = canvas.getByRole('button', { name: /send message/i })
+
+    await expect(submitButton).toBeDisabled()
+
+    await userEvent.type(nameInput, 'Storybook Tester')
+    await userEvent.type(emailInput, 'tester@example.com')
+    await userEvent.type(messageInput, 'Interaction test for contact form.')
+    await userEvent.click(privacyCheckbox)
+
+    await expect(submitButton).toBeEnabled()
+
+    const originalFetch = globalThis.fetch
+    const fetchMock = fn(async () => ({
+      ok: true,
+      json: async () => ({ message: 'ok' }),
+    }))
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      writable: true,
+      value: fetchMock,
+    })
+
+    try {
+      await userEvent.click(submitButton)
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+      await expect(await canvas.findByText('Message sent!')).toBeInTheDocument()
+    } finally {
+      Object.defineProperty(globalThis, 'fetch', {
+        configurable: true,
+        writable: true,
+        value: originalFetch,
+      })
+    }
+  },
 }
 
 export const CreateSection: StoryObj = {
@@ -461,44 +637,253 @@ export const CreateSection: StoryObj = {
 type CustomVideoArgs = {
   videoUrl: string
   thumbnailUrl: string
+  useThumbnail: boolean
   color: string
   startPlaying: boolean
+  maxWidthClassName: string
 }
 
 export const CustomVideoPlayerComponent: StoryObj<CustomVideoArgs> = {
+  parameters: darkBackground,
   args: {
     videoUrl: '/assets/book.mp4',
     thumbnailUrl: '/assets/book.avif',
+    useThumbnail: true,
     color: '#3DB1FF',
     startPlaying: false,
+    maxWidthClassName: 'max-w-5xl',
   },
   argTypes: {
     videoUrl: { control: 'text' },
     thumbnailUrl: { control: 'text' },
+    useThumbnail: { control: 'boolean' },
     color: { control: 'color' },
     startPlaying: { control: 'boolean' },
+    maxWidthClassName: { control: 'text' },
   },
   render: (args) => (
-    <Padded dark>
-      <div className="max-w-5xl mx-auto">
-        <CustomVideoPlayer {...args} />
+    <Padded>
+      <div className={`${args.maxWidthClassName} mx-auto`}>
+        <CustomVideoPlayer
+          videoUrl={args.videoUrl}
+          thumbnailUrl={args.useThumbnail ? args.thumbnailUrl : undefined}
+          color={args.color}
+          startPlaying={args.startPlaying}
+        />
       </div>
     </Padded>
   ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const video = canvasElement.querySelector('video')
+    await expect(video).toBeTruthy()
+    if (!video) return
+
+    const playMock = fn(async () => undefined)
+    const pauseMock = fn(() => undefined)
+
+    Object.defineProperty(video, 'play', {
+      configurable: true,
+      writable: true,
+      value: playMock,
+    })
+    Object.defineProperty(video, 'pause', {
+      configurable: true,
+      writable: true,
+      value: pauseMock,
+    })
+    Object.defineProperty(video, 'duration', {
+      configurable: true,
+      value: 120,
+    })
+    Object.defineProperty(video, 'currentTime', {
+      configurable: true,
+      writable: true,
+      value: 0,
+    })
+
+    video.dispatchEvent(new Event('loadedmetadata'))
+    video.dispatchEvent(new Event('loadeddata'))
+    video.dispatchEvent(new Event('canplay'))
+
+    const centerPlay = await canvas.findByRole('button', { name: /^play$/i })
+    await userEvent.click(centerPlay)
+    await waitFor(() => expect(playMock).toHaveBeenCalled())
+
+    const playerRoot = video.closest('[tabindex="0"]') as HTMLElement | null
+    await expect(Boolean(playerRoot)).toBe(true)
+    if (!playerRoot) return
+
+    await userEvent.hover(playerRoot)
+    const pauseButton = await canvas.findByRole('button', { name: /pause/i })
+    await userEvent.click(pauseButton)
+    await waitFor(() => expect(pauseMock).toHaveBeenCalled())
+
+    const muteButton = canvas.getByRole('button', { name: /mute/i })
+    await userEvent.click(muteButton)
+    await expect(canvas.getByRole('button', { name: /unmute/i })).toBeInTheDocument()
+
+    const volumeSlider = canvas.getByLabelText('volume-slider') as HTMLInputElement
+    volumeSlider.value = '0.35'
+    volumeSlider.dispatchEvent(new Event('change', { bubbles: true }))
+    await expect(volumeSlider.value).toBe('0.35')
+  },
 }
 
-type ProjectListArgs = {
-  data: typeof sampleProjects
+export const CustomVideoPlayerAutoplay: StoryObj<CustomVideoArgs> = {
+  parameters: darkBackground,
+  args: {
+    videoUrl: '/assets/book.mp4',
+    thumbnailUrl: '/assets/book.avif',
+    useThumbnail: false,
+    color: '#8AE9C1',
+    startPlaying: true,
+    maxWidthClassName: 'max-w-4xl',
+  },
+  argTypes: CustomVideoPlayerComponent.argTypes,
+  render: (args) => (
+    <Padded>
+      <div className={`${args.maxWidthClassName} mx-auto`}>
+        <CustomVideoPlayer
+          videoUrl={args.videoUrl}
+          thumbnailUrl={args.useThumbnail ? args.thumbnailUrl : undefined}
+          color={args.color}
+          startPlaying={args.startPlaying}
+        />
+      </div>
+    </Padded>
+  ),
+  play: async ({ canvasElement }) => {
+    const video = canvasElement.querySelector('video')
+    await expect(video).toBeTruthy()
+    if (!video) return
+
+    const playMock = fn(async () => undefined)
+    Object.defineProperty(video, 'play', {
+      configurable: true,
+      writable: true,
+      value: playMock,
+    })
+    Object.defineProperty(video, 'duration', {
+      configurable: true,
+      value: 120,
+    })
+
+    video.dispatchEvent(new Event('loadedmetadata'))
+    await waitFor(() => expect(playMock).toHaveBeenCalled())
+  },
 }
 
-export const FeaturedProjectsSection: StoryObj<ProjectListArgs> = {
+type FeaturedProjectsArgs = {
+  data: Project[]
+  projectCount: number
+  featuredPattern: StoryProjectFeaturedPattern
+  animationMode: StoryProjectAnimationMode
+  heroMediaMode: StoryProjectHeroMediaMode
+  topSpacerVh: number
+  bottomSpacerVh: number
+}
+
+export const FeaturedProjectsSection: StoryObj<FeaturedProjectsArgs> = {
   args: {
     data: sampleProjects,
+    projectCount: 8,
+    featuredPattern: 'alternating',
+    animationMode: 'source',
+    heroMediaMode: 'source',
+    topSpacerVh: 20,
+    bottomSpacerVh: 20,
   },
   argTypes: {
     data: { control: 'object' },
+    projectCount: { control: { type: 'number', min: 1, max: 12, step: 1 } },
+    featuredPattern: { control: 'inline-radio', options: ['source', 'alternating', 'all-featured', 'all-standard'] },
+    animationMode: { control: 'inline-radio', options: ['source', 'none', 'video', 'spritesheet'] },
+    heroMediaMode: { control: 'inline-radio', options: ['source', 'none', 'lottie', 'video'] },
+    topSpacerVh: { control: { type: 'number', min: 0, max: 220, step: 5 } },
+    bottomSpacerVh: { control: { type: 'number', min: 0, max: 220, step: 5 } },
   },
-  render: (args) => <FeaturedProjects data={args.data} />,
+  render: (args) => {
+    const data = buildProjectsForStories({
+      data: args.data,
+      projectCount: args.projectCount,
+      featuredPattern: args.featuredPattern,
+      animationMode: args.animationMode,
+      heroMediaMode: args.heroMediaMode,
+    })
+    return (
+      <ScrollHarness topSpacerVh={args.topSpacerVh} bottomSpacerVh={args.bottomSpacerVh}>
+        <FeaturedProjects data={data} />
+      </ScrollHarness>
+    )
+  },
+  play: async ({ canvas, canvasElement, userEvent, args }) => {
+    const storyData = buildProjectsForStories({
+      data: args.data,
+      projectCount: args.projectCount,
+      featuredPattern: args.featuredPattern,
+      animationMode: args.animationMode,
+      heroMediaMode: args.heroMediaMode,
+    })
+    const expectedItems = Math.min(storyData.length, 7) + 1
+
+    await expect(canvas.getByText('Recent News')).toBeInTheDocument()
+    await expect(canvasElement.querySelectorAll('[data-carousel-item="true"]').length).toBe(expectedItems)
+
+    const carousel = canvasElement.querySelector('div.overflow-x-auto') as HTMLDivElement | null
+    await expect(Boolean(carousel)).toBe(true)
+    if (!carousel) return
+
+    const scrollToMock = fn((options?: ScrollToOptions | number) => {
+      if (typeof options === 'number') {
+        carousel.scrollLeft = options
+        return
+      }
+      if (options && typeof options.left === 'number') {
+        carousel.scrollLeft = options.left
+      }
+    })
+
+    Object.defineProperty(carousel, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollToMock,
+    })
+
+    await userEvent.click(canvas.getByRole('button', { name: /scroll to next project/i }))
+    await waitFor(() => expect(scrollToMock).toHaveBeenCalled())
+
+    await userEvent.click(canvas.getByRole('button', { name: /scroll to previous project/i }))
+    await expect(scrollToMock.mock.calls.length).toBeGreaterThan(1)
+  },
+}
+
+export const FeaturedProjectsFallbackData: StoryObj<FeaturedProjectsArgs> = {
+  parameters: lightBackground,
+  args: {
+    data: [],
+    projectCount: 5,
+    featuredPattern: 'all-standard',
+    animationMode: 'spritesheet',
+    heroMediaMode: 'none',
+    topSpacerVh: 10,
+    bottomSpacerVh: 10,
+  },
+  argTypes: FeaturedProjectsSection.argTypes,
+  render: FeaturedProjectsSection.render,
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await expect(canvas.getByText('Recent News')).toBeInTheDocument()
+
+    const carousel = canvasElement.querySelector('div.overflow-x-auto') as HTMLDivElement | null
+    await expect(Boolean(carousel)).toBe(true)
+    if (!carousel) return
+
+    carousel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, pageX: 420 }))
+    carousel.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, pageX: 360 }))
+    carousel.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, pageX: 360 }))
+
+    const moreProjects = canvas.getByRole('button', { name: /more projects/i })
+    await userEvent.click(moreProjects)
+  },
 }
 
 type FontSpecimenArgs = {
@@ -959,6 +1344,7 @@ type ScrollVelocityArgs = {
 }
 
 export const ScrollVelocityComponent: StoryObj<ScrollVelocityArgs> = {
+  parameters: darkBackground,
   args: {
     texts: ['Benedikt Schnupp - ', 'Creative Developer - '],
     velocity: 80,
@@ -986,7 +1372,7 @@ export const ScrollVelocityComponent: StoryObj<ScrollVelocityArgs> = {
     scrollerStyle: { control: 'object' },
   },
   render: (args) => (
-    <Padded dark>
+    <Padded>
       <ScrollVelocity
         texts={args.texts}
         velocity={args.velocity}
@@ -1084,8 +1470,50 @@ export const ShuffleComponent: StoryObj<ShuffleArgs> = {
   ),
 }
 
-export const SkillsSection: StoryObj = {
-  render: () => <Skills />,
+type SkillsArgs = {
+  topSpacerVh: number
+  bottomSpacerVh: number
+  initialScrollY: number
+}
+
+export const SkillsSection: StoryObj<SkillsArgs> = {
+  parameters: darkBackground,
+  args: {
+    topSpacerVh: 90,
+    bottomSpacerVh: 90,
+    initialScrollY: 500,
+  },
+  argTypes: {
+    topSpacerVh: { control: { type: 'number', min: 0, max: 220, step: 5 } },
+    bottomSpacerVh: { control: { type: 'number', min: 0, max: 220, step: 5 } },
+    initialScrollY: { control: { type: 'number', min: 0, max: 2400, step: 50 } },
+  },
+  render: (args) => (
+    <ScrollHarness topSpacerVh={args.topSpacerVh} bottomSpacerVh={args.bottomSpacerVh}>
+      <Skills />
+    </ScrollHarness>
+  ),
+  play: async ({ canvas, userEvent, args }) => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+    window.scrollTo({ top: args.initialScrollY, behavior: 'auto' })
+
+    if (args.initialScrollY > 0) {
+      await waitFor(() => expect(window.scrollY).toBeGreaterThan(0))
+    }
+
+    const openMotion = canvas.getByRole('button', { name: /open motion & brand design/i })
+    await userEvent.click(openMotion)
+    await expect(await canvas.findByText(/crafting kinetic identities/i)).toBeInTheDocument()
+
+    const openUx = canvas.getByRole('button', { name: /open ux\/ui architecture/i })
+    await userEvent.click(openUx)
+    await expect(await canvas.findByText(/designing intuitive, accessible/i)).toBeInTheDocument()
+    await waitFor(() => expect(canvas.queryByText(/crafting kinetic identities/i)).not.toBeInTheDocument())
+
+    const closeUx = canvas.getByRole('button', { name: /close ux\/ui architecture/i })
+    await userEvent.click(closeUx)
+    await waitFor(() => expect(canvas.queryByText(/designing intuitive, accessible/i)).not.toBeInTheDocument())
+  },
 }
 
 type StatArgs = {
@@ -1144,52 +1572,201 @@ export const StructuredDataComponent: StoryObj<StructuredDataArgs> = {
 }
 
 type ThreeSceneArgs = {
+  useModel: boolean
   modelPath: string
   height: string
   className: string
   autoRotate: boolean
   preset: 'apartment' | 'city' | 'dawn' | 'forest' | 'lobby' | 'night' | 'park' | 'studio' | 'sunset' | 'warehouse'
-  scale: number | [number, number, number]
+  useVectorScale: boolean
+  uniformScale: number
+  vectorScale: [number, number, number]
   position: [number, number, number]
   rotation: [number, number, number]
 }
 
 export const ThreeSceneComponent: StoryObj<ThreeSceneArgs> = {
   args: {
-    modelPath: '',
+    useModel: false,
+    modelPath: '/assets/cursor-2.glb',
     height: '480px',
     className: '',
     autoRotate: true,
     preset: 'studio',
-    scale: 1,
+    useVectorScale: false,
+    uniformScale: 1,
+    vectorScale: [1, 1, 1],
     position: [0, 0, 0],
     rotation: [0, 0, 0],
   },
   argTypes: {
+    useModel: { control: 'boolean' },
     modelPath: { control: 'text' },
     height: { control: 'text' },
     className: { control: 'text' },
     autoRotate: { control: 'boolean' },
     preset: { control: 'select', options: ['apartment', 'city', 'dawn', 'forest', 'lobby', 'night', 'park', 'studio', 'sunset', 'warehouse'] },
-    scale: { control: 'object' },
+    useVectorScale: { control: 'boolean' },
+    uniformScale: { control: { type: 'number', min: 0.1, max: 4, step: 0.1 } },
+    vectorScale: { control: 'object' },
     position: { control: 'object' },
     rotation: { control: 'object' },
   },
   render: (args) => (
     <Padded>
       <div className="max-w-5xl mx-auto">
-        <ThreeScene {...args} />
+        <ThreeScene
+          modelPath={args.useModel ? args.modelPath : undefined}
+          height={args.height}
+          className={args.className}
+          autoRotate={args.autoRotate}
+          preset={args.preset}
+          scale={args.useVectorScale ? args.vectorScale : args.uniformScale}
+          position={args.position}
+          rotation={args.rotation}
+        />
       </div>
     </Padded>
   ),
+  play: async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByText('DRAG TO INTERACT')).toBeInTheDocument()
+    await expect(Boolean(canvasElement.querySelector('[data-r3f-canvas="mocked"]'))).toBe(true)
+  },
 }
 
-export const WorkSection: StoryObj<ProjectListArgs> = {
+export const ThreeSceneModelComponent: StoryObj<ThreeSceneArgs> = {
+  args: {
+    useModel: true,
+    modelPath: '/assets/cursor-2.glb',
+    height: '420px',
+    className: '',
+    autoRotate: false,
+    preset: 'city',
+    useVectorScale: true,
+    uniformScale: 1,
+    vectorScale: [1.2, 1.2, 1.2],
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+  },
+  argTypes: ThreeSceneComponent.argTypes,
+  render: ThreeSceneComponent.render,
+  play: async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByText('DRAG TO INTERACT')).toBeInTheDocument()
+    await expect(Boolean(canvasElement.querySelector('[data-r3f-canvas="mocked"]'))).toBe(true)
+  },
+}
+
+type WorkArgs = {
+  data: Project[]
+  projectCount: number
+  featuredPattern: StoryProjectFeaturedPattern
+  animationMode: StoryProjectAnimationMode
+  heroMediaMode: StoryProjectHeroMediaMode
+  topSpacerVh: number
+  bottomSpacerVh: number
+}
+
+export const WorkSection: StoryObj<WorkArgs> = {
   args: {
     data: sampleProjects,
+    projectCount: 6,
+    featuredPattern: 'alternating',
+    animationMode: 'source',
+    heroMediaMode: 'source',
+    topSpacerVh: 80,
+    bottomSpacerVh: 80,
   },
   argTypes: {
     data: { control: 'object' },
+    projectCount: { control: { type: 'number', min: 1, max: 12, step: 1 } },
+    featuredPattern: { control: 'inline-radio', options: ['source', 'alternating', 'all-featured', 'all-standard'] },
+    animationMode: { control: 'inline-radio', options: ['source', 'none', 'video', 'spritesheet'] },
+    heroMediaMode: { control: 'inline-radio', options: ['source', 'none', 'lottie', 'video'] },
+    topSpacerVh: { control: { type: 'number', min: 0, max: 240, step: 5 } },
+    bottomSpacerVh: { control: { type: 'number', min: 0, max: 240, step: 5 } },
   },
-  render: (args) => <Work data={args.data} />,
+  render: (args) => {
+    const data = buildProjectsForStories({
+      data: args.data,
+      projectCount: args.projectCount,
+      featuredPattern: args.featuredPattern,
+      animationMode: args.animationMode,
+      heroMediaMode: args.heroMediaMode,
+    })
+
+    return (
+      <ScrollHarness topSpacerVh={args.topSpacerVh} bottomSpacerVh={args.bottomSpacerVh}>
+        <Work data={data} />
+      </ScrollHarness>
+    )
+  },
+  play: async ({ canvas, canvasElement, userEvent, args }) => {
+    const data = buildProjectsForStories({
+      data: args.data,
+      projectCount: args.projectCount,
+      featuredPattern: args.featuredPattern,
+      animationMode: args.animationMode,
+      heroMediaMode: args.heroMediaMode,
+    })
+
+    const section = canvasElement.querySelector('section#work')
+    await expect(Boolean(section)).toBe(true)
+    if (!section) return
+
+    await expect(section.querySelectorAll(':scope > div.relative.w-full').length).toBe(data.length)
+
+    window.scrollTo({ top: 0, behavior: 'auto' })
+    window.scrollTo({ top: 900, behavior: 'auto' })
+    await waitFor(() => expect(window.scrollY).toBeGreaterThan(0))
+
+    const firstCard = section.querySelector('div.sticky.w-full.h-full.cursor-pointer.group') as HTMLElement | null
+    await expect(Boolean(firstCard)).toBe(true)
+    if (!firstCard) return
+
+    await userEvent.hover(firstCard)
+    await userEvent.click(firstCard)
+  },
+}
+
+export const WorkSpritesheetSection: StoryObj<WorkArgs> = {
+  args: {
+    data: sampleProjects,
+    projectCount: 4,
+    featuredPattern: 'all-featured',
+    animationMode: 'spritesheet',
+    heroMediaMode: 'none',
+    topSpacerVh: 50,
+    bottomSpacerVh: 50,
+  },
+  argTypes: WorkSection.argTypes,
+  render: WorkSection.render,
+  play: async ({ canvasElement }) => {
+    const spritesheetImages = Array.from(canvasElement.querySelectorAll('img[alt$="animation sequence"]')) as HTMLImageElement[]
+    for (const image of spritesheetImages) {
+      Object.defineProperty(image, 'naturalWidth', { configurable: true, value: 15360 })
+      Object.defineProperty(image, 'naturalHeight', { configurable: true, value: 14040 })
+      image.dispatchEvent(new Event('load'))
+    }
+    await expect(spritesheetImages.length).toBeGreaterThan(0)
+  },
+}
+
+export const WorkNoAnimationSection: StoryObj<WorkArgs> = {
+  args: {
+    data: [],
+    projectCount: 3,
+    featuredPattern: 'all-standard',
+    animationMode: 'none',
+    heroMediaMode: 'video',
+    topSpacerVh: 30,
+    bottomSpacerVh: 30,
+  },
+  argTypes: WorkSection.argTypes,
+  render: WorkSection.render,
+  play: async ({ canvasElement }) => {
+    const section = canvasElement.querySelector('section#work')
+    await expect(Boolean(section)).toBe(true)
+    if (!section) return
+    await expect(section.querySelectorAll('video').length).toBeGreaterThan(0)
+  },
 }

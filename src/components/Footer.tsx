@@ -89,7 +89,7 @@ const Footer = () => {
         <motion.div className="md:col-span-4 flex flex-col justify-between h-full" variants={itemVariants}>
           <div>
              <h2 className="text-white font-space-grotesk font-bold text-2xl md:text-3xl mb-2">Benedikt Schnupp</h2>
-             <p className="text-white/40 font-inter text-sm max-w-xs leading-relaxed">
+             <p className="text-white/50 font-inter text-sm max-w-xs leading-relaxed">
                Creative Motion Designer & Developer based in Berlin, crafting digital experiences.
              </p>
           </div>

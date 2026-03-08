@@ -80,7 +80,7 @@ export default function ThreeScene({
             </Canvas>
 
             {/* Optional watermark or interaction hint overlay */}
-            <div className="absolute bottom-4 right-6 pointer-events-none opacity-40 font-mono text-xs text-black/50 tracking-widest">
+            <div className="absolute bottom-4 right-6 pointer-events-none rounded-full bg-black/70 px-3 py-1 font-mono text-[10px] text-white tracking-[0.16em] shadow-sm">
                 DRAG TO INTERACT
             </div>
         </div>

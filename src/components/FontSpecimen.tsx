@@ -20,6 +20,8 @@ export default function FontSpecimen({
     svgAa,
     svgTitle
 }: FontSpecimenProps) {
+    const metaLabelStyle: React.CSSProperties = { color, opacity: 0.65 }
+
     const resolveSvgReference = (svgRef?: string) => {
         if (!svgRef) return undefined
         const trimmed = svgRef.trim()
@@ -74,7 +76,7 @@ export default function FontSpecimen({
                 {/* Main Name & Meta */}
                 <div className="flex flex-col w-full">
                     <div className="p-8 md:p-12 lg:p-16 border-b border-current/20 flex flex-col justify-end min-h-[12rem] md:min-h-[16rem]">
-                        <h3 className="text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase opacity-60 mb-6 font-inter">
+                        <h3 className="text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase mb-6 font-inter" style={metaLabelStyle}>
                             Typeface Specimen
                         </h3>
                         <h2
@@ -104,11 +106,11 @@ export default function FontSpecimen({
 
                     <div className="grid grid-cols-2">
                         <div className="p-6 md:p-8 lg:p-10 border-r border-current/20 flex flex-col gap-2">
-                            <span className="text-[10px] uppercase tracking-widest opacity-60 font-inter font-bold">Weights</span>
+                            <span className="text-[10px] uppercase tracking-widest font-inter font-bold" style={metaLabelStyle}>Weights</span>
                             <span className="text-sm md:text-base font-medium font-inter">{styles}</span>
                         </div>
                         <div className="p-6 md:p-8 lg:p-10 flex flex-col gap-2">
-                            <span className="text-[10px] uppercase tracking-widest opacity-60 font-inter font-bold">Design</span>
+                            <span className="text-[10px] uppercase tracking-widest font-inter font-bold" style={metaLabelStyle}>Design</span>
                             <span className="text-sm md:text-base font-medium font-inter flex items-center gap-2">
                                 Premium Editorial
                             </span>

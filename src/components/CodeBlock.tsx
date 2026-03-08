@@ -62,7 +62,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
       highlighted = replaceOutsideSpans(highlighted, /`([^`]*?)`/g, '<span class="text-[#2E7D32]">`$1`<\/span>')
 
       // Comments (Gray -> Neutral Gray)
-      highlighted = replaceOutsideSpans(highlighted, /\/\/.*$/gm, '<span class="text-[#86868b] italic">$&<\/span>')
+      highlighted = replaceOutsideSpans(highlighted, /\/\/.*$/gm, '<span class="text-[#6e6e73] italic">$&<\/span>')
 
       // Booleans / nullish (Orange -> Burnt Orange)
       highlighted = replaceOutsideSpans(highlighted, /\b(true|false|null|undefined)\b/g, '<span class="text-[#D32F2F]">$1<\/span>')
@@ -92,7 +92,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
       )
 
       // Punctuation
-      highlighted = replaceOutsideSpans(highlighted, /([{}()[\],.])/g, '<span class="text-[#86868b]">$1<\/span>')
+      highlighted = replaceOutsideSpans(highlighted, /([{}()[\],.])/g, '<span class="text-[#6e6e73]">$1<\/span>')
     }
     return highlighted
   }
@@ -121,17 +121,17 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E] border border-black/10" />
                 <span className="w-2.5 h-2.5 rounded-full bg-[#28C840] border border-black/10" />
               </div>
-              {filename && <span className="text-[#86868b] text-xs font-mono font-medium">{filename}</span>}
+              {filename && <span className="text-[#6e6e73] text-xs font-mono font-medium">{filename}</span>}
             </div>
             <div className="flex items-center gap-2">
               {githubUrl && (
-                <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-[#86868b] hover:text-[#1D1D1F] transition-colors p-1.5 rounded hover:bg-black/5">
+                <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-[#6e6e73] hover:text-[#1D1D1F] transition-colors p-1.5 rounded hover:bg-black/5">
                   <ExternalLink className="w-4 h-4" />
                 </a>
               )}
               <button 
                 onClick={copyToClipboard} 
-                className="text-[#86868b] hover:text-[#1D1D1F] transition-colors p-1.5 rounded hover:bg-black/5"
+                className="text-[#6e6e73] hover:text-[#1D1D1F] transition-colors p-1.5 rounded hover:bg-black/5"
               >
                 {copied ? <Check className="w-4 h-4 text-[#28C840]" /> : <Copy className="w-4 h-4" />}
               </button>

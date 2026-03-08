@@ -12,6 +12,7 @@ export interface MockupItem {
     video?: string
     bgColor?: string
     url?: string
+    alt?: string
 }
 
 interface MockupProps {
@@ -22,6 +23,7 @@ interface MockupProps {
     bgColor?: string
     accentColor?: string
     items?: MockupItem[]
+    alt?: string
 }
 
 const normalizeMockupType = (rawType?: string): NormalizedMockupType => {
@@ -33,6 +35,15 @@ const normalizeMockupType = (rawType?: string): NormalizedMockupType => {
     if (type === 'android') return 'android'
     if (type === 'safari' || type === 'safari-tab' || type === 'safaritab') return 'safari-tab'
     return 'iphone'
+}
+
+const getTypeLabel = (type: NormalizedMockupType): string => {
+    if (type === 'iphone') return 'iPhone'
+    if (type === 'android') return 'Android'
+    if (type === 'ipad') return 'iPad'
+    if (type === 'macbook') return 'MacBook'
+    if (type === 'tv') return 'TV'
+    return 'Browser'
 }
 
 const getRowSlotWidthClass = (type: NormalizedMockupType, count: number): string => {
@@ -108,16 +119,18 @@ const MockupMedia = ({
     path,
     accentColor,
     imageClassName = 'object-cover',
+    alt,
 }: {
     isVideo: boolean
     path: string
     accentColor: string
     imageClassName?: string
+    alt: string
 }) => {
     if (isVideo) {
         return <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} minimal loop muted />
     }
-    return <img src={path} className={`w-full h-full ${imageClassName}`} loading="lazy" />
+    return <img src={path} alt={alt} className={`w-full h-full ${imageClassName}`} loading="lazy" />
 }
 
 const MockupDevice = ({
@@ -128,6 +141,7 @@ const MockupDevice = ({
     maxWidthClass,
     itemCount,
     displayUrl,
+    alt,
 }: {
     type: NormalizedMockupType
     path: string
@@ -136,6 +150,7 @@ const MockupDevice = ({
     maxWidthClass: string
     itemCount: number
     displayUrl?: string
+    alt: string
 }) => {
     if (type === 'iphone') {
         return (
@@ -144,7 +159,7 @@ const MockupDevice = ({
                     <div className="w-[31%] aspect-[10/3] bg-black rounded-full" />
                 </div>
                 <div className="w-full h-full rounded-[1.45rem] sm:rounded-[1.85rem] md:rounded-[2.25rem] lg:rounded-[2.75rem] xl:rounded-[3.2rem] overflow-hidden bg-neutral-900 relative z-10">
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} />
+                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
                 </div>
             </div>
         )
@@ -155,7 +170,7 @@ const MockupDevice = ({
             <div className={`relative mx-auto w-full ${maxWidthClass} aspect-[9/20] rounded-[1.6rem] sm:rounded-[2rem] md:rounded-[2.45rem] lg:rounded-[2.95rem] xl:rounded-[3.4rem] p-[5px] sm:p-[6px] md:p-[7px] lg:p-[8px] xl:p-[9px] bg-black shadow-2xl ring-1 ring-white/10`}>
                 <div className="w-full h-full rounded-[1.3rem] sm:rounded-[1.6rem] md:rounded-[1.95rem] lg:rounded-[2.35rem] xl:rounded-[2.8rem] overflow-hidden bg-neutral-900 relative z-10">
                     <div className="absolute top-[8px] sm:top-[10px] md:top-[11px] lg:top-[12px] left-1/2 -translate-x-1/2 w-[8px] h-[8px] sm:w-[10px] sm:h-[10px] md:w-[11px] md:h-[11px] lg:w-[12px] lg:h-[12px] bg-black rounded-full z-20 pointer-events-none" />
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} />
+                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
                 </div>
             </div>
         )
@@ -165,7 +180,7 @@ const MockupDevice = ({
         return (
             <div className={`relative mx-auto w-full ${maxWidthClass} aspect-[4/3] rounded-[clamp(1.7rem,2.8vw,2.3rem)] p-[clamp(6px,0.9vw,10px)] bg-black shadow-2xl ring-1 ring-white/10`}>
                 <div className="w-full h-full rounded-[clamp(1.25rem,2.2vw,1.85rem)] overflow-hidden bg-neutral-900">
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} />
+                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
                 </div>
             </div>
         )
@@ -176,7 +191,7 @@ const MockupDevice = ({
             <div className={`relative mx-auto w-full ${maxWidthClass} flex flex-col items-center`}>
                 <div className="relative w-full aspect-video bg-[#161616] rounded-[0.65rem] p-1 shadow-2xl ring-1 ring-white/5">
                     <div className="w-full h-full overflow-hidden bg-black rounded-[0.45rem]">
-                        <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} />
+                        <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
                     </div>
                 </div>
                 <div className="relative w-[34%] h-5 md:h-7 flex justify-between -mt-1">
@@ -205,6 +220,7 @@ const MockupDevice = ({
                         path={path}
                         accentColor={accentColor}
                         imageClassName="object-cover object-top"
+                        alt={alt}
                     />
                 </div>
             </div>
@@ -219,7 +235,7 @@ const MockupDevice = ({
                     <div className="w-14 md:w-16 h-2.5 md:h-3 bg-black rounded-b-md" />
                 </div>
                 <div className="w-full h-full rounded-md overflow-hidden bg-neutral-900 relative">
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} />
+                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
                 </div>
             </div>
             <div className="relative w-[114%] h-3 md:h-5 bg-gradient-to-b from-[#E2E2E2] to-[#BCBCBC] rounded-b-3xl shadow-xl flex justify-center pt-0.5 border-t border-white/40 z-20">
@@ -249,6 +265,8 @@ export default function Mockup(props: MockupProps) {
         const maxWidthClass = getGroupedMaxWidthClass(type, validItems.length)
         const rawUrl = type === 'safari-tab' ? item.url : undefined
         const externalUrl = type === 'safari-tab' ? normalizeExternalUrl(rawUrl) : null
+        const fallbackAlt = `${getTypeLabel(type)} mockup ${index + 1}`
+        const altText = (item.alt || '').trim() || fallbackAlt
 
         const content = (
             <div
@@ -263,6 +281,7 @@ export default function Mockup(props: MockupProps) {
                     maxWidthClass={maxWidthClass}
                     itemCount={validItems.length}
                     displayUrl={rawUrl}
+                    alt={altText}
                 />
             </div>
         )
@@ -283,6 +302,7 @@ export default function Mockup(props: MockupProps) {
                     maxWidthClass={maxWidthClass}
                     itemCount={validItems.length}
                     displayUrl={rawUrl}
+                    alt={altText}
                 />
             </a>
         )
@@ -297,6 +317,8 @@ export default function Mockup(props: MockupProps) {
         const maxWidthClass = getSingleMaxWidthClass(type)
         const rawUrl = type === 'safari-tab' ? item.url : undefined
         const externalUrl = type === 'safari-tab' ? normalizeExternalUrl(rawUrl) : null
+        const fallbackAlt = `${getTypeLabel(type)} mockup`
+        const altText = (item.alt || props.alt || '').trim() || fallbackAlt
 
         return (
             <div
@@ -319,6 +341,7 @@ export default function Mockup(props: MockupProps) {
                                 maxWidthClass={maxWidthClass}
                                 itemCount={1}
                                 displayUrl={rawUrl}
+                                alt={altText}
                             />
                         </a>
                     ) : (
@@ -330,6 +353,7 @@ export default function Mockup(props: MockupProps) {
                             maxWidthClass={maxWidthClass}
                             itemCount={1}
                             displayUrl={rawUrl}
+                            alt={altText}
                         />
                     )}
                 </div>

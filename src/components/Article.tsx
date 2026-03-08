@@ -331,7 +331,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
   let currentIndex = 0
 
-  type RowGalleryItem = { url: string; caption?: string }
+  type RowGalleryItem = { url: string; caption?: string; alt?: string }
 
   const DraggableRowGallery = ({
     items,
@@ -543,6 +543,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             {items.map((item, idx) => {
               const path = resolveAssetPath(item.url)
               const isV = isVideoFile(item.url)
+              const altText = (item.caption || item.alt || `Gallery image ${idx + 1}`).trim()
               return (
                 <figure
                   key={idx}
@@ -560,6 +561,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                     ) : (
                       <img
                         src={path}
+                        alt={altText}
                         className="block h-auto max-h-[90vh] w-auto max-w-[92vw] sm:max-w-[78vw] md:max-w-[720px] lg:max-w-[840px] object-contain"
                         loading="lazy"
                         draggable={false}
@@ -567,7 +569,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                     )}
                   </div>
                   {item.caption && (
-                    <figcaption className="mt-3 text-[12px] leading-snug text-[#86868b] font-inter tracking-[-0.01em]">
+                    <figcaption className="mt-3 text-[12px] leading-snug text-[#6e6e73] font-inter tracking-[-0.01em]">
                       {item.caption}
                     </figcaption>
                   )}
@@ -1441,6 +1443,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         const { content: mediaLine, attrs: mediaInlineAttrs } = parseMediaLineWithAttrs(line)
         const mediaFrameOptions = parseMediaFrameOptions(mediaInlineAttrs)
         let mediaUrl = ''
+        let mediaAlt = ''
         let thumbnailUrl = ''
         let isVid = false
 
@@ -1458,17 +1461,26 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
             isVid = true
           }
         } else {
-          const match = mediaLine.match(/!\[.*?\]\((.*?)\)/) || mediaLine.match(/!\[(.*?)\]/)
-          if (match) mediaUrl = match[1]
+          const markdownMatch = mediaLine.match(/!\[(.*?)\]\((.*?)\)/)
+          const shorthandMatch = mediaLine.match(/!\[(.*?)\]/)
+          if (markdownMatch) {
+            mediaAlt = (markdownMatch[1] || '').trim()
+            mediaUrl = markdownMatch[2]
+          } else if (shorthandMatch) {
+            mediaUrl = shorthandMatch[1]
+          }
         }
 
         if (mediaUrl) {
           // Check if multiple images
           if (mediaUrl.includes('|')) {
             // Support optional captions via `asset.jpg::Caption`
-            const mediaList = mediaUrl.split('|').map(entry => {
+            const sharedAlt = mediaAlt.trim()
+            const mediaList = mediaUrl.split('|').map((entry, idx) => {
               const [u, c] = entry.split('::')
-              return { url: (u || '').trim(), caption: (c || '').trim() }
+              const caption = (c || '').trim()
+              const alt = caption || (sharedAlt ? `${sharedAlt} ${idx + 1}` : '')
+              return { url: (u || '').trim(), caption, alt }
             }).filter(item => item.url)
             const shouldUseCarousel = mediaList.length >= 4 || (mediaList.length === 3 && mediaList.some((item) => isVideoFile(item.url)))
             const isThreeImageRow = mediaList.length === 3 && mediaList.every((item) => !isVideoFile(item.url))
@@ -1491,13 +1503,14 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                       ) : (
                         <img
                           src={path}
+                          alt={(item.caption || item.alt || `Gallery image ${idx + 1}`).trim()}
                           className="block w-auto max-w-full h-auto max-h-[90vh] object-contain"
                           loading="lazy"
                         />
                       )}
                     </div>
                     {item.caption && (
-                      <figcaption className="mt-3 text-[12px] leading-snug text-[#86868b] font-inter tracking-[-0.01em]">
+                      <figcaption className="mt-3 text-[12px] leading-snug text-[#6e6e73] font-inter tracking-[-0.01em]">
                         {item.caption}
                       </figcaption>
                     )}
@@ -1563,6 +1576,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                   ) : (
                     <img
                       src={path}
+                      alt={(mediaAlt || 'Project image').trim()}
                       className="block w-auto max-w-full h-auto max-h-[90vh] object-contain mx-auto"
                       loading="lazy"
                     />
@@ -1759,7 +1773,7 @@ export default function Article({ project, allProjects, heroPriority = false }: 
                     {/* CLIENT */}
                     {project.client && project.client.length > 0 && (
                       <div className="space-y-1">
-                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Client</div>
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#6e6e73]">Client</div>
                         <div className="text-[15px] font-medium text-[#1d1d1f]">
                           {project.client.join(', ')}
                         </div>
@@ -1768,14 +1782,14 @@ export default function Article({ project, allProjects, heroPriority = false }: 
 
                     {/* TIMELINE */}
                     <div className="space-y-1">
-                      <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Timeline</div>
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-[#6e6e73]">Timeline</div>
                       <div className="text-[15px] font-medium text-[#1d1d1f]">{date}</div>
                     </div>
 
                     {/* COLLABORATION */}
                     {collaborators.length > 0 && (
                       <div className="space-y-1">
-                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Collaboration</div>
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#6e6e73]">Collaboration</div>
                         <div className="flex flex-col items-start gap-1">
                           {collaborators.map((c, i) => {
                             if (!c) return null
@@ -1803,7 +1817,7 @@ export default function Article({ project, allProjects, heroPriority = false }: 
                     {/* AWARDS */}
                     {project.awards && project.awards.length > 0 && (
                       <div className="space-y-1">
-                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Awards</div>
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-[#6e6e73]">Awards</div>
                         <div className="flex flex-col gap-1">
                           {project.awards.map((award, i) => (
                             <span key={i} className="text-[15px] font-medium text-[#1d1d1f]">{award}</span>
@@ -1813,7 +1827,7 @@ export default function Article({ project, allProjects, heroPriority = false }: 
                     )}
 
                     <div className="col-span-2 space-y-2">
-                      <div className="text-[11px] font-bold uppercase tracking-widest text-[#86868b]">Scope</div>
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-[#6e6e73]">Scope</div>
                       <div className="flex flex-wrap gap-2">
                         {projectTags.map((t, i) => (
                           <span key={i} className="px-2.5 py-1 rounded-full bg-black/5 text-[#1d1d1f] text-[13px] font-medium">

@@ -371,7 +371,7 @@ const Skills = () => {
                                         className={`flex-1 min-w-0 text-left ${isExpanded ? 'cursor-default' : 'cursor-pointer'}`}
                                     >
                                         <div className="flex items-center gap-3 md:gap-7">
-                                            <div className="font-space-grotesk font-medium text-neutral-500 text-sm md:text-base">
+                                            <div className="font-space-grotesk font-medium text-[#939393] text-sm md:text-base">
                                                 {skill.num}
                                             </div>
                                             <h3 className="font-space-grotesk font-semibold tracking-tight text-xl md:text-2xl lg:text-[2.25rem] text-white leading-[1.08]">

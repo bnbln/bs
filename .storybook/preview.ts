@@ -9,6 +9,7 @@ const preview: Preview = {
         'div',
         {
           style: {
+            position: 'relative',
             ['--font-space-grotesk' as string]: '"Space Grotesk", sans-serif',
             ['--font-inter' as string]: '"Inter", sans-serif',
           },
@@ -17,6 +18,14 @@ const preview: Preview = {
       ),
   ],
   parameters: {
+    backgrounds: {
+      default: 'portfolio-light',
+      values: [
+        { name: 'portfolio-light', value: '#F5F5F7' },
+        { name: 'portfolio-dark', value: '#1C1D20' },
+        { name: 'portfolio-white', value: '#FFFFFF' },
+      ],
+    },
     nextjs: {
       image: {
         unoptimized: true,
