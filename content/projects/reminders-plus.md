@@ -56,7 +56,7 @@ That mechanic sounds small, but it changes how you use the app: you stop aiming 
 
 ```mockup type="iphone" image="assets/reminders-plus/IMG_3090.PNG" bgColor="#F5F5F7"
 ```
-```mockup type="iphone" image="assets/reminders-plus/Simulator Screenshot - iPhone 17 Pro - 2026-03-03 at 16.34.29.png" bgColor="#F5F5F7"
+```mockup type="iphone" image="assets/reminders-plus/streaks.png" bgColor="#F5F5F7"
 ```
 ```insight title="Motivation without gamification noise"
 The streak isn’t a badge explosion — it’s just a calm, persistent signal: “you’re building something.” The UI stays minimal so the feedback loop stays strong.
@@ -97,3 +97,5 @@ Green #22C55E
 The landing page serves as a visual extension of the app's minimalist philosophy. It was designed to communicate the value of privacy and simplicity immediately, using clean layouts and interactive previews to demonstrate the fluid navigation and the "no-account-required" onboarding flow. 
 [Visit the landing page](https://reminders-plus.vercel.app/) and
 [download in the App Store](https://apps.apple.com/ng/app/reminders/id6758573672).
+
+![assets/reminders-plus/-1.jpg|assets/reminders-plus/-2.jpg|assets/reminders-plus/-4.jpg]
