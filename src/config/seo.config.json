@@ -1,7 +1,7 @@
 {
   "site": {
     "siteUrl": "https://benediktschnupp.com",
-    "defaultTitle": "Benedikt Schnupp - Motion Designer & Developer",
+    "defaultTitle": "Benedikt Schnupp - Senior Designer & Developer",
     "titleTemplate": "%s | Benedikt Schnupp - Senior Designer & Developer",
     "defaultDescription": "Senior Designer & Developer with 7+ years of experience in branding, motion design and modern web development. Based in Berlin, Germany.",
     "siteName": "Benedikt Schnupp - Senior Designer & Developer",
@@ -22,7 +22,7 @@
     "android512": "/android-chrome-512x512.png"
   },
   "app": {
-    "name": "Benedikt Schnupp - Motion Designer & Developer",
+    "name": "Benedikt Schnupp - Senior Designer & Developer",
     "shortName": "Benedikt Schnupp",
     "themeColor": "#1C1D20",
     "backgroundColor": "#1C1D20",
@@ -43,7 +43,7 @@
     },
     "about": {
       "title": "About",
-      "description": "Learn more about Benedikt Schnupp - a creative Motion Designer & Front-End Developer based in Berlin.",
+      "description": "Learn more about Benedikt Schnupp - a creative Senior Designer & Developer based in Berlin.",
       "path": "/about/",
       "ogImage": "/assets/portrait.webp",
       "noindex": false,

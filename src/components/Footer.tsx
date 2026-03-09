@@ -90,7 +90,7 @@ const Footer = () => {
           <div>
              <h2 className="text-white font-space-grotesk font-bold text-2xl md:text-3xl mb-2">Benedikt Schnupp</h2>
              <p className="text-white/50 font-inter text-sm max-w-xs leading-relaxed">
-               Creative Motion Designer & Developer based in Berlin, crafting digital experiences.
+               Senior Designer & Developer based in Berlin, crafting digital experiences.
              </p>
           </div>
         </motion.div>

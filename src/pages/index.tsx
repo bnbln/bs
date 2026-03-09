@@ -33,7 +33,7 @@ export default function Home({ data }: HomeProps) {
         type="person"
         data={{
           name: 'Benedikt Schnupp',
-          jobTitle: 'Motion Designer & Developer',
+          jobTitle: 'Senior Designer & Developer',
           description: seoConfig.site.defaultDescription,
           url: siteUrl,
           image: defaultOgImage,

@@ -178,7 +178,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                            </h2>
                            <div className="prose prose-lg text-neutral-600 font-inter leading-relaxed">
                               <p>
-                                 I am a creative and tech-savvy Berlin-based Motion Designer & Developer with over 8 years of experience. My journey began in this vibrant city, where I studied <strong>Media Management & Communication Design</strong> and soaked in the diverse culture that continues to inspire my work today.
+                                 I am a creative and tech-savvy Berlin-based Senior Designer & Developer with over 8 years of experience. My journey began in this vibrant city, where I studied <strong>Media Management & Communication Design</strong> and soaked in the diverse culture that continues to inspire my work today.
                               </p>
                               <br />
                               <p>

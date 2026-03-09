@@ -69,7 +69,7 @@ src/
 ### Hero Section
 - Large animated title: "Benedikt Schnupp – Benedikt Schnupp"
 - Location badge with Berlin, Germany
-- Role indicators: "Motion Designer & Developer"
+- Role indicators: "Senior Designer & Developer"
 - Background image from Figma design
 
 ### Featured Projects
