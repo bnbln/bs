@@ -1,11 +1,10 @@
 ---
 id: 7
 title: Automating Production for Brand Assets
-subtitle: Key Visuals for Streaming Services
+subtitle: Key Visuals for VoD Streaming Services
 slug: automating-brand-assets
 category: [Automation, Brand Design, Systems]
 client: [Premium Gruppe]
-collaboration: [{Max Möckel, maxmoeckel.com}]
 published: '2025-09-10'
 image: assets/n8n-streaming-assets.jpg
 bgColor: '#EA4B71'

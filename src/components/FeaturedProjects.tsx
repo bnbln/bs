@@ -339,7 +339,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                         alt={project.title}
                         fill
                         sizes={imageSizes}
-                        className="object-cover object-center"
+                        className={isLandscapeCard ? 'object-cover object-right' : 'object-cover object-center'}
                         draggable={false}
                       />
                     </motion.div>

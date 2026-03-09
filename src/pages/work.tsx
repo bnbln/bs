@@ -16,10 +16,31 @@ interface WorkPageProps {
     projects: Project[]
 }
 
+type WorkFilter = 'All' | 'Design' | 'UX/UI' | 'Development'
+
+const FILTER_OPTIONS: WorkFilter[] = ['All', 'Design', 'UX/UI', 'Development']
+
+const normalizeTag = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '')
+
+const isUxUiTag = (value: string) => {
+    const normalized = normalizeTag(value)
+    return normalized.includes('uxui') || normalized.includes('uiux')
+}
+
+const isDevelopmentTag = (value: string) => {
+    const normalized = normalizeTag(value)
+    return normalized.includes('development') || normalized.includes('developement') || normalized === 'dev'
+}
+
+const isDesignTag = (value: string) => {
+    if (isUxUiTag(value)) return false
+    return normalizeTag(value).includes('design')
+}
+
 const WorkPage = ({ projects }: WorkPageProps) => {
     const seoConfig = getSeoConfig()
     const seo = buildPageSeo(seoConfig, 'work')
-    const [filter, setFilter] = useState<'All' | 'Design' | 'Development'>('All')
+    const [filter, setFilter] = useState<WorkFilter>('All')
     const [mounted, setMounted] = useState(false)
 
     React.useEffect(() => {
@@ -30,16 +51,30 @@ const WorkPage = ({ projects }: WorkPageProps) => {
     const getCategoryTags = (project: Project) => {
         if (project.type) {
             const types = Array.isArray(project.type) ? project.type : [project.type]
+            const isUxUi = types.some(isUxUiTag)
             return {
-                isDev: types.includes('Development'),
-                isDesign: types.includes('Design')
+                isDev: types.some(isDevelopmentTag),
+                isDesign: types.some(isDesignTag),
+                isUxUi
             }
         }
         const catVal = project.category
-        const cats = (Array.isArray(catVal) ? catVal.join(' ') : (catVal || '')).toLowerCase()
-        const isDev = cats.includes('development') || cats.includes('code') || cats.includes('tech')
-        const isDesign = cats.includes('design') || cats.includes('ux') || cats.includes('branding') || cats.includes('promotion') || cats.includes('art') || cats.includes('motion')
-        return { isDev, isDesign }
+        const rawCategoryTags = Array.isArray(catVal) ? catVal : [catVal || '']
+        const categoryTags = rawCategoryTags
+            .flatMap(value => String(value).split(','))
+            .map(value => value.trim())
+            .filter(Boolean)
+
+        const isUxUi = categoryTags.some(isUxUiTag)
+        const isDev = categoryTags.some(tag => isDevelopmentTag(tag) || normalizeTag(tag).includes('code') || normalizeTag(tag).includes('tech'))
+        const isDesign = categoryTags.some(tag =>
+            isDesignTag(tag) ||
+            normalizeTag(tag).includes('branding') ||
+            normalizeTag(tag).includes('promotion') ||
+            normalizeTag(tag).includes('art') ||
+            normalizeTag(tag).includes('motion')
+        )
+        return { isDev, isDesign, isUxUi }
     }
 
     // Helper to determine aspect ratio for the grid
@@ -50,8 +85,9 @@ const WorkPage = ({ projects }: WorkPageProps) => {
 
     const filteredProjects = projects.filter(project => {
         if (filter === 'All') return true
-        const { isDev, isDesign } = getCategoryTags(project)
+        const { isDev, isDesign, isUxUi } = getCategoryTags(project)
         if (filter === 'Design') return isDesign
+        if (filter === 'UX/UI') return isUxUi
         if (filter === 'Development') return isDev
         return false
     })
@@ -86,10 +122,10 @@ const WorkPage = ({ projects }: WorkPageProps) => {
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             >
-                                {['All', 'Design', 'Development'].map((f) => (
+                                {FILTER_OPTIONS.map((f) => (
                                     <button
                                         key={f}
-                                        onClick={() => setFilter(f as any)}
+                                        onClick={() => setFilter(f)}
                                         className={`relative px-6 py-2 rounded-full transition-colors duration-300 font-inter text-sm md:text-base z-10 ${filter === f
                                             ? 'text-white font-medium'
                                             : 'text-neutral-500 hover:text-black'

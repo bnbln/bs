@@ -10,7 +10,7 @@ excerpts: >-
   For the 2024 EU elections, I created a motion design trailer that brings
   Europe's identity to life. With rotating stars, animated graphics and bold
   colors, the project was even nominated for a 2024 Eyes & Ears Award.
-published: '2024-05-01'
+published: '2024-04-29'
 description: Trailer for EU election campaign
 bgColor: '#E6A105'
 image: assets/EU_wahl.webp

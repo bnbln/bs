@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo, useLayoutEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import { Reorder, motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, Type, LayoutTemplate, Palette, Video, Code, List as ListIcon, Link as LinkIcon, Play, Monitor, Smartphone, Tablet, BarChart } from 'lucide-react';
+import { Reorder, motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { GripVertical, Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, Type, LayoutTemplate, Palette, Video, Code, List as ListIcon, Link as LinkIcon, Play, Monitor, Smartphone, Tablet, BarChart, RotateCw, Expand, FileText, ImagePlus, Upload } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Block, parseMarkdownToBlocks, serializeBlocksToMarkdown, generateId, BlockType, parseFenceAttributes, serializeFenceAttributes } from '../../../lib/editor-blocks';
 import { resolveAssetPath } from '../../../lib/assets';
 import Article from '../../../components/Article';
@@ -19,22 +20,42 @@ interface AutoResizeTextareaProps {
     onBlur?: () => void;
     onFocus?: () => void;
     autoFocus?: boolean;
+    maxHeight?: number;
 }
 
-const AutoResizeTextarea = ({ value, onChange, placeholder, className, rows = 1, onBlur, onFocus, autoFocus }: AutoResizeTextareaProps) => {
+const AutoResizeTextarea = ({
+    value,
+    onChange,
+    placeholder,
+    className,
+    rows = 1,
+    onBlur,
+    onFocus,
+    autoFocus,
+    maxHeight = 640,
+}: AutoResizeTextareaProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const resize = useCallback(() => {
+        const element = textareaRef.current;
+        if (!element) return;
+
+        element.style.height = '0px';
+        const nextHeight = Math.min(element.scrollHeight, maxHeight);
+        const minimumHeight = rows * 24;
+
+        element.style.height = `${Math.max(nextHeight, minimumHeight)}px`;
+        element.style.overflowY = element.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    }, [maxHeight, rows]);
+
     useLayoutEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-        }
-    }, [value]);
+        resize();
+    }, [value, resize]);
 
     return (
         <textarea
             ref={textareaRef}
-            className={`resize-none overflow-hidden ${className || ''}`}
+            className={`resize-none ${className || ''}`}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onBlur={onBlur}
@@ -42,8 +63,90 @@ const AutoResizeTextarea = ({ value, onChange, placeholder, className, rows = 1,
             autoFocus={autoFocus}
             placeholder={placeholder}
             rows={rows}
+            spellCheck
         />
     );
+};
+
+interface AssetLibraryEntry {
+    path: string;
+    name: string;
+    updatedAt: string;
+    sizeBytes: number;
+}
+
+type AssetFieldKind = 'image' | 'video';
+
+interface CollaborationPerson {
+    name: string;
+    url: string;
+}
+
+const PROJECT_TYPE_OPTIONS = ['Design', 'UX/UI', 'Developement'] as const;
+
+const toPreviewSource = (assetPath: string): string => resolveAssetPath(assetPath || '');
+
+const normalizeUrl = (value: string): string => {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+};
+
+const parseCollaborationPeople = (input: any): CollaborationPerson[] => {
+    if (!Array.isArray(input)) return [];
+
+    return input
+        .map((entry): CollaborationPerson | null => {
+            if (typeof entry === 'string') {
+                const name = entry.trim();
+                return name ? { name, url: '' } : null;
+            }
+
+            if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+                return null;
+            }
+
+            const entries = Object.entries(entry as Record<string, unknown>)
+                .map(([key, value]) => [String(key).trim(), typeof value === 'string' ? value.trim() : ''] as const)
+                .filter(([key]) => Boolean(key));
+
+            if (entries.length === 0) return null;
+
+            const [firstKey, firstValue] = entries[0];
+            let name = firstKey;
+            let url = firstValue || '';
+
+            if (!url && entries.length > 1) {
+                const [secondKey, secondValue] = entries[1];
+                if (secondValue) {
+                    url = secondValue;
+                } else if ((firstKey.includes('.') || /^https?:\/\//i.test(firstKey)) && !secondKey.includes('.')) {
+                    name = secondKey;
+                    url = firstKey;
+                } else if (secondKey.includes('.') || /^https?:\/\//i.test(secondKey)) {
+                    url = secondKey;
+                }
+            }
+
+            return {
+                name,
+                url: normalizeUrl(url),
+            };
+        })
+        .filter((person): person is CollaborationPerson => Boolean(person && person.name));
+};
+
+const serializeCollaborationPeople = (people: CollaborationPerson[]): Array<Record<string, string | null>> => {
+    return people
+        .map((person) => ({
+            name: (person.name || '').trim(),
+            url: (person.url || '').trim(),
+        }))
+        .filter((person) => person.name.length > 0)
+        .map((person) => ({
+            [person.name]: person.url ? normalizeUrl(person.url) : null,
+        }));
 };
 
 const parseMediaMarkdownWithAttrs = (raw: string): { base: string; attrs: Record<string, string> } => {
@@ -135,8 +238,20 @@ function HeaderBlockEditor({ block, updateBlock, accentColor }: { block: Block, 
     );
 }
 
-function TextBlockEditor({ block, updateBlock }: { block: Block, updateBlock: (id: string, updates: Partial<Block>) => void }) {
+function ParagraphBlockEditor({
+    block,
+    updateBlock,
+    variant = 'normal',
+    onVariantChange,
+}: {
+    block: Block,
+    updateBlock: (id: string, updates: Partial<Block>) => void,
+    variant?: 'normal' | 'small',
+    onVariantChange?: (nextVariant: 'normal' | 'small') => void,
+}) {
     const [focused, setFocused] = useState(block.content === '');
+    const isSmall = variant === 'small';
+    const variantValue: 'normal' | 'small' = isSmall ? 'small' : 'normal';
 
     const parseMD = (text: string) => {
         if (!text) return '';
@@ -149,21 +264,41 @@ function TextBlockEditor({ block, updateBlock }: { block: Block, updateBlock: (i
         return html;
     };
 
+    const variantSelect = (
+        <select
+            value={variantValue}
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+            onChange={(event) => onVariantChange?.(event.target.value === 'small' ? 'small' : 'normal')}
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600 transition-colors focus:border-black focus:ring-black"
+            aria-label="Paragraph size"
+        >
+            <option value="normal">Large</option>
+            <option value="small">Small</option>
+        </select>
+    );
+
     if (focused) {
         return (
-            <div className="group/text bg-white shadow-sm border rounded-xl p-3 -mx-3 -my-3 z-10 transition-all">
+            <div className="group/text rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.55)] -mx-2 transition-all">
+                <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Paragraph</span>
+                    {variantSelect}
+                </div>
                 <AutoResizeTextarea
-                    className="w-full bg-transparent border-none focus:ring-0 font-sans text-lg md:text-xl text-neutral-800 placeholder-neutral-300 p-0"
+                    className={`w-full border-none bg-transparent p-0 font-sans text-neutral-800 placeholder-neutral-300 focus:ring-0 ${isSmall ? 'text-[15px] md:text-[18px] leading-[1.45]' : 'text-lg md:text-xl leading-[1.6]'}`}
                     value={block.content}
                     onChange={(val) => updateBlock(block.id, { content: val })}
                     onBlur={() => setFocused(false)}
                     autoFocus
-                    placeholder="Write something... Use **bold**, *italic*, or [Links](url)"
+                    placeholder={isSmall ? 'Small paragraph...' : 'Write something... Use **bold**, *italic*, or [Links](url)'}
+                    maxHeight={560}
                 />
-                <div className="text-xs text-neutral-400 flex gap-4 mt-3 pt-3 border-t">
+                <div className="mt-3 flex gap-4 border-t border-slate-100 pt-3 text-xs text-neutral-400">
                     <span>**bold**</span>
                     <span>*italic*</span>
                     <span>[link label](url)</span>
+                    {isSmall && <span className="text-indigo-500">small block</span>}
                 </div>
             </div>
         );
@@ -171,10 +306,17 @@ function TextBlockEditor({ block, updateBlock }: { block: Block, updateBlock: (i
 
     return (
         <div
-            className="w-full font-sans text-lg md:text-xl text-neutral-800 p-3 hover:bg-neutral-50 rounded-lg cursor-text transition-colors border border-transparent min-h-[3rem]"
+            className={`w-full cursor-text rounded-xl border border-transparent p-3 font-sans text-neutral-800 transition-colors hover:bg-slate-50 ${isSmall ? 'text-[15px] md:text-[18px] leading-[1.45]' : 'text-lg md:text-xl leading-[1.6]'} min-h-[3rem]`}
             onClick={() => setFocused(true)}
-            dangerouslySetInnerHTML={{ __html: parseMD(block.content) || '<span class="text-neutral-400">Write something...</span>' }}
-        />
+        >
+            <div className="mb-2 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{isSmall ? 'Small' : 'Large'} Paragraph</span>
+                {variantSelect}
+            </div>
+            <div
+                dangerouslySetInnerHTML={{ __html: parseMD(block.content) || '<span class="text-neutral-400">Write something...</span>' }}
+            />
+        </div>
     );
 }
 
@@ -309,78 +451,342 @@ function ProjectRefEditor({ block, updateBlock, allProjects }: { block: Block, u
     );
 }
 
-// Inline component for the Add Menu
-function AddMenu({ onAdd }: { onAdd: (type: BlockType) => void }) {
-    const [open, setOpen] = useState(false);
+function AssetPreviewTile({
+    path,
+    title,
+    kind = 'image',
+}: {
+    path: string;
+    title?: string;
+    kind?: AssetFieldKind;
+}) {
+    const resolved = toPreviewSource(path);
 
     return (
-        <div className="relative flex items-center justify-center group/add z-40">
-            <div className="h-[2px] bg-neutral-200 w-32 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 -z-10 group-hover/add:w-48 transition-all" />
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
+            {kind === 'image' ? (
+                <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={resolved} alt={title || path} className="h-full w-full object-cover" />
+                </div>
+            ) : (
+                <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-500">
+                    <Video size={16} />
+                </div>
+            )}
+
+            <div className="min-w-0">
+                <p className="truncate text-xs font-semibold text-slate-700">{title || 'Selected Asset'}</p>
+                <p className="truncate text-xs text-slate-500">{path}</p>
+            </div>
+        </div>
+    );
+}
+
+function AssetSelectionField({
+    label,
+    value,
+    onChange,
+    placeholder,
+    kind = 'image',
+    recentAssets,
+    onUploadImage,
+    helperText,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    kind?: AssetFieldKind;
+    recentAssets: AssetLibraryEntry[];
+    onUploadImage?: (file: File) => Promise<string | null>;
+    helperText?: string;
+}) {
+    const [uploading, setUploading] = useState(false);
+    const [showRecent, setShowRecent] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const canUpload = kind === 'image' && typeof onUploadImage === 'function';
+    const visibleRecentAssets = recentAssets.slice(0, 24);
+
+    const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file || !canUpload || !onUploadImage) return;
+
+        try {
+            setUploading(true);
+            const uploadedPath = await onUploadImage(file);
+            if (uploadedPath) {
+                onChange(uploadedPath);
+            }
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 block">{label}</label>
+            <input
+                className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+            />
+
+            {value && <AssetPreviewTile path={value} title="Current Asset" kind={kind} />}
+
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                <button
+                    type="button"
+                    onClick={() => setShowRecent((current) => !current)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                >
+                    <FileText size={14} />
+                    {showRecent ? 'Recent Files ausblenden' : 'Recent Files anzeigen'}
+                </button>
+
+                {canUpload ? (
+                    <>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleUpload}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {uploading ? <Upload size={14} className="animate-pulse" /> : <ImagePlus size={14} />}
+                            {uploading ? 'Upload...' : 'Bild hochladen'}
+                        </button>
+                    </>
+                ) : (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                        Keine Upload-Option fuer diesen Feldtyp
+                    </div>
+                )}
+            </div>
+
+            {showRecent && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
+                    {visibleRecentAssets.length === 0 ? (
+                        <p className="px-2 py-3 text-xs text-slate-500">Keine recent files gefunden.</p>
+                    ) : (
+                        <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 md:grid-cols-3">
+                            {visibleRecentAssets.map((asset) => {
+                                const isSelected = value === asset.path;
+                                return (
+                                    <button
+                                        key={asset.path}
+                                        type="button"
+                                        onClick={() => {
+                                            onChange(asset.path);
+                                            setShowRecent(false);
+                                        }}
+                                        className={`overflow-hidden rounded-lg border text-left transition-colors ${isSelected ? 'border-indigo-400 ring-1 ring-indigo-300' : 'border-slate-200 hover:border-indigo-200'} bg-white`}
+                                        title={asset.path}
+                                    >
+                                        {kind === 'image' ? (
+                                            <div className="h-24 w-full bg-slate-200">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={toPreviewSource(asset.path)} alt={asset.name} className="h-full w-full object-cover" />
+                                            </div>
+                                        ) : (
+                                            <div className="flex h-24 w-full items-center justify-center bg-slate-100 text-slate-500">
+                                                <Video size={18} />
+                                            </div>
+                                        )}
+                                        <div className="space-y-0.5 px-2 py-1.5">
+                                            <p className="truncate text-[11px] font-semibold text-slate-700">{asset.name}</p>
+                                            <p className="truncate text-[10px] text-slate-500">{asset.path}</p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {helperText && <p className="text-xs text-slate-500">{helperText}</p>}
+        </div>
+    );
+}
+
+// Inline component for the Add Menu
+function AddMenu({
+    onAdd,
+    variant = 'inline',
+}: {
+    onAdd: (type: BlockType) => void,
+    variant?: 'inline' | 'footer'
+}) {
+    const [open, setOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({
+        top: 0,
+        left: 0,
+        width: 620,
+        maxHeight: 440,
+        opensUpward: false,
+    });
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const isInline = variant === 'inline';
+    const buttonSizeClass = isInline ? 'w-8 h-8' : 'w-10 h-10';
+    const plusSize = isInline ? 14 : 16;
+
+    const menuItems: Array<{ type: BlockType; label: string; icon: React.ReactNode }> = [
+        { type: 'text', label: 'Paragraph', icon: <Type size={16} className="text-slate-500" /> },
+        { type: 'header', label: 'Header', icon: <span className="text-xs font-bold text-slate-500">H1</span> },
+        { type: 'list', label: 'List', icon: <ListIcon size={16} className="text-slate-500" /> },
+        { type: 'mockup', label: 'Mockup', icon: <ImageIcon size={16} className="text-slate-500" /> },
+        { type: 'callout', label: 'Callout', icon: <LayoutTemplate size={16} className="text-slate-500" /> },
+        { type: 'video', label: 'Inline Video', icon: <Play size={16} className="text-slate-500" /> },
+        { type: 'gallery', label: 'Gallery', icon: <ImageIcon size={16} className="text-slate-500" /> },
+        { type: 'palette', label: 'Palette', icon: <Palette size={16} className="text-slate-500" /> },
+        { type: 'stats', label: 'Stats', icon: <BarChart size={16} className="text-slate-500" /> },
+        { type: 'font', label: 'Font', icon: <Type size={16} className="text-slate-500" /> },
+        { type: 'code', label: 'Code', icon: <Code size={16} className="text-slate-500" /> },
+        { type: 'project-ref', label: 'Project Ref', icon: <LinkIcon size={16} className="text-slate-500" /> },
+        { type: 'animation-sequence', label: 'Anim Seq', icon: <Video size={16} className="text-slate-500" /> },
+        { type: 'three', label: '3D Scene', icon: <Monitor size={16} className="text-slate-500" /> },
+    ];
+
+    const updateMenuPosition = useCallback(() => {
+        if (!triggerRef.current) return;
+        const rect = triggerRef.current.getBoundingClientRect();
+
+        const viewportPadding = 12;
+        const gap = 10;
+        const width = Math.max(300, Math.min(680, window.innerWidth - viewportPadding * 2));
+        const availableBelow = window.innerHeight - rect.bottom - viewportPadding;
+        const availableAbove = rect.top - viewportPadding;
+        const maxHeight = Math.max(260, Math.min(560, Math.floor(window.innerHeight * 0.72)));
+        const opensUpward = availableBelow < 300 && availableAbove > availableBelow;
+
+        const unclampedLeft = rect.left + rect.width / 2;
+        const halfWidth = width / 2;
+        const minCenter = viewportPadding + halfWidth;
+        const maxCenter = window.innerWidth - viewportPadding - halfWidth;
+        const left = Math.max(minCenter, Math.min(maxCenter, unclampedLeft));
+
+        const top = opensUpward
+            ? Math.max(viewportPadding, rect.top - maxHeight - gap)
+            : Math.min(window.innerHeight - viewportPadding - maxHeight, rect.bottom + gap);
+
+        setMenuPosition({
+            top,
+            left,
+            width,
+            maxHeight,
+            opensUpward,
+        });
+    }, []);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!open) return;
+
+        updateMenuPosition();
+        const onReposition = () => updateMenuPosition();
+        window.addEventListener('resize', onReposition);
+        window.addEventListener('scroll', onReposition, true);
+        return () => {
+            window.removeEventListener('resize', onReposition);
+            window.removeEventListener('scroll', onReposition, true);
+        };
+    }, [open, updateMenuPosition]);
+
+    useEffect(() => {
+        if (!open) return;
+
+        const handlePointerDown = (event: PointerEvent) => {
+            const target = event.target as Node;
+            if (menuRef.current?.contains(target)) return;
+            if (triggerRef.current?.contains(target)) return;
+            setOpen(false);
+        };
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setOpen(false);
+        };
+
+        document.addEventListener('pointerdown', handlePointerDown);
+        document.addEventListener('keydown', handleEscape);
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [open]);
+
+    const handleToggle = () => {
+        if (!open) updateMenuPosition();
+        setOpen((current) => !current);
+    };
+
+    const menuContent = (
+        <motion.div
+            ref={menuRef}
+            initial={{ opacity: 0, y: menuPosition.opensUpward ? 8 : -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: menuPosition.opensUpward ? 8 : -8, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="fixed z-[2100] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200 bg-white font-sans shadow-[0_28px_48px_-28px_rgba(15,23,42,0.8)]"
+            style={{ top: menuPosition.top, left: menuPosition.left, width: menuPosition.width, maxHeight: menuPosition.maxHeight }}
+        >
+            <div className="border-b border-slate-100 px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Add Block</p>
+            </div>
+
+            <div className="overflow-y-auto p-2">
+                <div className="grid grid-cols-3 gap-2">
+                    {menuItems.map((item) => (
+                        <button
+                            key={item.type}
+                            onClick={() => {
+                                onAdd(item.type);
+                                setOpen(false);
+                            }}
+                            className="flex min-h-[78px] flex-col items-start justify-between rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50"
+                        >
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white shadow-sm">
+                                {item.icon}
+                            </span>
+                            <span className="text-xs font-semibold leading-tight text-slate-700">{item.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </motion.div>
+    );
+
+    return (
+        <div className={`relative flex items-center justify-center group/add ${open ? 'z-[120]' : 'z-20'}`}>
+            <div className={`absolute left-1/2 top-1/2 -z-10 h-[2px] -translate-x-1/2 -translate-y-1/2 bg-slate-300 transition-all ${isInline ? 'w-24 group-hover/add:w-36' : 'w-40 group-hover/add:w-52'}`} />
             <button
-                onClick={() => setOpen(!open)}
-                className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-md"
+                ref={triggerRef}
+                onClick={handleToggle}
+                className={`${buttonSizeClass} flex items-center justify-center rounded-full bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-[0_14px_24px_-16px_rgba(15,23,42,0.85)] transition-all hover:scale-105 active:scale-95`}
+                aria-label="Open add block menu"
             >
-                <Plus size={16} />
+                <Plus size={plusSize} />
             </button>
 
-            <AnimatePresence>
-                {open && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute z-50 left-1/2 -ml-[140px] top-full mt-2 bg-white border border-neutral-200 rounded-xl shadow-2xl w-[280px] p-2 flex flex-col gap-1 font-sans max-h-[65vh] overflow-y-auto"
-                    >
-                        <button onClick={() => { onAdd('text'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Type size={16} className="text-neutral-400" /> Text Paragraph
-                        </button>
-                        <button onClick={() => { onAdd('small-text'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Type size={16} className="text-neutral-400" /> Small Paragraph
-                        </button>
-                        <button onClick={() => { onAdd('header'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <span className="text-neutral-400 font-bold ml-1 text-xs">H1</span> Header
-                        </button>
-                        <button onClick={() => { onAdd('list'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <ListIcon size={16} className="text-neutral-400" /> Bullet List
-                        </button>
-                        <button onClick={() => { onAdd('mockup'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <ImageIcon size={16} className="text-neutral-400" /> Mockup (iPhone/Mac)
-                        </button>
-                        <button onClick={() => { onAdd('callout'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <LayoutTemplate size={16} className="text-neutral-400" /> Callout (Insight)
-                        </button>
-                        <button onClick={() => { onAdd('video'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Play size={16} className="text-neutral-400" /> Inline Video
-                        </button>
-                        <button onClick={() => { onAdd('gallery'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <ImageIcon size={16} className="text-neutral-400" /> Image Gallery
-                        </button>
-                        <button onClick={() => { onAdd('palette'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Palette size={16} className="text-neutral-400" /> Color Palette
-                        </button>
-                        <button onClick={() => { onAdd('stats'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <BarChart size={16} className="text-neutral-400" /> Stats List
-                        </button>
-                        <button onClick={() => { onAdd('font'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Type size={16} className="text-neutral-400" /> Font Specimen
-                        </button>
-                        <button onClick={() => { onAdd('code'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Code size={16} className="text-neutral-400" /> Code Block
-                        </button>
-                        <button onClick={() => { onAdd('project-ref'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <LinkIcon size={16} className="text-neutral-400" /> Project Reference
-                        </button>
-                        <button onClick={() => { onAdd('animation-sequence'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Video size={16} className="text-neutral-400" /> Video Sequence
-                        </button>
-                        <button onClick={() => { onAdd('three'); setOpen(false); }} className="text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded-lg flex items-center gap-3 transition-colors text-neutral-700">
-                            <Monitor size={16} className="text-neutral-400" /> 3D Scene (three)
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            {open && <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />}
+            {mounted && createPortal(
+                <AnimatePresence>
+                    {open && menuContent}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 }
@@ -468,7 +874,19 @@ function FontBlockEditor({ block, updateBlock }: { block: Block, updateBlock: (i
 
 
 // --- Main Editor Component ---
-function FrontmatterEditor({ block, updateBlock }: { block: Block; updateBlock: (id: string, updates: Partial<Block>) => void }) {
+function FrontmatterEditor({
+    block,
+    updateBlock,
+    recentImageAssets,
+    recentVideoAssets,
+    onUploadImage,
+}: {
+    block: Block;
+    updateBlock: (id: string, updates: Partial<Block>) => void;
+    recentImageAssets: AssetLibraryEntry[];
+    recentVideoAssets: AssetLibraryEntry[];
+    onUploadImage: (file: File) => Promise<string | null>;
+}) {
     const [data, setData] = useState<Record<string, any> | null>(null);
     const [rawMode, setRawMode] = useState(false);
 
@@ -552,118 +970,338 @@ function FrontmatterEditor({ block, updateBlock }: { block: Block; updateBlock: 
 
     const toCommaStr = (arr: any) => Array.isArray(arr) ? arr.join(', ') : (typeof arr === 'string' ? arr : '');
     const fromCommaStr = (str: string) => str.split(',').map(s => s.trim()).filter(Boolean);
+    const collaborationPeople = parseCollaborationPeople(collaboration);
+    const typeValues = Array.isArray(type) ? type.map((item: unknown) => String(item)) : (typeof type === 'string' ? [type] : []);
+    const selectedType = typeValues[0] || '';
+    const typeOptions = selectedType && !PROJECT_TYPE_OPTIONS.includes(selectedType as typeof PROJECT_TYPE_OPTIONS[number])
+        ? [selectedType, ...PROJECT_TYPE_OPTIONS]
+        : [...PROJECT_TYPE_OPTIONS];
+    const animationData: Record<string, any> = animationSequence && typeof animationSequence === 'object' ? animationSequence : {};
+
+    const updateCollaborationPerson = (index: number, key: 'name' | 'url', value: string) => {
+        const nextPeople = [...collaborationPeople];
+        const base = nextPeople[index] || { name: '', url: '' };
+        nextPeople[index] = { ...base, [key]: value };
+        handleChange('collaboration', serializeCollaborationPeople(nextPeople));
+    };
+
+    const addCollaborationPerson = () => {
+        handleChange('collaboration', serializeCollaborationPeople([...collaborationPeople, { name: 'New Person', url: '' }]));
+    };
+
+    const removeCollaborationPerson = (index: number) => {
+        handleChange(
+            'collaboration',
+            serializeCollaborationPeople(collaborationPeople.filter((_, candidateIndex) => candidateIndex !== index))
+        );
+    };
 
     return (
         <div className="flex flex-col gap-6 text-neutral-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Project Title</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm font-semibold focus:bg-white focus:ring-black focus:border-black transition-colors" value={title} onChange={e => handleChange('title', e.target.value)} />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Project ID</label>
-                    <input type="number" className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={id} onChange={e => handleChange('id', parseInt(e.target.value) || 0)} />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Subtitle</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={subtitle} onChange={e => handleChange('subtitle', e.target.value)} />
-                </div>
-                <div>
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">URL Slug</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={slug} onChange={e => handleChange('slug', e.target.value)} />
-                </div>
-                <div>
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Publish Date (YYYY-MM-DD)</label>
-                    <input type="text" className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={published} onChange={e => handleChange('published', e.target.value)} />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Excerpt (Hero Parallax Intro)</label>
-                    <AutoResizeTextarea className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={excerpts} onChange={val => handleChange('excerpts', val)} rows={3} />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">SEO Description</label>
-                    <AutoResizeTextarea className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={description} onChange={val => handleChange('description', val)} rows={2} />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Cover / Hero Image Path</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={image} onChange={e => handleChange('image', e.target.value)} placeholder="assets/..." />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Cover Video Loop (Optional override)</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={video} onChange={e => handleChange('video', e.target.value)} placeholder="assets/..." />
-                </div>
-                <div>
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Project Brand Color</label>
-                    <div className="flex gap-2 items-center bg-neutral-50 border rounded-lg pr-2.5 overflow-hidden focus-within:ring-1 focus-within:ring-black">
-                        <input type="color" className="w-10 h-10 border-r border-transparent p-0 bg-transparent object-cover cursor-pointer" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} />
-                        <input className="flex-1 bg-transparent border-none p-2.5 text-sm font-mono focus:ring-0" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} placeholder="#007EFF" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <section className="md:col-span-2 rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/70 p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
+                    <div className="mb-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Identity</p>
+                        <h3 className="mt-1 text-lg font-bold text-slate-900">Project Core</h3>
                     </div>
-                </div>
-                <div>
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Collaboration JSON</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm font-mono focus:bg-white focus:ring-black focus:border-black transition-colors" value={JSON.stringify(collaboration)} onChange={e => {
-                        try { handleChange('collaboration', JSON.parse(e.target.value)); } catch (err) { /* ignore invalid json while typing */ }
-                    }} placeholder='[{"Name": null}]' />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Awards List (Comma Seperated)</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={toCommaStr(awards)} onChange={e => handleChange('awards', fromCommaStr(e.target.value))} />
-                </div>
-                <div>
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Category (Comma Seperated)</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={toCommaStr(category)} onChange={e => handleChange('category', fromCommaStr(e.target.value))} />
-                </div>
-                <div>
-                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5 block">Type Tags (Comma Seperated)</label>
-                    <input className="w-full bg-neutral-50 border rounded-lg p-2.5 text-sm focus:bg-white focus:ring-black focus:border-black transition-colors" value={toCommaStr(type)} onChange={e => handleChange('type', fromCommaStr(e.target.value))} />
-                </div>
-
-                <div className="col-span-1 md:col-span-2 flex flex-col gap-2 mt-4">
-                    <div className="flex items-center gap-3 bg-neutral-50 p-3 rounded-lg border">
-                        <input type="checkbox" id="featured" className="w-4 h-4 rounded border-neutral-300 focus:ring-black text-black" checked={featured} onChange={e => handleChange('featured', e.target.checked)} />
-                        <label htmlFor="featured" className="text-sm font-bold text-neutral-700 select-none cursor-pointer">Featured Project (Large Grid Display)</label>
-                    </div>
-                    <div className="flex items-center gap-3 bg-neutral-50 p-3 rounded-lg border">
-                        <input type="checkbox" id="hasAnimation" className="w-4 h-4 rounded border-neutral-300 focus:ring-black text-black" checked={hasAnimation} onChange={e => handleChange('hasAnimation', e.target.checked)} />
-                        <label htmlFor="hasAnimation" className="text-sm font-bold text-neutral-700 select-none cursor-pointer">Use Hero Scroll Animation Sequence</label>
-                    </div>
-                </div>
-
-                {hasAnimation && (
-                    <div className="col-span-1 md:col-span-2 bg-neutral-50 border border-neutral-200 p-5 rounded-2xl flex flex-col gap-4 mt-2 shadow-sm">
-                        <div className="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-1 flex items-center gap-2"><Video size={16} /> Animation Paths (Video Scrubbing)</div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
-                            <div className="col-span-1 md:col-span-2">
-                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Desktop Video Path (.mp4)</label>
-                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.videoPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, videoPath: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Safari Native Video Path</label>
-                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.safariVideoPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, safariVideoPath: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Mobile Video Path</label>
-                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.mobileVideoPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, mobileVideoPath: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Total Frame Count (Critical for scrubbing)</label>
-                                <input type="number" className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.frameCount || 0} onChange={e => handleChange('animationSequence', { ...animationSequence, frameCount: parseInt(e.target.value) })} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-neutral-500 mb-1.5 block">Legacy Spritesheet Path (Optional)</label>
-                                <input className="w-full bg-white border rounded-lg p-2.5 text-sm focus:ring-black focus:border-black transition-colors" value={animationSequence.spritesheetPath || ''} onChange={e => handleChange('animationSequence', { ...animationSequence, spritesheetPath: e.target.value })} />
-                            </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="md:col-span-2">
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project Title</label>
+                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm font-semibold transition-colors focus:border-black focus:bg-white focus:ring-black" value={title} onChange={e => handleChange('title', e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project ID</label>
+                            <input type="number" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={id} onChange={e => handleChange('id', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">URL Slug</label>
+                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={slug} onChange={e => handleChange('slug', e.target.value)} />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Subtitle</label>
+                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={subtitle} onChange={e => handleChange('subtitle', e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Publish Date (YYYY-MM-DD)</label>
+                            <input type="text" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={published} onChange={e => handleChange('published', e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project Type</label>
+                            <select
+                                className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black"
+                                value={selectedType}
+                                onChange={(event) => handleChange('type', event.target.value ? [event.target.value] : [])}
+                            >
+                                <option value="">Not set</option>
+                                {typeOptions.map((entry) => (
+                                    <option key={entry} value={entry}>
+                                        {entry}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Excerpt (Hero Intro)</label>
+                            <AutoResizeTextarea className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={excerpts} onChange={val => handleChange('excerpts', val)} rows={3} />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">SEO Description</label>
+                            <AutoResizeTextarea className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={description} onChange={val => handleChange('description', val)} rows={2} />
                         </div>
                     </div>
+                </section>
+
+                <section className="md:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
+                    <div className="mb-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Media</p>
+                        <h3 className="mt-1 text-lg font-bold text-slate-900">Hero Assets</h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="md:col-span-2">
+                            <AssetSelectionField
+                                label="Cover / Hero Image"
+                                value={image}
+                                onChange={(next) => handleChange('image', next)}
+                                placeholder="assets/..."
+                                kind="image"
+                                recentAssets={recentImageAssets}
+                                onUploadImage={onUploadImage}
+                                helperText="Du kannst aus Recent Files waehlen oder direkt ein Bild als weboptimiertes .webp hochladen."
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <AssetSelectionField
+                                label="Cover Video Loop (Optional override)"
+                                value={video}
+                                onChange={(next) => handleChange('video', next)}
+                                placeholder="assets/..."
+                                kind="video"
+                                recentAssets={recentVideoAssets}
+                                helperText="Video-Dateien kommen aus den recent assets unter public/assets."
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project Brand Color</label>
+                            <div className="flex items-center gap-2 overflow-hidden rounded-lg border bg-neutral-50 pr-2.5 focus-within:ring-1 focus-within:ring-black">
+                                <input type="color" className="h-10 w-10 cursor-pointer border-r border-transparent bg-transparent p-0 object-cover" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} />
+                                <input className="flex-1 border-none bg-transparent p-2.5 text-sm font-mono focus:ring-0" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} placeholder="#007EFF" />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2 md:justify-end">
+                            <label className="flex items-center gap-3 rounded-lg border bg-neutral-50 p-3">
+                                <input type="checkbox" id="featured" className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black" checked={featured} onChange={e => handleChange('featured', e.target.checked)} />
+                                <span className="text-sm font-semibold text-neutral-700">Featured Project</span>
+                            </label>
+                            <label className="flex items-center gap-3 rounded-lg border bg-neutral-50 p-3">
+                                <input type="checkbox" id="hasAnimation" className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black" checked={hasAnimation} onChange={e => handleChange('hasAnimation', e.target.checked)} />
+                                <span className="text-sm font-semibold text-neutral-700">Hero Animation Sequence</span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
+                    <div className="mb-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Taxonomy</p>
+                        <h3 className="mt-1 text-lg font-bold text-slate-900">Category & Awards</h3>
+                    </div>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Category (Comma separated)</label>
+                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={toCommaStr(category)} onChange={e => handleChange('category', fromCommaStr(e.target.value))} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Awards (Comma separated)</label>
+                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={toCommaStr(awards)} onChange={e => handleChange('awards', fromCommaStr(e.target.value))} />
+                        </div>
+                    </div>
+                </section>
+
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
+                    <div className="mb-4 flex items-center justify-between gap-2">
+                        <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Collaboration</p>
+                            <h3 className="mt-1 text-lg font-bold text-slate-900">People & Links</h3>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={addCollaborationPerson}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                            <Plus size={13} />
+                            Add
+                        </button>
+                    </div>
+                    {collaborationPeople.length === 0 ? (
+                        <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-500">
+                            Noch keine Personen hinterlegt. Fuege ueber <strong>+</strong> einen Namen und optional eine URL hinzu.
+                        </p>
+                    ) : (
+                        <div className="space-y-2">
+                            {collaborationPeople.map((person, index) => (
+                                <div key={`${person.name}-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 md:grid-cols-[1fr_1fr_auto]">
+                                    <input
+                                        className="w-full rounded-lg border bg-white p-2.5 text-sm transition-colors focus:border-black focus:ring-black"
+                                        value={person.name}
+                                        onChange={(event) => updateCollaborationPerson(index, 'name', event.target.value)}
+                                        placeholder="Name"
+                                    />
+                                    <input
+                                        className="w-full rounded-lg border bg-white p-2.5 text-sm transition-colors focus:border-black focus:ring-black"
+                                        value={person.url}
+                                        onChange={(event) => updateCollaborationPerson(index, 'url', event.target.value)}
+                                        placeholder="URL (optional)"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeCollaborationPerson(index)}
+                                        className="inline-flex h-[42px] items-center justify-center rounded-lg border border-red-200 bg-white px-3 text-red-500 transition-colors hover:bg-red-50"
+                                        aria-label="Remove collaborator"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                {hasAnimation && (
+                    <section className="md:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
+                        <div className="mb-4">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Animation</p>
+                            <h3 className="mt-1 text-lg font-bold text-slate-900">Scrub Sequence Paths</h3>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="md:col-span-2">
+                                <AssetSelectionField
+                                    label="Desktop Video Path (.mp4)"
+                                    value={animationData.videoPath || ''}
+                                    onChange={(next) => handleChange('animationSequence', { ...animationData, videoPath: next })}
+                                    kind="video"
+                                    recentAssets={recentVideoAssets}
+                                    placeholder="assets/..."
+                                />
+                            </div>
+                            <AssetSelectionField
+                                label="Safari Native Video Path"
+                                value={animationData.safariVideoPath || ''}
+                                onChange={(next) => handleChange('animationSequence', { ...animationData, safariVideoPath: next })}
+                                kind="video"
+                                recentAssets={recentVideoAssets}
+                                placeholder="assets/..."
+                            />
+                            <AssetSelectionField
+                                label="Mobile Video Path"
+                                value={animationData.mobileVideoPath || ''}
+                                onChange={(next) => handleChange('animationSequence', { ...animationData, mobileVideoPath: next })}
+                                kind="video"
+                                recentAssets={recentVideoAssets}
+                                placeholder="assets/..."
+                            />
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Total Frame Count</label>
+                                <input type="number" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={animationData.frameCount || 0} onChange={e => handleChange('animationSequence', { ...animationData, frameCount: parseInt(e.target.value || '0', 10) || 0 })} />
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Legacy Spritesheet Path (Optional)</label>
+                                <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={animationData.spritesheetPath || ''} onChange={e => handleChange('animationSequence', { ...animationData, spritesheetPath: e.target.value })} />
+                            </div>
+                        </div>
+                    </section>
                 )}
             </div>
 
-            <div className="border-t mt-4 pt-4">
-                <button onClick={() => setRawMode(true)} className="text-xs font-medium text-neutral-400 hover:text-black transition-colors flex items-center gap-1.5">
+            <div className="mt-2 border-t border-slate-100 pt-4">
+                <button onClick={() => setRawMode(true)} className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 transition-colors hover:text-black">
                     <Code size={12} /> View Raw Context
                 </button>
             </div>
         </div>
+    );
+}
+
+function SortableBlockRow({
+    block,
+    index,
+    bodyIndex,
+    isFrontmatter,
+    isActive,
+    renderBlockEditor,
+    deleteBlock,
+    addBlock,
+    focusBlockAndSyncPreview,
+}: {
+    block: Block,
+    index: number,
+    bodyIndex: number,
+    isFrontmatter: boolean,
+    isActive: boolean,
+    renderBlockEditor: (block: Block) => React.ReactNode,
+    deleteBlock: (id: string) => void,
+    addBlock: (index: number, type: BlockType) => void,
+    focusBlockAndSyncPreview: (block: Block, bodyIndex: number) => void,
+}) {
+    const dragControls = useDragControls();
+
+    return (
+        <Reorder.Item
+            key={block.id}
+            value={block}
+            dragListener={false}
+            dragControls={dragControls}
+            dragElastic={0.03}
+            dragMomentum={false}
+            transition={{ layout: { duration: 0.14, ease: 'easeOut' } }}
+            whileDrag={{
+                scale: 1.01,
+                boxShadow: '0 18px 34px -24px rgba(15,23,42,0.7)',
+            }}
+            onPointerDownCapture={() => focusBlockAndSyncPreview(block, bodyIndex)}
+            onFocusCapture={() => focusBlockAndSyncPreview(block, bodyIndex)}
+            className={`relative group py-1 transition-all ${isActive ? 'z-30' : ''}`}
+        >
+            <div className={`flex items-start gap-2 rounded-2xl px-1 py-1 transition-colors ${isFrontmatter ? 'opacity-60' : ''} ${isActive ? 'bg-white shadow-[0_16px_28px_-22px_rgba(15,23,42,0.6)] ring-1 ring-indigo-100' : ''}`}>
+                {/* Drag Handle */}
+                <div className="w-8 flex flex-col justify-center items-center h-12 shrink-0 mt-1">
+                    {!isFrontmatter && (
+                        <button
+                            type="button"
+                            onPointerDown={(event) => dragControls.start(event)}
+                            className="cursor-grab active:cursor-grabbing rounded-md p-1.5 text-slate-400 opacity-0 transition-opacity group-hover:opacity-90 hover:bg-slate-100 hover:text-slate-700"
+                            aria-label="Drag block"
+                        >
+                            <GripVertical size={18} />
+                        </button>
+                    )}
+                </div>
+
+                {/* Block Content */}
+                <div className={`flex-1 relative ${block.type === 'text' || block.type === 'small-text' || block.type === 'header' ? 'py-1' : ''}`}>
+                    {renderBlockEditor(block)}
+                </div>
+
+                {/* Delete */}
+                <div className="w-8 flex flex-col items-center h-12 justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1">
+                    {!isFrontmatter && (
+                        <button onClick={() => deleteBlock(block.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-colors">
+                            <Trash2 size={16} />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Add Menu (appears between blocks) */}
+            {!isFrontmatter && (
+                <div className="relative mt-2 h-0">
+                    <div className="absolute inset-x-0 top-0 flex -translate-y-1/2 justify-center">
+                        <div className={`rounded-full bg-[#f7f9fc] px-2 py-1 transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            <AddMenu onAdd={(type) => addBlock(index, type)} variant="inline" />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </Reorder.Item>
     );
 }
 
@@ -684,12 +1322,90 @@ export default function EditorPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [viewMode, setViewMode] = useState<'body' | 'header'>('body');
+    const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+    const [recentImageAssets, setRecentImageAssets] = useState<AssetLibraryEntry[]>([]);
+    const [recentVideoAssets, setRecentVideoAssets] = useState<AssetLibraryEntry[]>([]);
 
     // Live Preview State
-    const [previewWidth, setPreviewWidth] = useState<'100%' | '375px' | '768px'>('100%');
+    const [previewVisible, setPreviewVisible] = useState(true);
+    const [previewPanelWidth, setPreviewPanelWidth] = useState(860);
+    const [viewportWidth, setViewportWidth] = useState(1440);
+    const [previewViewport, setPreviewViewport] = useState<'mobile' | 'tablet' | 'desktop' | 'full'>('desktop');
+    const [previewOrientation, setPreviewOrientation] = useState<'portrait' | 'landscape'>('portrait');
     const [previewZoom, setPreviewZoom] = useState<number>(100);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [iframeReady, setIframeReady] = useState(false);
+    const previewResizingRef = useRef(false);
+
+    const loadAssetLibrary = useCallback(async () => {
+        try {
+            const response = await fetch('/api/admin/assets');
+            if (!response.ok) return;
+
+            const payload = await response.json();
+            if (Array.isArray(payload?.recentImages)) {
+                setRecentImageAssets(payload.recentImages);
+            }
+            if (Array.isArray(payload?.recentVideos)) {
+                setRecentVideoAssets(payload.recentVideos);
+            }
+        } catch {
+            // Silent fallback: editor remains usable without asset API
+        }
+    }, []);
+
+    const uploadImageAsset = useCallback(async (file: File): Promise<string | null> => {
+        try {
+            if (file.size > 35 * 1024 * 1024) {
+                alert('Bild ist zu gross. Bitte unter 35MB bleiben.');
+                return null;
+            }
+
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+                reader.onerror = () => reject(new Error('Failed reading file'));
+                reader.readAsDataURL(file);
+            });
+
+            if (!dataUrl) return null;
+
+            const response = await fetch('/api/admin/assets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: file.name,
+                    dataUrl,
+                }),
+            });
+
+            const rawResponse = await response.text();
+            let payload: any = null;
+            try {
+                payload = rawResponse ? JSON.parse(rawResponse) : null;
+            } catch {
+                payload = { error: rawResponse || `Upload fehlgeschlagen (HTTP ${response.status})` };
+            }
+
+            if (!response.ok) {
+                alert(payload?.error || `Bild-Upload fehlgeschlagen (HTTP ${response.status}).`);
+                return null;
+            }
+
+            if (Array.isArray(payload?.assets?.recentImages)) {
+                setRecentImageAssets(payload.assets.recentImages);
+            }
+            if (Array.isArray(payload?.assets?.recentVideos)) {
+                setRecentVideoAssets(payload.assets.recentVideos);
+            }
+
+            return typeof payload?.path === 'string' ? payload.path : null;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unbekannter Fehler beim Upload.';
+            alert(`Bild-Upload fehlgeschlagen: ${message}`);
+            return null;
+        }
+    }, []);
 
     useEffect(() => {
         const handleMessage = (e: MessageEvent) => {
@@ -699,6 +1415,65 @@ export default function EditorPage() {
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
+    useEffect(() => {
+        loadAssetLibrary();
+    }, [loadAssetLibrary]);
+
+    const clampPreviewPanelWidth = useCallback((candidate: number) => {
+        const minWidth = 460;
+        const maxWidth = Math.max(560, window.innerWidth - 120);
+        return Math.max(minWidth, Math.min(maxWidth, candidate));
+    }, []);
+
+    useEffect(() => {
+        const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+        updateViewportWidth();
+        window.addEventListener('resize', updateViewportWidth);
+        return () => window.removeEventListener('resize', updateViewportWidth);
+    }, []);
+
+    useEffect(() => {
+        setPreviewPanelWidth((current) => clampPreviewPanelWidth(current));
+    }, [clampPreviewPanelWidth]);
+
+    useEffect(() => {
+        const handlePointerMove = (event: PointerEvent) => {
+            if (!previewResizingRef.current) return;
+            const nextWidth = window.innerWidth - event.clientX;
+            setPreviewPanelWidth(clampPreviewPanelWidth(nextWidth));
+        };
+
+        const handlePointerUp = () => {
+            if (!previewResizingRef.current) return;
+            previewResizingRef.current = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+
+        const handleWindowResize = () => {
+            setPreviewPanelWidth((current) => clampPreviewPanelWidth(current));
+        };
+
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('resize', handleWindowResize);
+
+        return () => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('resize', handleWindowResize);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+    }, [clampPreviewPanelWidth]);
+
+    const handlePreviewResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        previewResizingRef.current = true;
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
     }, []);
 
     useEffect(() => {
@@ -764,7 +1539,7 @@ export default function EditorPage() {
             newBlock.fenceInfo = '```palette';
             newBlock.content = 'name="Primary" hex="#FFFFFF" rgb="255,255,255" rank="1"';
         } else if (type === 'gallery') {
-            newBlock.content = '![image1.jpg|image2.jpg]';
+            newBlock.content = '![]';
         } else if (type === 'video') {
             newBlock.content = '[video](assets/video.mp4|assets/poster.jpg)';
         } else if (type === 'project-ref') {
@@ -792,6 +1567,37 @@ export default function EditorPage() {
         setBlocks(newBlocks);
     };
 
+    const buildBlockSnippet = useCallback((raw: string): string => {
+        return raw
+            .replace(/^#{1,6}\s+/gm, '')
+            .replace(/!\[[^\]]*\]\(([^)]+)\)/g, '')
+            .replace(/\[video(?:\s+loop)?\]\(([^)]+)\)/gi, '')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+            .replace(/[`*_~>#-]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 180);
+    }, []);
+
+    const focusBlockAndSyncPreview = useCallback((block: Block, bodyIndex: number) => {
+        setActiveBlockId(block.id);
+
+        if (viewMode !== 'body') return;
+        if (block.type === 'frontmatter') return;
+        if (!iframeReady || !iframeRef.current) return;
+
+        iframeRef.current.contentWindow?.postMessage({
+            type: 'SCROLL_TO_BLOCK',
+            payload: {
+                bodyIndex,
+                blockType: block.type,
+                snippet: buildBlockSnippet(block.content),
+                rawContent: block.content,
+                fenceInfo: block.fenceInfo || '',
+            },
+        }, '*');
+    }, [buildBlockSnippet, iframeReady, viewMode]);
+
     const frontmatterContent = blocks.find(b => b.type === 'frontmatter')?.content || '';
     const editorAccentColor =
         frontmatterContent.match(/^bgColor:\s*['"]?(.*?)['"]?$/m)?.[1] ||
@@ -808,20 +1614,24 @@ export default function EditorPage() {
         }
 
         if (block.type === 'header') return <HeaderBlockEditor block={block} updateBlock={updateBlock} accentColor={editorAccentColor} />;
-        if (block.type === 'text') return <TextBlockEditor block={block} updateBlock={updateBlock} />;
-        if (block.type === 'small-text') {
+        if (block.type === 'text' || block.type === 'small-text') {
             return (
-                <div className="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-3">
-                    <div className="flex items-center gap-2 font-bold text-sm text-neutral-800 uppercase tracking-wider"><Type size={16} /> Small Paragraph</div>
-                    <p className="text-xs text-neutral-500">Renders in frontend as a smaller paragraph block with tighter leading.</p>
-                    <AutoResizeTextarea
-                        className="w-full bg-neutral-50 border rounded p-3 font-sans text-[15px] leading-[1.25] text-neutral-800 focus:ring-black focus:border-black transition-colors"
-                        value={block.content}
-                        onChange={(val) => updateBlock(block.id, { content: val })}
-                        placeholder="Small paragraph..."
-                        rows={3}
-                    />
-                </div>
+                <ParagraphBlockEditor
+                    block={block}
+                    updateBlock={updateBlock}
+                    variant={block.type === 'small-text' ? 'small' : 'normal'}
+                    onVariantChange={(nextVariant) => {
+                        if (nextVariant === 'small') {
+                            const nextFenceInfo =
+                                block.fenceInfo && block.fenceInfo.trim().startsWith('```small')
+                                    ? block.fenceInfo
+                                    : '```small';
+                            updateBlock(block.id, { type: 'small-text', fenceInfo: nextFenceInfo });
+                            return;
+                        }
+                        updateBlock(block.id, { type: 'text' });
+                    }}
+                />
             );
         }
         if (block.type === 'project-ref') return <ProjectRefEditor block={block} updateBlock={updateBlock} allProjects={allProjects} />;
@@ -925,6 +1735,23 @@ export default function EditorPage() {
 
         if (block.type === 'mockup') {
             const attrs = parseFenceAttributes(block.fenceInfo || '');
+            const mediaMode: 'image' | 'video' = attrs.video ? 'video' : 'image';
+            const updateMockupAttrs = (nextAttrs: Record<string, string>) => {
+                updateBlock(block.id, { fenceInfo: serializeFenceAttributes('mockup', nextAttrs) });
+            };
+
+            const switchMockupMediaMode = (nextMode: 'image' | 'video') => {
+                const nextAttrs = { ...attrs };
+                if (nextMode === 'video') {
+                    delete nextAttrs.image;
+                    nextAttrs.video = attrs.video || '';
+                } else {
+                    delete nextAttrs.video;
+                    nextAttrs.image = attrs.image || '';
+                }
+                updateMockupAttrs(nextAttrs);
+            };
+
             return (
                 <div className="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-3">
                     <div className="flex items-center gap-2 font-bold text-sm text-neutral-800 uppercase tracking-wider"><ImageIcon size={16} /> Mockup Device</div>
@@ -934,9 +1761,11 @@ export default function EditorPage() {
                             <select
                                 className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors"
                                 value={attrs.type || 'iphone'}
-                                onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('mockup', { ...attrs, type: e.target.value }) })}
+                                onChange={(e) => updateMockupAttrs({ ...attrs, type: e.target.value })}
                             >
                                 <option value="iphone">iPhone</option>
+                                <option value="android">Android</option>
+                                <option value="ipad">iPad</option>
                                 <option value="macbook">MacBook</option>
                                 <option value="safari-tab">Safari Tab</option>
                                 <option value="tv">TV</option>
@@ -948,18 +1777,42 @@ export default function EditorPage() {
                                 type="text"
                                 className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors"
                                 value={attrs.bgColor || '#F5F5F7'}
-                                onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('mockup', { ...attrs, bgColor: e.target.value }) })}
+                                onChange={(e) => updateMockupAttrs({ ...attrs, bgColor: e.target.value })}
                             />
                         </div>
                         <div className="col-span-2">
-                            <label className="text-xs text-neutral-500 mb-1 block">Image Path</label>
-                            <input
-                                type="text"
+                            <label className="text-xs text-neutral-500 mb-1 block">Media Source</label>
+                            <select
                                 className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors"
-                                value={attrs.image || ''}
-                                placeholder="assets/project/img.png"
-                                onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('mockup', { ...attrs, image: e.target.value }) })}
-                            />
+                                value={mediaMode}
+                                onChange={(e) => switchMockupMediaMode(e.target.value === 'video' ? 'video' : 'image')}
+                            >
+                                <option value="image">Image</option>
+                                <option value="video">Video URL</option>
+                            </select>
+                        </div>
+                        <div className="col-span-2">
+                            {mediaMode === 'video' ? (
+                                <AssetSelectionField
+                                    label="Video Path"
+                                    value={attrs.video || ''}
+                                    onChange={(nextPath) => updateMockupAttrs({ ...attrs, video: nextPath })}
+                                    placeholder="assets/mockup-video.mp4"
+                                    kind="video"
+                                    recentAssets={recentVideoAssets}
+                                    helperText="Mockups (auch TV) koennen direkt Video-URLs nutzen."
+                                />
+                            ) : (
+                                <AssetSelectionField
+                                    label="Image Path"
+                                    value={attrs.image || ''}
+                                    onChange={(nextPath) => updateMockupAttrs({ ...attrs, image: nextPath })}
+                                    placeholder="assets/project/img.png"
+                                    kind="image"
+                                    recentAssets={recentImageAssets}
+                                    onUploadImage={uploadImageAsset}
+                                />
+                            )}
                         </div>
                         {(attrs.type === 'safari-tab' || attrs.type === 'safari') && (
                             <div className="col-span-2">
@@ -969,7 +1822,7 @@ export default function EditorPage() {
                                     className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors"
                                     value={attrs.url || ''}
                                     placeholder="https://example.com"
-                                    onChange={(e) => updateBlock(block.id, { fenceInfo: serializeFenceAttributes('mockup', { ...attrs, url: e.target.value }) })}
+                                    onChange={(e) => updateMockupAttrs({ ...attrs, url: e.target.value })}
                                 />
                             </div>
                         )}
@@ -1000,13 +1853,13 @@ export default function EditorPage() {
                     <div className="flex items-center gap-2 font-bold text-sm text-neutral-800 uppercase tracking-wider"><Play size={16} /> Video Block</div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="col-span-2">
-                            <label className="text-xs text-neutral-500 mb-1 block">Video URL (.mp4)</label>
-                            <input
-                                type="text"
-                                className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors"
+                            <AssetSelectionField
+                                label="Video URL (.mp4)"
                                 value={videoUrl}
+                                onChange={(nextVideo) => updateBlock(block.id, { content: constructVideoStr(nextVideo, posterUrl, isLoop) })}
                                 placeholder="assets/video.mp4"
-                                onChange={(e) => updateBlock(block.id, { content: constructVideoStr(e.target.value, posterUrl, isLoop) })}
+                                kind="video"
+                                recentAssets={recentVideoAssets}
                             />
                         </div>
                         <div className="col-span-2 flex items-center gap-2">
@@ -1019,13 +1872,14 @@ export default function EditorPage() {
                             <label className="text-sm font-medium">Loop infinitely</label>
                         </div>
                         <div className="col-span-2">
-                            <label className="text-xs text-neutral-500 mb-1 block">Poster Image (Optional)</label>
-                            <input
-                                type="text"
-                                className="w-full bg-neutral-50 border rounded p-2 text-sm focus:ring-black focus:border-black transition-colors"
+                            <AssetSelectionField
+                                label="Poster Image (Optional)"
                                 value={posterUrl}
-                                placeholder="assets/poster.jpg"
-                                onChange={(e) => updateBlock(block.id, { content: constructVideoStr(videoUrl, e.target.value, isLoop) })}
+                                onChange={(nextPoster) => updateBlock(block.id, { content: constructVideoStr(videoUrl, nextPoster, isLoop) })}
+                                placeholder="assets/poster.webp"
+                                kind="image"
+                                recentAssets={recentImageAssets}
+                                onUploadImage={uploadImageAsset}
                             />
                         </div>
                     </div>
@@ -1040,6 +1894,10 @@ export default function EditorPage() {
             const radiusEnabled = !['false', '0'].includes((parsed.attrs.radius || '').trim().toLowerCase());
             const parsedPadding = Number(parsed.attrs.padding || '0');
             const paddingValue = Number.isFinite(parsedPadding) && parsedPadding > 0 ? Math.round(parsedPadding) : 0;
+            const galleryMatch = baseValue.trim().match(/^!\[(.*)\]$/);
+            const galleryItems = galleryMatch
+                ? galleryMatch[1].split('|').map((item) => item.trim())
+                : [];
 
             const updateGalleryBase = (nextBase: string) => {
                 updateBlock(block.id, { content: serializeMediaMarkdownWithAttrs(nextBase, parsed.attrs) });
@@ -1049,17 +1907,59 @@ export default function EditorPage() {
                 updateBlock(block.id, { content: serializeMediaMarkdownWithAttrs(baseValue, nextAttrs) });
             };
 
+            const updateGalleryItems = (nextItems: string[]) => {
+                const nextBase = `![${nextItems.join('|')}]`;
+                updateGalleryBase(nextBase);
+            };
+
             return (
                 <div className="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-3">
                     <div className="flex items-center gap-2 font-bold text-sm text-neutral-800 uppercase tracking-wider"><ImageIcon size={16} /> Image Gallery</div>
-                    <label className="text-xs text-neutral-500 mb-1 block">Format: ![img1.jpg|img2.jpg]</label>
-                    <AutoResizeTextarea
-                        className="w-full bg-neutral-50 border rounded p-2 text-sm font-mono focus:ring-black focus:border-black transition-colors"
-                        value={baseValue}
-                        onChange={updateGalleryBase}
-                        placeholder="![image1.png|image2.png]"
-                        rows={1}
-                    />
+                    <p className="text-xs text-neutral-500">Jedes Bild hat Quick-Preview, Recent Files Dropdown und Upload nach <code>public/assets/upload</code>.</p>
+                    <div className="space-y-3">
+                        {galleryItems.length === 0 && (
+                            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-500">
+                                Keine Bilder gesetzt. Fuege unten das erste Galerie-Bild hinzu.
+                            </p>
+                        )}
+                        {galleryItems.map((item, index) => (
+                            <div key={`${item}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1">
+                                        <AssetSelectionField
+                                            label={`Gallery Image ${index + 1}`}
+                                            value={item}
+                                            onChange={(nextPath) => {
+                                                const nextItems = [...galleryItems];
+                                                nextItems[index] = nextPath;
+                                                updateGalleryItems(nextItems);
+                                            }}
+                                            placeholder="assets/gallery/image.webp"
+                                            kind="image"
+                                            recentAssets={recentImageAssets}
+                                            onUploadImage={uploadImageAsset}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => updateGalleryItems(galleryItems.filter((_, currentIndex) => currentIndex !== index))}
+                                        className="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 bg-white px-2.5 text-red-500 transition-colors hover:bg-red-50"
+                                        aria-label="Remove gallery image"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        <button
+                            type="button"
+                            onClick={() => updateGalleryItems([...galleryItems, ''])}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                            <Plus size={14} />
+                            Add Gallery Image
+                        </button>
+                    </div>
                     <div className="grid grid-cols-3 gap-3 items-end">
                         <label className="flex items-center gap-2 text-sm text-neutral-700 font-medium">
                             <input
@@ -1107,9 +2007,19 @@ export default function EditorPage() {
                             />
                         </div>
                     </div>
-                    <p className="text-xs text-neutral-500">
-                        Optional MD-Syntax: <code>{'![img1|img2] {shadow="false" radius="false" padding="12"}'}</code>
-                    </p>
+                    <details className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <summary className="cursor-pointer text-xs font-semibold text-slate-600">Raw Gallery Markdown</summary>
+                        <AutoResizeTextarea
+                            className="mt-2 w-full rounded border bg-white p-2 text-sm font-mono transition-colors focus:border-black focus:ring-black"
+                            value={baseValue}
+                            onChange={updateGalleryBase}
+                            placeholder="![image1.png|image2.png]"
+                            rows={1}
+                        />
+                        <p className="mt-2 text-xs text-neutral-500">
+                            Optional syntax: <code>{'![img1|img2] {shadow="false" radius="false" padding="12"}'}</code>
+                        </p>
+                    </details>
                 </div>
             );
         }
@@ -1708,18 +2618,83 @@ export default function EditorPage() {
         };
     };
 
+    const previewFrame = useMemo(() => {
+        if (previewViewport === 'full') {
+            return {
+                width: '100%',
+                height: '100%',
+                chrome: 'none' as const,
+                label: 'Full View',
+            };
+        }
+
+        if (previewViewport === 'desktop') {
+            return {
+                width: '1720px',
+                height: '1080px',
+                chrome: 'desktop' as const,
+                label: 'Desktop',
+            };
+        }
+
+        const portrait = previewOrientation === 'portrait';
+
+        if (previewViewport === 'mobile') {
+            return {
+                width: portrait ? '393px' : '852px',
+                height: portrait ? '852px' : '393px',
+                chrome: 'device' as const,
+                label: portrait ? 'Mobile Portrait' : 'Mobile Landscape',
+            };
+        }
+
+        return {
+            width: portrait ? '834px' : '1194px',
+            height: portrait ? '1194px' : '834px',
+            chrome: 'device' as const,
+            label: portrait ? 'Tablet Portrait' : 'Tablet Landscape',
+        };
+    }, [previewOrientation, previewViewport]);
+
+    const canRotatePreview = previewViewport === 'mobile' || previewViewport === 'tablet';
+    const effectivePreviewZoom = previewViewport === 'desktop' ? 75 : previewZoom;
+
+    const editorContentLayout = useMemo(() => {
+        const minPageMargin = viewportWidth >= 1024 ? 32 : 16;
+        const maxEditorWidth = viewportWidth >= 1536 ? 760 : 672;
+        const baseWidth = Math.min(maxEditorWidth, Math.max(320, viewportWidth - minPageMargin * 2));
+
+        const centeredInsetLimit = Math.max(0, viewportWidth - baseWidth - minPageMargin * 2);
+        const reservedRightInset = previewVisible ? Math.min(previewPanelWidth, centeredInsetLimit) : 0;
+        const visibleWidth = Math.max(0, viewportWidth - reservedRightInset);
+        const left = Math.max(minPageMargin, (visibleWidth - baseWidth) / 2);
+
+        return {
+            width: baseWidth,
+            left,
+        };
+    }, [previewPanelWidth, previewVisible, viewportWidth]);
+
     if (loading) return <div className="p-10 flex min-h-screen items-center justify-center font-sans">Loading editor interface...</div>;
 
     return (
-        <div className="flex h-screen overflow-hidden bg-neutral-100 font-sans selection:bg-black selection:text-white">
+        <div className="relative h-screen overflow-hidden bg-[radial-gradient(circle_at_0%_0%,#f4f8ff_0%,#edf1f7_45%,#e6ebf2_100%)] font-sans selection:bg-black selection:text-white">
 
             {/* LEFT COLUMN: EDITOR */}
-            <div className="w-1/2 flex flex-col border-r bg-[#F5F5F7] relative z-10 shadow-[8px_0_24px_rgba(0,0,0,0.02)] overflow-hidden">
+            <div className="h-full w-full flex flex-col bg-[#f7f9fc] relative z-10 overflow-hidden">
                 {/* Header */}
-                <div className="h-16 bg-white border-b flex items-center justify-between px-4 lg:px-6 shrink-0 shadow-sm z-20">
+                <div className="h-16 bg-white/90 border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 shrink-0 shadow-sm z-50 backdrop-blur">
                     <div className="flex items-center gap-2 lg:gap-4 flex-1">
                         <button onClick={() => router.push('/admin')} className="text-neutral-400 hover:text-black transition-colors shrink-0">
                             <ArrowLeft size={18} />
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="bg-slate-900 text-white px-4 py-1.5 lg:px-5 lg:py-2 rounded-full text-xs lg:text-sm font-medium flex items-center gap-2 hover:bg-slate-700 hover:scale-105 active:scale-95 transition-all shadow-sm disabled:hover:scale-100 disabled:opacity-70 shrink-0"
+                        >
+                            <Save size={16} />
+                            {saving ? 'Saving...' : <span className="hidden lg:inline">Save Changes</span>}
                         </button>
                         <h1 className="font-bold text-sm lg:text-base truncate">
                             {initialProject?.title || slug || 'Untitled'}
@@ -1729,87 +2704,104 @@ export default function EditorPage() {
                         </h1>
                     </div>
 
-                    <div className="flex gap-1 bg-neutral-100 p-1 mx-2 lg:mx-4 rounded-lg shrink-0">
+                    <div className="flex-1 flex justify-end shrink-0 items-center gap-2">
                         <button
-                            onClick={() => setViewMode('body')}
-                            className={`px-3 lg:px-4 py-1.5 text-xs lg:text-sm font-medium rounded-md transition-colors ${viewMode === 'body' ? 'bg-white shadow pointer-events-none text-black' : 'text-neutral-500 hover:text-black hover:bg-neutral-200/50'}`}
-                        >Body</button>
-                        <button
-                            onClick={() => setViewMode('header')}
-                            className={`px-3 lg:px-4 py-1.5 text-xs lg:text-sm font-medium rounded-md transition-colors ${viewMode === 'header' ? 'bg-white shadow pointer-events-none text-black' : 'text-neutral-500 hover:text-black hover:bg-neutral-200/50'}`}
-                        >Header</button>
-                    </div>
-
-                    <div className="flex-1 flex justify-end shrink-0">
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="bg-black text-white px-4 py-1.5 lg:px-5 lg:py-2 rounded-full text-xs lg:text-sm font-medium flex items-center gap-2 hover:bg-neutral-800 hover:scale-105 active:scale-95 transition-all shadow-sm"
+                            type="button"
+                            onClick={() => setPreviewVisible((current) => !current)}
+                            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
                         >
-                            <Save size={16} />
-                            {saving ? 'Saving...' : <span className="hidden lg:inline">Save Changes</span>}
+                            {previewVisible ? 'Hide Preview' : 'Show Preview'}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="absolute left-3 top-20 z-30 flex">
+                    <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-[0_18px_36px_-28px_rgba(15,23,42,0.9)] backdrop-blur">
+                        <button
+                            type="button"
+                            title="Body View"
+                            onClick={() => setViewMode('body')}
+                            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${viewMode === 'body' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+                            aria-label="Switch to body view"
+                        >
+                            <FileText size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            title="Header View"
+                            onClick={() => setViewMode('header')}
+                            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${viewMode === 'header' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+                            aria-label="Switch to header view"
+                        >
+                            <LayoutTemplate size={16} />
                         </button>
                     </div>
                 </div>
 
                 {/* Editor Area */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 layout-scrollbar pb-52">
-                    <div className="max-w-2xl mx-auto">
+                <div className="flex-1 overflow-y-auto layout-scrollbar pb-52 pt-4 md:pt-8">
+                    <div
+                        className="relative"
+                        style={{
+                            width: `${editorContentLayout.width}px`,
+                            marginLeft: `${editorContentLayout.left}px`,
+                        }}
+                    >
                         {viewMode === 'header' && blocks.find(b => b.type === 'frontmatter') && (
-                            <div className="bg-white p-6 md:p-8 border rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div>
-                                    <h2 className="font-bold text-xl font-sans tracking-tight text-neutral-800">Frontmatter Properties</h2>
-                                    <p className="text-sm text-neutral-500 mt-1 mb-4 border-b pb-4">These properties control the cover routing, SEO tags, list thumbnails, and hero animations for the project page.</p>
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_42px_-28px_rgba(15,23,42,0.65)]">
+                                <div className="border-b border-slate-200 bg-[radial-gradient(circle_at_0%_0%,#eef4ff_0%,#f8fbff_45%,#ffffff_100%)] px-6 py-5 md:px-8">
+                                    <div className="flex flex-wrap items-start justify-between gap-4">
+                                        <div className="max-w-2xl">
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Header View</p>
+                                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Frontmatter, Hero & Metadata</h2>
+                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                                Hier konfigurierst du alle Header-relevanten Projektangaben: Identity, Hero-Assets, Featured-Status, Type und Collaboration.
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                                                {folder === 'archive' ? 'Archive Draft' : 'Published'}
+                                            </span>
+                                            {slug && (
+                                                <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
+                                                    {slug}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
+                                <div className="p-6 md:p-8">
                                 <FrontmatterEditor
                                     block={blocks.find(b => b.type === 'frontmatter')!}
                                     updateBlock={updateBlock}
+                                    recentImageAssets={recentImageAssets}
+                                    recentVideoAssets={recentVideoAssets}
+                                    onUploadImage={uploadImageAsset}
                                 />
+                                </div>
                             </div>
                         )}
 
                         {viewMode === 'body' && (
-                            <Reorder.Group axis="y" values={blocks} onReorder={setBlocks} className="flex flex-col gap-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <Reorder.Group axis="y" values={blocks} onReorder={setBlocks} layoutScroll className="flex flex-col gap-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 {blocks.map((block, index) => {
                                     const isFrontmatter = block.type === 'frontmatter';
+                                    const bodyIndex = blocks.slice(0, index + 1).filter((candidate) => candidate.type !== 'frontmatter').length - 1;
+                                    const isActive = activeBlockId === block.id;
 
                                     return (
-                                        <Reorder.Item
+                                        <SortableBlockRow
                                             key={block.id}
-                                            value={block}
-                                            dragListener={!isFrontmatter}
-                                            className="relative group py-1"
-                                        >
-                                            <div className={`flex items-start gap-2 ${isFrontmatter ? 'opacity-60' : ''}`}>
-                                                {/* Drag Handle */}
-                                                <div className="w-8 flex flex-col justify-center items-center h-12 opacity-0 group-hover:opacity-40 hover:!opacity-80 transition-opacity cursor-grab active:cursor-grabbing shrink-0 mt-1">
-                                                    {!isFrontmatter && <GripVertical size={20} />}
-                                                </div>
-
-                                                {/* Block Content */}
-                                                <div className={`flex-1 relative ${block.type === 'text' || block.type === 'header' ? 'py-1' : ''}`}>
-                                                    {renderBlockEditor(block)}
-                                                </div>
-
-                                                {/* Delete */}
-                                                <div className="w-8 flex flex-col items-center h-12 justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1">
-                                                    {!isFrontmatter && (
-                                                        <button onClick={() => deleteBlock(block.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-colors">
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Add Menu (appears between blocks) */}
-                                            {!isFrontmatter && (
-                                                <div className="h-0 flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity relative z-40">
-                                                    <div className="absolute top-0 -translate-y-1/2 bg-[#F5F5F7] px-2 py-1">
-                                                        <AddMenu onAdd={(type) => addBlock(index, type)} />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </Reorder.Item>
+                                            block={block}
+                                            index={index}
+                                            bodyIndex={bodyIndex}
+                                            isFrontmatter={isFrontmatter}
+                                            isActive={isActive}
+                                            renderBlockEditor={renderBlockEditor}
+                                            deleteBlock={deleteBlock}
+                                            addBlock={addBlock}
+                                            focusBlockAndSyncPreview={focusBlockAndSyncPreview}
+                                        />
                                     )
                                 })}
                             </Reorder.Group>
@@ -1817,7 +2809,7 @@ export default function EditorPage() {
 
                         {viewMode === 'body' && (
                             <div className="mt-12 flex justify-center pb-24 relative z-20 animate-in fade-in duration-500 delay-150">
-                                <AddMenu onAdd={(type) => addBlock(blocks.length - 1, type)} />
+                                <AddMenu onAdd={(type) => addBlock(blocks.length - 1, type)} variant="footer" />
                             </div>
                         )}
 
@@ -1825,54 +2817,105 @@ export default function EditorPage() {
                 </div>
             </div>
 
-            {/* RIGHT COLUMN: PREVIEW */}
-            <div className="w-1/2 bg-[#E5E5EA] overflow-hidden relative flex flex-col border-l border-neutral-200">
-                {/* Preview Controls Bar */}
-                <div className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0 shadow-sm z-20 text-xs text-neutral-600 font-medium">
-                    <div className="flex gap-2 items-center bg-neutral-100 p-1 rounded-lg">
-                        <button onClick={() => setPreviewWidth('375px')} className={`px-3 flex gap-2 items-center py-2 rounded transition-colors ${previewWidth === '375px' ? 'bg-white shadow text-black' : 'hover:bg-neutral-200'}`}>
-                            <Smartphone size={14} /> Mobile
-                        </button>
-                        <button onClick={() => setPreviewWidth('768px')} className={`px-3 flex gap-2 items-center py-2 rounded transition-colors ${previewWidth === '768px' ? 'bg-white shadow text-black' : 'hover:bg-neutral-200'}`}>
-                            <Tablet size={14} /> Tablet
-                        </button>
-                        <button onClick={() => setPreviewWidth('100%')} className={`px-3 flex gap-2 items-center py-2 rounded transition-colors ${previewWidth === '100%' ? 'bg-white shadow text-black' : 'hover:bg-neutral-200'}`}>
-                            <Monitor size={14} /> Desktop
-                        </button>
+            {previewVisible && (
+                <div
+                    className="absolute right-0 top-0 z-40 h-full flex"
+                    style={{ width: `${previewPanelWidth}px` }}
+                >
+                    <div
+                        onPointerDown={handlePreviewResizeStart}
+                        className="relative w-3 cursor-ew-resize bg-transparent"
+                        aria-label="Resize preview panel"
+                    >
+                        <div className="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 rounded-full bg-slate-300/80 hover:bg-indigo-400" />
                     </div>
-                    <div className="flex gap-2 items-center bg-neutral-100 p-1 rounded-lg">
-                        <button onClick={() => setPreviewZoom(Math.max(25, previewZoom - 25))} className="px-3 py-2 hover:bg-neutral-200 hover:text-black transition-colors rounded">-</button>
-                        <span className="w-12 text-center text-sm">{previewZoom}%</span>
-                        <button onClick={() => setPreviewZoom(Math.min(200, previewZoom + 25))} className="px-3 py-2 hover:bg-neutral-200 hover:text-black transition-colors rounded">+</button>
-                    </div>
-                </div>
 
-                <div className="flex-1 overflow-auto hide-scrollbar relative flex justify-center items-start pt-8 pb-32">
-                    {previewProject && (
-                        <div
-                            className={`bg-white shadow-2xl relative transition-all duration-300 ease-out flex origin-top ${previewWidth === '100%' ? '' : 'rounded-[40px] border-[8px] border-neutral-800 ring-1 ring-black/5 overflow-hidden'}`}
-                            style={{
-                                width: previewWidth,
-                                height: previewWidth === '100%' ? '100%' : (previewWidth === '375px' ? '812px' : '1024px'),
-                                transform: `scale(${previewZoom / 100})`,
-                            }}
-                        >
-                            {!iframeReady && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white text-neutral-400 font-sans text-sm animate-pulse z-50">
-                                    Loading Preview...
+                    {/* RIGHT COLUMN: PREVIEW */}
+                    <div className="flex-1 overflow-hidden relative flex flex-col border-l border-slate-200 bg-[radial-gradient(circle_at_10%_0%,#f2f6ff_0%,#eaf0f8_42%,#e5ebf3_100%)] shadow-[-28px_0_42px_-36px_rgba(15,23,42,0.8)]">
+                        {/* Preview Controls Bar */}
+                        <div className="h-16 bg-white/90 border-b border-slate-200 flex items-center justify-between px-4 shrink-0 shadow-sm z-20 text-xs text-slate-600 font-medium backdrop-blur">
+                            <div className="flex gap-1 items-center bg-slate-100 p-1 rounded-xl">
+                                <button onClick={() => setPreviewViewport('mobile')} className={`px-2.5 flex gap-1.5 items-center py-2 rounded-lg transition-colors ${previewViewport === 'mobile' ? 'bg-white shadow text-black' : 'hover:bg-slate-200'}`}>
+                                    <Smartphone size={13} /> Mobile
+                                </button>
+                                <button onClick={() => setPreviewViewport('tablet')} className={`px-2.5 flex gap-1.5 items-center py-2 rounded-lg transition-colors ${previewViewport === 'tablet' ? 'bg-white shadow text-black' : 'hover:bg-slate-200'}`}>
+                                    <Tablet size={13} /> Tablet
+                                </button>
+                                <button onClick={() => setPreviewViewport('desktop')} className={`px-2.5 flex gap-1.5 items-center py-2 rounded-lg transition-colors ${previewViewport === 'desktop' ? 'bg-white shadow text-black' : 'hover:bg-slate-200'}`}>
+                                    <Monitor size={13} /> Desktop
+                                </button>
+                                <button onClick={() => { setPreviewViewport('full'); setPreviewZoom(100); }} className={`px-2.5 flex gap-1.5 items-center py-2 rounded-lg transition-colors ${previewViewport === 'full' ? 'bg-white shadow text-black' : 'hover:bg-slate-200'}`}>
+                                    <Expand size={13} /> Full
+                                </button>
+                                <button onClick={() => setPreviewVisible(false)} className="px-2.5 py-2 rounded-lg transition-colors text-slate-500 hover:bg-slate-200 hover:text-slate-800">
+                                    Off
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {canRotatePreview && (
+                                    <button
+                                        onClick={() => setPreviewOrientation((current) => current === 'portrait' ? 'landscape' : 'portrait')}
+                                        className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-slate-600 hover:bg-slate-100"
+                                    >
+                                        <RotateCw size={13} />
+                                        Rotate
+                                    </button>
+                                )}
+
+                                <div className="flex gap-1 items-center bg-slate-100 p-1 rounded-xl">
+                                    <button
+                                        onClick={() => setPreviewZoom(Math.max(25, previewZoom - 25))}
+                                        disabled={previewViewport === 'desktop'}
+                                        className="px-2.5 py-2 hover:bg-slate-200 hover:text-black transition-colors rounded-lg disabled:opacity-40 disabled:hover:bg-transparent"
+                                    >
+                                        -
+                                    </button>
+                                    <span className="w-12 text-center text-sm">{effectivePreviewZoom}%</span>
+                                    <button
+                                        onClick={() => setPreviewZoom(Math.min(200, previewZoom + 25))}
+                                        disabled={previewViewport === 'desktop'}
+                                        className="px-2.5 py-2 hover:bg-slate-200 hover:text-black transition-colors rounded-lg disabled:opacity-40 disabled:hover:bg-transparent"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-b border-slate-200/80 bg-white/60 px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                            <span>Preview Mode</span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">{previewFrame.label}</span>
+                        </div>
+
+                        <div className={`flex-1 overflow-auto hide-scrollbar relative flex ${previewViewport === 'full' ? 'justify-stretch items-stretch p-0' : 'justify-center items-start pt-8 pb-32 px-4'}`}>
+                            {previewProject && (
+                                <div
+                                    className={`bg-white shadow-2xl relative transition-all duration-300 ease-out flex origin-top ${previewFrame.chrome === 'device' ? 'rounded-[36px] border-[8px] border-slate-800 ring-1 ring-black/10 overflow-hidden' : ''} ${previewFrame.chrome === 'desktop' ? 'rounded-2xl border border-slate-200 overflow-hidden' : ''} ${previewViewport === 'full' ? 'origin-top-left' : ''}`}
+                                    style={{
+                                        width: previewFrame.width,
+                                        height: previewFrame.height,
+                                        transform: `scale(${effectivePreviewZoom / 100})`,
+                                    }}
+                                >
+                                    {!iframeReady && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white text-neutral-400 font-sans text-sm animate-pulse z-50">
+                                            Loading Preview...
+                                        </div>
+                                    )}
+                                    <iframe
+                                        ref={iframeRef}
+                                        src={`/admin/preview/${slug || ''}`}
+                                        className="w-full h-full border-none"
+                                        style={{ pointerEvents: 'auto' }}
+                                        title="Device Simulator"
+                                    />
                                 </div>
                             )}
-                            <iframe
-                                ref={iframeRef}
-                                src={`/admin/preview/${slug || ''}`}
-                                className="w-full h-full border-none pointer-events-none" // We don't interact with the iframe physically just yet, unless we want to, so we keep events passed or disabled. Let's make it interactive.
-                                style={{ pointerEvents: 'auto' }}
-                                title="Device Simulator"
-                            />
                         </div>
-                    )}
+                    </div>
                 </div>
-            </div>
+            )}
 
         </div>
     );

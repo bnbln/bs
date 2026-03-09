@@ -1,7 +1,7 @@
 ---
 id: 0
 title: Building habits with Streaks
-subtitle: Reminders+ a local-first habit & task app for iOS
+subtitle: Reminders+ is a local-first habit & task app for iOS
 slug: reminders-plus
 category: [UX/UI Design, Development]
 collaboration: [{Max Möckel}]
@@ -9,7 +9,7 @@ excerpts: >-
   Reminders+ turns “too many to-dos” into daily momentum: finish at least one task
   per day, keep your streak alive, and build routines that actually stick —
   designed and built in React Native, 100% local-first.
-published: '2025-08-01'
+published: '2025-12-01'
 description: Habit-building task app for iOS, built with React Native
 bgColor: '#007EFF'
 image: assets/reminders-plus/reminders-promo.jpg
@@ -29,7 +29,7 @@ animationSequence:
   safariVideoPath: assets/reminders-8-safari-scrub.mp4
   frameCount: 3607
 featured: false
-type: [Design, Development]
+type: [UX/UI, Development]
 ---
 
 Some productivity apps are *too good* at letting you plan. You end up with perfect lists… and zero momentum.

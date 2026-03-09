@@ -15,7 +15,7 @@ image: assets/qr.webp
 hasAnimation: false
 featured: true
 heroImage: assets/qr-prev.png
-type: [Design, Development]
+type: [Design]
 ---
 
 The project was designed for the business department of the German news media brand WELT, aiming to attract young employees through a magazine ad. The creative brief was to embody the claim "Erfolg beginnt mit neuem Denken" (Success begins with thinking new), integrating a QR-code.

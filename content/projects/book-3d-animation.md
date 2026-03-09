@@ -5,7 +5,7 @@ subtitle: A Short Cinematic 3D Sequence for a Space Book Trailer
 slug: book-3d-animation
 category: Book
 excerpts: A handcrafted 3D book animation created for a television book promotion
-published: '2023-03-15'
+published: '2020-03-15'
 image: assets/book.avif
 hasAnimation: true
 animationSequence:

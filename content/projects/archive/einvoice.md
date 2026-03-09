@@ -15,7 +15,7 @@ bgColor: '#0F4C81'
 image: assets/einvoice/hero.jpg
 hasAnimation: false
 featured: false
-type: [Design, Strategy]
+type: [UX/UI, Developement]
 ---
 
 Rechnungserstellung auf dem Smartphone ist selten nur Dateneingabe. In der Praxis ist es ein **Risikoworkflow**: unter Zeitdruck, zwischen Terminen, mit regulatorischen Anforderungen und direktem Einfluss auf Cashflow und Vertrauen.

@@ -1742,12 +1742,12 @@ export default function Article({ project, allProjects, heroPriority = false }: 
             <div className="max-w-[1400px] mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-x-6 pb-4">
                 {/* Title Column */}
-                <div className="md:col-span-8">
+                <div className="md:col-span-7">
                   <motion.h1
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="text-[12vw] sm:text-[9vw] md:text-[7vw] leading-[0.9] tracking-[-0.03em] font-bold font-space-grotesk mb-8 text-black"
+                    className="text-[12vw] sm:text-[9vw] md:text-[7vw] leading-[0.98] tracking-[-0.03em] font-bold font-space-grotesk mb-8 text-black"
                   >
                     {project.title}
                   </motion.h1>

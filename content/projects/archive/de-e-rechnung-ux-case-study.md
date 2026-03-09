@@ -13,7 +13,7 @@ bgColor: '#0F4C81'
 image: assets/einvoice/hero.jpg
 hasAnimation: false
 featured: false
-type: [Design, Strategy]
+type: [UX/UI, Developement]
 ---
 Rechnungen auf dem Smartphone erstellen – in der Realität ist das ein Risikoworkflow: unter Zeitdruck, zwischen Terminen, mit steigenden regulatorischen Anforderungen. Seit 2026 gilt in Deutschland die Pflicht zur elektronischen Rechnung im B2B-Bereich. Für kleine Unternehmen und Freelancer eine echte Hürde – und der Moment, in dem schlechtes UX echten Schaden anrichtet.
 

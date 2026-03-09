@@ -5,7 +5,7 @@ subtitle: My Brand Guidelines for WELT
 slug: brand-manual
 category: [Brand Design, Guidelines, Systems]
 client: [WELT]
-published: '2024-07-13'
+published: '2023-01-13'
 image: assets/brand-manual.jpg
 bgColor: '#003A5A'
 hasAnimation: false
