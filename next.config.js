@@ -14,6 +14,14 @@ const nextConfig = {
     locales: ['en'],
     defaultLocale: 'en',
   },
+
+  experimental: {
+    // Prevent the dev-only admin assets endpoint from tracing all media files into
+    // the deployed serverless function bundle on Vercel.
+    outputFileTracingExcludes: {
+      '/api/admin/assets': ['./public/assets/**/*'],
+    },
+  },
   
   // Cache headers for better asset caching
   async headers() {
