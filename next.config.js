@@ -20,6 +20,8 @@ const nextConfig = {
     // the deployed serverless function bundle on Vercel.
     outputFileTracingExcludes: {
       '/api/admin/assets': ['./public/assets/**/*'],
+      // This endpoint recursively scans public/content directories in dev mode.
+      '/api/admin/files': ['./public/**/*', './content/projects/**/*'],
     },
   },
   
