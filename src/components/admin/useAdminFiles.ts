@@ -23,6 +23,7 @@ const emptySummary: FilesApiResponse['summary'] = {
   bySource: {
     public: 0,
     content: 0,
+    blob: 0,
   },
 }
 

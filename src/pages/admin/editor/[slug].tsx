@@ -73,6 +73,7 @@ interface AssetLibraryEntry {
     name: string;
     updatedAt: string;
     sizeBytes: number;
+    source?: 'local' | 'blob';
 }
 
 type AssetFieldKind = 'image' | 'video';
@@ -504,9 +505,20 @@ function AssetSelectionField({
 }) {
     const [uploading, setUploading] = useState(false);
     const [showRecent, setShowRecent] = useState(false);
+    const [recentSource, setRecentSource] = useState<'local' | 'blob'>('blob');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canUpload = kind === 'image' && typeof onUploadImage === 'function';
-    const visibleRecentAssets = recentAssets.slice(0, 24);
+    const localAssets = recentAssets.filter((asset) => (asset.source || 'local') === 'local');
+    const blobAssets = recentAssets.filter((asset) => asset.source === 'blob');
+    const hasLocalAssets = localAssets.length > 0;
+    const hasBlobAssets = blobAssets.length > 0;
+    const visibleRecentAssets = (recentSource === 'blob' ? blobAssets : localAssets).slice(0, 24);
+
+    useEffect(() => {
+        if (recentSource === 'blob' && !hasBlobAssets && hasLocalAssets) {
+            setRecentSource('local');
+        }
+    }, [hasBlobAssets, hasLocalAssets, recentSource]);
 
     const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -574,8 +586,29 @@ function AssetSelectionField({
 
             {showRecent && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
+                    <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Recent Source</span>
+                        <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1">
+                            <button
+                                type="button"
+                                onClick={() => setRecentSource('local')}
+                                className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${recentSource === 'local' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                            >
+                                Local ({localAssets.length})
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRecentSource('blob')}
+                                className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${recentSource === 'blob' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                            >
+                                Blob ({blobAssets.length})
+                            </button>
+                        </div>
+                    </div>
                     {visibleRecentAssets.length === 0 ? (
-                        <p className="px-2 py-3 text-xs text-slate-500">Keine recent files gefunden.</p>
+                        <p className="px-2 py-3 text-xs text-slate-500">
+                            Keine recent files fuer <strong>{recentSource}</strong> gefunden.
+                        </p>
                     ) : (
                         <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 md:grid-cols-3">
                             {visibleRecentAssets.map((asset) => {
@@ -1399,7 +1432,16 @@ export default function EditorPage() {
                 setRecentVideoAssets(payload.assets.recentVideos);
             }
 
-            return typeof payload?.path === 'string' ? payload.path : null;
+            if (typeof payload?.path === 'string') {
+                try {
+                    await navigator.clipboard.writeText(payload.path);
+                } catch {
+                    // Clipboard can fail on insecure contexts; URL insert still works.
+                }
+                return payload.path;
+            }
+
+            return null;
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unbekannter Fehler beim Upload.';
             alert(`Bild-Upload fehlgeschlagen: ${message}`);

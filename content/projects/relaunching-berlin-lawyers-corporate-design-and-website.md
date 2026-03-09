@@ -36,7 +36,7 @@ A rebranding and web development project where corporate gravitas meets the flex
 Hosting on **Netlify** ensures global CDN delivery, continuous deployment from Git, and automated builds - meaning every change goes live within minutes.
 ```
 
-```mockup type="safari-tab" bgColor="#F5F5F7" image="assets/upload/decap-cms-bild-mmj3uaib-f39d1e.webp"
+```mockup type="safari-tab" bgColor="#F5F5F7" image="https://f33qiggog7gxjoua.public.blob.vercel-storage.com/projects/decap-cms-mmjiomas-dc9185.webp"
 ```
 
 ## Content Editing Made Simple

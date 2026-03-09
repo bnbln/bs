@@ -7,12 +7,12 @@ category: [Case Study,UX/UI Design, Product Strategy]
 collaboration: []
 excerpts: >-
   Seit 2026 ist die E-Rechnung Pflicht. Für kleine Unternehmen und Freelancer eine echte Hürde – Rechnungen+ macht daraus einen sicheren, mobilen Workflow.
-published: '2026-02-25'
+published: '2024-06-25'
 description: Mobile UX case study for secure, fast B2B e-invoicing workflows
 bgColor: '#0F4C81'
 image: assets/einvoice/hero.jpg
 hasAnimation: false
-featured: false
+featured: true
 type: [UX/UI, Developement]
 ---
 Rechnungen auf dem Smartphone erstellen – in der Realität ist das ein Risikoworkflow: unter Zeitdruck, zwischen Terminen, mit steigenden regulatorischen Anforderungen. Seit 2026 gilt in Deutschland die Pflicht zur elektronischen Rechnung im B2B-Bereich. Für kleine Unternehmen und Freelancer eine echte Hürde – und der Moment, in dem schlechtes UX echten Schaden anrichtet.

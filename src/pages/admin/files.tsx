@@ -78,7 +78,7 @@ function renderPreview(file: AdminFileEntry) {
 
 export default function AdminFilesPage() {
   const { files, summary, loading, error } = useAdminFiles()
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'public' | 'content'>('all')
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'public' | 'content' | 'blob'>('all')
   const [kindFilter, setKindFilter] = useState<'all' | AdminFileKind>('all')
   const [query, setQuery] = useState('')
 
@@ -123,12 +123,13 @@ export default function AdminFilesPage() {
             <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
               <select
                 value={sourceFilter}
-                onChange={(event) => setSourceFilter(event.target.value as 'all' | 'public' | 'content')}
+                onChange={(event) => setSourceFilter(event.target.value as 'all' | 'public' | 'content' | 'blob')}
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
               >
                 <option value="all">All Sources</option>
                 <option value="public">public/</option>
                 <option value="content">content/</option>
+                <option value="blob">blob/projects/</option>
               </select>
 
               <select

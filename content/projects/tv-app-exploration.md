@@ -17,7 +17,7 @@ slug: tv-app-exploration
 recommendedFilename: tv-app-exploration.md.md
 canonical: '[BILD: canonical-url nicht angegeben]'
 og:image: '[BILD: welt-tv-og.jpg nicht angegeben]'
-image: assets/upload/mockup-1-mmipukuc-c32860.webp
+image: https://f33qiggog7gxjoua.public.blob.vercel-storage.com/projects/hero-tv-app-mmjhuxd8-5ae2f1.webp
 category:
   - UX/UI
 type:
@@ -68,6 +68,8 @@ On Apple Vision Pro, the concept shifts from a screen-based interface to a **spa
 
 ![/assets/vr/Video VisionOS.png]
 
+![https://f33qiggog7gxjoua.public.blob.vercel-storage.com/projects/video-visionos-mmjhl4dg-961da1.webp]
+
 ```small
 Users can watch news while standing inside **360° environments** captured from real locations: city squares during elections, reconstruction sites after natural disasters, or scientific expeditions. Documentary formats expand this concept further by offering fully **immersive storytelling** spaces.
 ```
@@ -82,4 +84,4 @@ Together, these explorations outline two complementary directions: a production-
 
 ## Reference
 
-[projects:some-slug,welt-tv-app-handoff]
+[projects:welt-tv-app-handoff,automating-brand-assets]

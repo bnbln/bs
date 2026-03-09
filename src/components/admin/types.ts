@@ -36,7 +36,7 @@ export type AdminFileKind = 'image' | 'video' | 'audio' | 'document' | 'markdown
 
 export interface AdminFileEntry {
   id: string
-  source: 'public' | 'content'
+  source: 'public' | 'content' | 'blob'
   name: string
   relativePath: string
   extension: string
@@ -55,6 +55,7 @@ export interface FilesApiResponse {
     bySource: {
       public: number
       content: number
+      blob: number
     }
   }
 }

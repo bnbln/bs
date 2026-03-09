@@ -117,7 +117,7 @@ const WorkPage = ({ projects }: WorkPageProps) => {
 
                             {/* Filter Toggles */}
                             <motion.div
-                                className="flex flex-wrap justify-center gap-2 relative bg-white p-1 rounded-full border border-neutral-200 w-fit mx-auto mb-16"
+                                className="flex flex-nowrap justify-center gap-1 sm:gap-2 relative bg-white p-1 rounded-full border border-neutral-200 w-fit max-w-full mx-auto mb-16 overflow-x-auto"
                                 initial={{ y: 20, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
@@ -126,7 +126,7 @@ const WorkPage = ({ projects }: WorkPageProps) => {
                                     <button
                                         key={f}
                                         onClick={() => setFilter(f)}
-                                        className={`relative px-6 py-2 rounded-full transition-colors duration-300 font-inter text-sm md:text-base z-10 ${filter === f
+                                        className={`relative whitespace-nowrap px-4 sm:px-5 md:px-6 py-1.5 sm:py-2 rounded-full transition-colors duration-300 font-inter text-xs sm:text-sm md:text-base z-10 ${filter === f
                                             ? 'text-white font-medium'
                                             : 'text-neutral-500 hover:text-black'
                                             }`}

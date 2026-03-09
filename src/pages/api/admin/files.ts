@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { list } from '@vercel/blob'
 import type { AdminFileEntry, AdminFileKind, FilesApiResponse } from '../../../components/admin/types'
 
 const publicDirectory = path.join(process.cwd(), 'public')
@@ -39,6 +40,7 @@ function createEmptySummary(): FilesApiResponse['summary'] {
     bySource: {
       public: 0,
       content: 0,
+      blob: 0,
     },
   }
 }
@@ -90,7 +92,54 @@ function walkDirectory(params: {
   })
 }
 
-function buildFilesResponse(): FilesApiResponse {
+async function listBlobFiles(): Promise<AdminFileEntry[]> {
+  const files: AdminFileEntry[] = []
+
+  try {
+    let cursor: string | undefined
+    let pageGuard = 0
+
+    while (pageGuard < 30) {
+      const response = await list({
+        prefix: 'projects/',
+        ...(cursor ? { cursor } : {}),
+      })
+
+      response.blobs.forEach((blob) => {
+        const pathname = (blob.pathname || '').trim()
+        if (!pathname) return
+
+        const name = pathname.split('/').pop() || pathname
+        const extension = path.extname(pathname).toLowerCase()
+        const uploadedAt = blob.uploadedAt instanceof Date
+          ? blob.uploadedAt.toISOString()
+          : new Date(blob.uploadedAt || Date.now()).toISOString()
+
+        files.push({
+          id: `blob:${pathname}`,
+          source: 'blob',
+          name,
+          relativePath: pathname,
+          extension,
+          kind: getFileKind(extension),
+          sizeBytes: typeof blob.size === 'number' ? blob.size : 0,
+          updatedAt: uploadedAt,
+          publicUrl: blob.url,
+        })
+      })
+
+      if (!response.hasMore || !response.cursor) break
+      cursor = response.cursor
+      pageGuard += 1
+    }
+  } catch {
+    // Blob listing is optional in local/dev environments without blob token.
+  }
+
+  return files
+}
+
+async function buildFilesResponse(): Promise<FilesApiResponse> {
   const files: AdminFileEntry[] = []
 
   walkDirectory({
@@ -107,6 +156,9 @@ function buildFilesResponse(): FilesApiResponse {
     files,
   })
 
+  const blobFiles = await listBlobFiles()
+  files.push(...blobFiles)
+
   const summary = createEmptySummary()
 
   files.forEach((file) => {
@@ -121,7 +173,7 @@ function buildFilesResponse(): FilesApiResponse {
   return { files, summary }
 }
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!isAdminEnabled()) {
     return res.status(403).json({ error: 'Forbidden' })
   }
@@ -132,7 +184,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    return res.status(200).json(buildFilesResponse())
+    const response = await buildFilesResponse()
+    return res.status(200).json(response)
   } catch (error) {
     return res.status(500).json({ error: 'Failed to process admin files request' })
   }

@@ -1,6 +1,6 @@
 ---
 id: 15
-title: E-Rechnungen als UX-Hürde für kleine Unternehmen
+title: E-Rechnung als UX-Hürde für kleine Unternehmen
 subtitle: Nativer Rechnungsworkflow für iOS
 slug: e-rechnung-ux-case-study
 category: [Case Study,UX/UI Design, Product Strategy]
@@ -9,12 +9,12 @@ excerpts: >-
   Rechnungen+ transformiert einen fehleranfälligen mobilen Rechnungsprozess in einen
   geführten End-to-End-Workflow: vom Kontakt bis zum ZUGFeRD-PDF mit
   eingebetteter XML.
-published: '2026-02-25'
+published: '2024-06-25'
 description: Mobile UX-Case-Study für sichere, schnelle E-Rechnungsprozesse im B2B-Kontext
 bgColor: '#0F4C81'
 image: assets/einvoice/hero.jpg
 hasAnimation: false
-featured: false
+featured: true
 type: [UX/UI, Developement]
 ---
 

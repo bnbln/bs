@@ -10,7 +10,7 @@ excerpts: >-
   world. My initial foray into Generative Images began a few months earlier with
   Midjourney. However, my real breakthrough came when I discovered Stable
   Diffusion.
-published: '2024-07-20'
+published: '2023-07-20'
 image: assets/qr.webp
 hasAnimation: false
 featured: true

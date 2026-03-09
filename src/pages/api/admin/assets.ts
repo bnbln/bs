@@ -2,13 +2,17 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { list, put } from '@vercel/blob'
 import sharp from 'sharp'
+
+type AssetSource = 'local' | 'blob'
 
 interface AssetEntry {
   path: string
   name: string
   updatedAt: string
   sizeBytes: number
+  source: AssetSource
 }
 
 interface AssetsResponse {
@@ -17,7 +21,6 @@ interface AssetsResponse {
 }
 
 const publicAssetsDirectory = path.join(process.cwd(), 'public/assets')
-const uploadDirectory = path.join(publicAssetsDirectory, 'upload')
 
 const imageExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'])
 const videoExtensions = new Set(['.mp4', '.webm', '.mov', '.m4v'])
@@ -43,7 +46,15 @@ function toSafeSlug(value: string): string {
     .slice(0, 48) || 'upload'
 }
 
-function scanAssets(): AssetsResponse {
+function isImageExtension(extension: string): boolean {
+  return imageExtensions.has(extension.toLowerCase())
+}
+
+function isVideoExtension(extension: string): boolean {
+  return videoExtensions.has(extension.toLowerCase())
+}
+
+function scanLocalAssets(): AssetsResponse {
   const imageAssets: AssetEntry[] = []
   const videoAssets: AssetEntry[] = []
 
@@ -72,10 +83,11 @@ function scanAssets(): AssetsResponse {
         name: entry.name,
         updatedAt: stats.mtime.toISOString(),
         sizeBytes: stats.size,
+        source: 'local',
       }
 
-      if (imageExtensions.has(extension)) imageAssets.push(payload)
-      if (videoExtensions.has(extension)) videoAssets.push(payload)
+      if (isImageExtension(extension)) imageAssets.push(payload)
+      if (isVideoExtension(extension)) videoAssets.push(payload)
     })
   }
 
@@ -88,6 +100,76 @@ function scanAssets(): AssetsResponse {
     recentImages: imageAssets.slice(0, 120),
     recentVideos: videoAssets.slice(0, 80),
   }
+}
+
+async function scanBlobAssets(): Promise<AssetsResponse> {
+  const imageAssets: AssetEntry[] = []
+  const videoAssets: AssetEntry[] = []
+
+  try {
+    let cursor: string | undefined
+    let pageGuard = 0
+
+    while (pageGuard < 30) {
+      const response = await list({
+        prefix: 'projects/',
+        ...(cursor ? { cursor } : {}),
+      })
+
+      response.blobs.forEach((blob) => {
+        const pathname = (blob.pathname || '').trim()
+        if (!pathname) return
+
+        const extension = path.extname(pathname).toLowerCase()
+        if (!isImageExtension(extension) && !isVideoExtension(extension)) return
+
+        const name = pathname.split('/').pop() || pathname
+        const uploadedAt = blob.uploadedAt instanceof Date
+          ? blob.uploadedAt.toISOString()
+          : new Date(blob.uploadedAt || Date.now()).toISOString()
+
+        const payload: AssetEntry = {
+          path: blob.url,
+          name,
+          updatedAt: uploadedAt,
+          sizeBytes: typeof blob.size === 'number' ? blob.size : 0,
+          source: 'blob',
+        }
+
+        if (isImageExtension(extension)) imageAssets.push(payload)
+        if (isVideoExtension(extension)) videoAssets.push(payload)
+      })
+
+      if (!response.hasMore || !response.cursor) break
+      cursor = response.cursor
+      pageGuard += 1
+    }
+  } catch {
+    // Blob listing is optional when blob token is not configured.
+  }
+
+  imageAssets.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  videoAssets.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+
+  return {
+    recentImages: imageAssets.slice(0, 120),
+    recentVideos: videoAssets.slice(0, 80),
+  }
+}
+
+async function scanAssets(): Promise<AssetsResponse> {
+  const localAssets = scanLocalAssets()
+  const blobAssets = await scanBlobAssets()
+
+  const recentImages = [...blobAssets.recentImages, ...localAssets.recentImages]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 180)
+
+  const recentVideos = [...blobAssets.recentVideos, ...localAssets.recentVideos]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 120)
+
+  return { recentImages, recentVideos }
 }
 
 function parseImageDataUrl(dataUrl: string): Buffer {
@@ -104,20 +186,13 @@ function parseImageDataUrl(dataUrl: string): Buffer {
   return Buffer.from(rawBase64, 'base64')
 }
 
-async function optimizeAndStoreImage(params: { filename: string; dataUrl: string }): Promise<string> {
-  const { filename, dataUrl } = params
+async function optimizeImageToWebpBuffer(params: { dataUrl: string }): Promise<Buffer> {
+  const { dataUrl } = params
 
   const sourceBuffer = parseImageDataUrl(dataUrl)
   if (sourceBuffer.length === 0) {
     throw new Error('Image payload is empty.')
   }
-
-  fs.mkdirSync(uploadDirectory, { recursive: true })
-
-  const baseName = toSafeSlug(path.parse(filename).name || 'upload')
-  const uniqueSuffix = `${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`
-  const outputName = `${baseName}-${uniqueSuffix}.webp`
-  const outputPath = path.join(uploadDirectory, outputName)
 
   let image = sharp(sourceBuffer, {
     // Larger design exports (Figma) can hit Sharp's default pixel safety limit.
@@ -130,9 +205,23 @@ async function optimizeAndStoreImage(params: { filename: string; dataUrl: string
     image = image.resize({ width: 2800, height: 2800, fit: 'inside', withoutEnlargement: true })
   }
 
-  await image.webp({ quality: 80, effort: 4 }).toFile(outputPath)
+  return image.webp({ quality: 80, effort: 4 }).toBuffer()
+}
 
-  return `assets/upload/${outputName}`
+async function uploadImageToBlob(params: { filename: string; dataUrl: string }): Promise<string> {
+  const { filename, dataUrl } = params
+  const baseName = toSafeSlug(path.parse(filename).name || 'upload')
+  const uniqueSuffix = `${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`
+  const blobPathname = `projects/${baseName}-${uniqueSuffix}.webp`
+  const webpBuffer = await optimizeImageToWebpBuffer({ dataUrl })
+
+  const blob = await put(blobPathname, webpBuffer, {
+    access: 'public',
+    addRandomSuffix: false,
+    contentType: 'image/webp',
+  })
+
+  return blob.url
 }
 
 async function handlePost(req: NextApiRequest, res: NextApiResponse) {
@@ -144,15 +233,16 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    const savedPath = await optimizeAndStoreImage({
+    const savedPath = await uploadImageToBlob({
       filename: filename.trim(),
       dataUrl: dataUrl.trim(),
     })
 
+    const assets = await scanAssets()
     return res.status(201).json({
       success: true,
       path: savedPath,
-      assets: scanAssets(),
+      assets,
     })
   } catch (error) {
     return res.status(400).json({
@@ -168,7 +258,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if (req.method === 'GET') {
-      return res.status(200).json(scanAssets())
+      const assets = await scanAssets()
+      return res.status(200).json(assets)
     }
 
     if (req.method === 'POST') {
