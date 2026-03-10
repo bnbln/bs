@@ -12,15 +12,17 @@ import Footer from '../components/Footer'
 import Create from '../components/Create'
 import Skills from '../components/Skills'
 import { buildCanonical, buildPageSeo, getSeoConfig } from '../lib/seo'
+import { getAllWorkHubContent, type WorkHubContent } from '../lib/work-hub-content'
 
 interface HomeProps {
   data: {
     projects: Project[]
     featuredProjects: Project[]
   }
+  hubContent: WorkHubContent[]
 }
 
-export default function Home({ data }: HomeProps) {
+export default function Home({ data, hubContent }: HomeProps) {
   const seoConfig = getSeoConfig()
   const homeSeo = buildPageSeo(seoConfig, 'home')
   const siteUrl = buildCanonical(seoConfig, '/')
@@ -56,7 +58,7 @@ export default function Home({ data }: HomeProps) {
           <About />
           <Work data={data.projects} />
           {/* <Create /> */}
-          <Skills />
+          <Skills hubContent={hubContent} />
           <Contact />
           <FeaturedProjects data={data.featuredProjects} />
         </div>
@@ -70,10 +72,12 @@ export default function Home({ data }: HomeProps) {
 
 export const getStaticProps: GetStaticProps = async () => {
   const data = getProjectsData()
+  const hubContent = await getAllWorkHubContent()
 
   return {
     props: {
-      data
+      data,
+      hubContent
     }
   }
 } 
