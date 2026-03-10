@@ -113,10 +113,54 @@ const Datenschutzerklaerung = () => {
                </section>
 
                <section className="mb-8">
-                 <h2 className="text-xl font-semibold text-black mb-4">6. Kontaktaufnahme</h2>
+                 <h2 className="text-xl font-semibold text-black mb-4">6. Kontaktformular & Kontaktaufnahme</h2>
+                 <p className="text-gray-700 mb-4">
+                   Wenn Sie uns über das Kontaktformular oder per E-Mail kontaktieren, verarbeiten wir die von Ihnen übermittelten
+                   personenbezogenen Daten zur Bearbeitung Ihrer Anfrage und zur Kommunikation mit Ihnen.
+                 </p>
+
+                 <h3 className="text-lg font-semibold text-black mb-2">6.1 Verarbeitete Daten</h3>
+                 <ul className="list-disc pl-6 text-gray-700 mb-4">
+                   <li>Pflichtangaben aus dem Formular: Name, E-Mail-Adresse, Nachricht,</li>
+                   <li>Zeitpunkt der Anfrage,</li>
+                   <li>technische Metadaten im Rahmen des Hostings (z. B. IP-Adresse, Request-Logs).</li>
+                 </ul>
+
+                 <h3 className="text-lg font-semibold text-black mb-2">6.2 Zwecke und Rechtsgrundlagen</h3>
+                 <ul className="list-disc pl-6 text-gray-700 mb-4">
+                   <li>Bearbeitung von Anfragen und vorvertragliche Kommunikation (Art. 6 Abs. 1 lit. b DSGVO),</li>
+                   <li>effiziente, sichere Bearbeitung allgemeiner Anfragen und Missbrauchsprävention (Art. 6 Abs. 1 lit. f DSGVO),</li>
+                   <li>
+                     soweit Sie im Formular eine Einwilligung erteilen, zusätzlich Art. 6 Abs. 1 lit. a DSGVO; eine Einwilligung können Sie
+                     jederzeit mit Wirkung für die Zukunft widerrufen.
+                   </li>
+                 </ul>
+
+                 <h3 className="text-lg font-semibold text-black mb-2">6.3 Empfänger und Auftragsverarbeiter</h3>
+                 <p className="text-gray-700 mb-4">
+                   Für den Versand und die Zustellung von Kontaktformular-Nachrichten nutzen wir den E-Mail-Dienst <strong>Resend</strong>
+                   (Plus Five Five, Inc., USA) als Auftragsverarbeiter. Die technische Bereitstellung der Website erfolgt über
+                   <strong> Vercel Inc.</strong> (USA). Mit den Dienstleistern bestehen vertragliche Datenschutzvereinbarungen
+                   (Auftragsverarbeitung / DPA).
+                 </p>
+
+                 <h3 className="text-lg font-semibold text-black mb-2">6.4 Drittlandübermittlung</h3>
+                 <p className="text-gray-700 mb-4">
+                   Bei Nutzung der genannten Dienstleister kann eine Übermittlung personenbezogener Daten in Drittländer, insbesondere in die
+                   USA, nicht ausgeschlossen werden. Soweit kein Angemessenheitsbeschluss greift, stützen wir die Übermittlung auf geeignete
+                   Garantien nach Art. 46 DSGVO (insbesondere Standardvertragsklauseln).
+                 </p>
+
+                 <h3 className="text-lg font-semibold text-black mb-2">6.5 Speicherdauer</h3>
+                 <p className="text-gray-700 mb-4">
+                   Wir speichern Ihre Kontaktanfrage nur so lange, wie dies zur Bearbeitung und etwaigen Anschlusskommunikation erforderlich ist
+                   oder gesetzliche Aufbewahrungspflichten bestehen. Danach werden die Daten gelöscht.
+                 </p>
+
+                 <h3 className="text-lg font-semibold text-black mb-2">6.6 Erforderlichkeit der Bereitstellung</h3>
                  <p className="text-gray-700">
-                   Bei Kontaktaufnahme per E-Mail verarbeiten wir Ihre Angaben zur Bearbeitung der Anfrage (Art. 6 Abs. 1 lit. b DSGVO,
-                   ggf. Art. 6 Abs. 1 lit. f DSGVO). Die Daten werden gelöscht, sobald sie für die Zweck­erfüllung nicht mehr erforderlich sind.
+                   Die Bereitstellung der als Pflichtfelder gekennzeichneten Daten ist für die Bearbeitung Ihrer Anfrage erforderlich. Ohne diese
+                   Angaben kann die Kontaktanfrage nicht bearbeitet werden.
                  </p>
                </section>
 
@@ -137,7 +181,7 @@ const Datenschutzerklaerung = () => {
                  <h2 className="text-xl font-semibold text-black mb-4">8. Aktualität und Änderungen</h2>
                  <p className="text-gray-700">
                    Wir passen diese Datenschutzerklärung an, sobald technische oder rechtliche Änderungen dies erforderlich machen.
-                   Stand: 01.09.2025
+                   Stand: 10.03.2026
                  </p>
                </section>
              </div>
