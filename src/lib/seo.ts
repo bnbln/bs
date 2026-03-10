@@ -1,6 +1,7 @@
 import type { DefaultSeoProps, NextSeoProps } from 'next-seo'
 import seoConfigJson from '../config/seo.config.json'
 import type { Project } from './markdown'
+import { WORK_HUBS } from './work-hubs'
 
 export const SEO_PAGE_KEYS = [
   'home',
@@ -542,6 +543,17 @@ export function buildSitemap(config: SeoConfig, projects: Project[]): string {
         lastmod: now,
         changefreq: page.changefreq || 'monthly',
         priority: formatPriority(page.priority, key === 'home' ? 1 : 0.8),
+      })
+    )
+  })
+
+  WORK_HUBS.forEach((hub) => {
+    entries.push(
+      toSitemapEntry({
+        loc: buildCanonical(config, `/work/${hub.slug}/`),
+        lastmod: now,
+        changefreq: 'monthly',
+        priority: formatPriority(0.7, 0.7),
       })
     )
   })

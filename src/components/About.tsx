@@ -103,7 +103,7 @@ const About = () => {
           {/* Scroll-Driven Scrubbing Bio */}
           <div className="min-h-[40vh] lg:min-h-[60vh] flex items-start">
             <ScrubText
-              text="As a designer and developer, I bridge the gap between brand identity and digital product. I craft visual systems that span brand, motion, and UX — then engineer them in React to ensure pixel-perfect execution at scale."
+              text="As a designer and developer, I bridge the gap between brand identity and digital product. I craft visual systems that span brand, motion, and UX - then engineer them in React to ensure pixel-perfect execution at scale."
               progress={scrollYProgress}
             />
           </div>

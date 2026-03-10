@@ -1,6 +1,5 @@
 import React from 'react'
 import { resolveAssetPath } from '../lib/assets'
-import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
 
 export type MockupType = 'iphone' | 'macbook' | 'tv' | 'ipad' | 'android' | 'safari' | 'safari-tab'
 type NormalizedMockupType = 'iphone' | 'macbook' | 'tv' | 'ipad' | 'android' | 'safari-tab'
@@ -117,18 +116,26 @@ const normalizeExternalUrl = (raw?: string): string | null => {
 const MockupMedia = ({
     isVideo,
     path,
-    accentColor,
     imageClassName = 'object-cover',
     alt,
 }: {
     isVideo: boolean
     path: string
-    accentColor: string
     imageClassName?: string
     alt: string
 }) => {
     if (isVideo) {
-        return <AdaptiveVideoPlayer videoUrl={path} autoStart={true} color={accentColor} minimal loop muted />
+        return (
+            <video
+                src={path}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+            />
+        )
     }
     return <img src={path} alt={alt} className={`w-full h-full ${imageClassName}`} loading="lazy" />
 }
@@ -137,7 +144,6 @@ const MockupDevice = ({
     type,
     path,
     isVideo,
-    accentColor,
     maxWidthClass,
     itemCount,
     displayUrl,
@@ -146,7 +152,6 @@ const MockupDevice = ({
     type: NormalizedMockupType
     path: string
     isVideo: boolean
-    accentColor: string
     maxWidthClass: string
     itemCount: number
     displayUrl?: string
@@ -159,7 +164,7 @@ const MockupDevice = ({
                     <div className="w-[31%] aspect-[10/3] bg-black rounded-full" />
                 </div>
                 <div className="w-full h-full rounded-[1.45rem] sm:rounded-[1.85rem] md:rounded-[2.25rem] lg:rounded-[2.75rem] xl:rounded-[3.2rem] overflow-hidden bg-neutral-900 relative z-10">
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
+                    <MockupMedia isVideo={isVideo} path={path} alt={alt} />
                 </div>
             </div>
         )
@@ -170,7 +175,7 @@ const MockupDevice = ({
             <div className={`relative mx-auto w-full ${maxWidthClass} aspect-[9/20] rounded-[1.6rem] sm:rounded-[2rem] md:rounded-[2.45rem] lg:rounded-[2.95rem] xl:rounded-[3.4rem] p-[5px] sm:p-[6px] md:p-[7px] lg:p-[8px] xl:p-[9px] bg-black shadow-2xl ring-1 ring-white/10`}>
                 <div className="w-full h-full rounded-[1.3rem] sm:rounded-[1.6rem] md:rounded-[1.95rem] lg:rounded-[2.35rem] xl:rounded-[2.8rem] overflow-hidden bg-neutral-900 relative z-10">
                     <div className="absolute top-[8px] sm:top-[10px] md:top-[11px] lg:top-[12px] left-1/2 -translate-x-1/2 w-[8px] h-[8px] sm:w-[10px] sm:h-[10px] md:w-[11px] md:h-[11px] lg:w-[12px] lg:h-[12px] bg-black rounded-full z-20 pointer-events-none" />
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
+                    <MockupMedia isVideo={isVideo} path={path} alt={alt} />
                 </div>
             </div>
         )
@@ -180,7 +185,7 @@ const MockupDevice = ({
         return (
             <div className={`relative mx-auto w-full ${maxWidthClass} aspect-[4/3] rounded-[clamp(1.7rem,2.8vw,2.3rem)] p-[clamp(6px,0.9vw,10px)] bg-black shadow-2xl ring-1 ring-white/10`}>
                 <div className="w-full h-full rounded-[clamp(1.25rem,2.2vw,1.85rem)] overflow-hidden bg-neutral-900">
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
+                    <MockupMedia isVideo={isVideo} path={path} alt={alt} />
                 </div>
             </div>
         )
@@ -191,7 +196,7 @@ const MockupDevice = ({
             <div className={`relative mx-auto w-full ${maxWidthClass} flex flex-col items-center`}>
                 <div className="relative w-full aspect-video bg-[#161616] rounded-[0.65rem] p-1 shadow-2xl ring-1 ring-white/5">
                     <div className="w-full h-full overflow-hidden bg-black rounded-[0.45rem]">
-                        <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
+                        <MockupMedia isVideo={isVideo} path={path} alt={alt} />
                     </div>
                 </div>
                 <div className="relative w-[34%] h-5 md:h-7 flex justify-between -mt-1">
@@ -218,7 +223,6 @@ const MockupDevice = ({
                     <MockupMedia
                         isVideo={isVideo}
                         path={path}
-                        accentColor={accentColor}
                         imageClassName="object-cover object-top"
                         alt={alt}
                     />
@@ -235,7 +239,7 @@ const MockupDevice = ({
                     <div className="w-14 md:w-16 h-2.5 md:h-3 bg-black rounded-b-md" />
                 </div>
                 <div className="w-full h-full rounded-md overflow-hidden bg-neutral-900 relative">
-                    <MockupMedia isVideo={isVideo} path={path} accentColor={accentColor} alt={alt} />
+                    <MockupMedia isVideo={isVideo} path={path} alt={alt} />
                 </div>
             </div>
             <div className="relative w-[114%] h-3 md:h-5 bg-gradient-to-b from-[#E2E2E2] to-[#BCBCBC] rounded-b-3xl shadow-xl flex justify-center pt-0.5 border-t border-white/40 z-20">
@@ -254,7 +258,6 @@ export default function Mockup(props: MockupProps) {
     if (validItems.length === 0) return null
 
     const containerBg = validItems[0].bgColor || props.bgColor || '#F5F5F7'
-    const accentColor = props.accentColor || '#000'
     const grouped = validItems.length > 1
 
     const renderGroupedItem = (item: MockupItem, index: number) => {
@@ -277,7 +280,6 @@ export default function Mockup(props: MockupProps) {
                     type={type}
                     path={path}
                     isVideo={isVid}
-                    accentColor={accentColor}
                     maxWidthClass={maxWidthClass}
                     itemCount={validItems.length}
                     displayUrl={rawUrl}
@@ -298,7 +300,6 @@ export default function Mockup(props: MockupProps) {
                     type={type}
                     path={path}
                     isVideo={isVid}
-                    accentColor={accentColor}
                     maxWidthClass={maxWidthClass}
                     itemCount={validItems.length}
                     displayUrl={rawUrl}
@@ -337,7 +338,6 @@ export default function Mockup(props: MockupProps) {
                                 type={type}
                                 path={path}
                                 isVideo={isVid}
-                                accentColor={accentColor}
                                 maxWidthClass={maxWidthClass}
                                 itemCount={1}
                                 displayUrl={rawUrl}
@@ -349,7 +349,6 @@ export default function Mockup(props: MockupProps) {
                             type={type}
                             path={path}
                             isVideo={isVid}
-                            accentColor={accentColor}
                             maxWidthClass={maxWidthClass}
                             itemCount={1}
                             displayUrl={rawUrl}

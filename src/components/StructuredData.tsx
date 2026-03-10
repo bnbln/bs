@@ -1,6 +1,6 @@
 interface StructuredDataProps {
-  type: 'person' | 'article' | 'website'
-  data: any
+  type: string
+  data: Record<string, unknown>
 }
 
 export default function StructuredData({ type, data }: StructuredDataProps) {
