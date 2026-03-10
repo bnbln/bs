@@ -162,6 +162,22 @@ const Datenschutzerklaerung = () => {
                    Die Bereitstellung der als Pflichtfelder gekennzeichneten Daten ist für die Bearbeitung Ihrer Anfrage erforderlich. Ohne diese
                    Angaben kann die Kontaktanfrage nicht bearbeitet werden.
                  </p>
+
+                 <h3 className="text-lg font-semibold text-black mt-6 mb-2">6.7 Newsletter</h3>
+                 <p className="text-gray-700 mb-4">
+                   Wenn Sie sich über das Newsletter-Feld im Footer anmelden, verarbeiten wir Ihre E-Mail-Adresse zum Zweck des Versands
+                   von Informationen über neue Projekte und Inhalte. Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).
+                 </p>
+                 <p className="text-gray-700 mb-4">
+                   Für die Verwaltung der Empfängerliste nutzen wir <strong>Resend</strong> (Plus Five Five, Inc., USA) als
+                   Auftragsverarbeiter. Dabei kann es zu einer Datenübermittlung in die USA kommen. Sofern kein Angemessenheitsbeschluss
+                   greift, erfolgt die Übermittlung auf Grundlage geeigneter Garantien nach Art. 46 DSGVO (insbesondere
+                   Standardvertragsklauseln).
+                 </p>
+                 <p className="text-gray-700">
+                   Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen, z. B. per E-Mail an
+                   mail@benediktschnupp.com.
+                 </p>
                </section>
 
                <section className="mb-8">

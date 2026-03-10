@@ -6,6 +6,9 @@ import { ArrowUpRight } from 'lucide-react'
 const Footer = () => {
   const currentYear = new Date().getFullYear()
   const [isDesktop, setIsDesktop] = useState(false)
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [newsletterMessage, setNewsletterMessage] = useState('')
   const footerRef = useRef<HTMLElement>(null)
   
   // Motion values for scroll-linked animation
@@ -41,7 +44,7 @@ const Footer = () => {
         window.removeEventListener('resize', checkDesktop)
         window.removeEventListener('scroll', handleScroll)
     }
-  }, [])
+  }, [revealProgress])
 
   // Derived animations from revealProgress (0 to 1)
   const y = useTransform(revealProgress, [0, 1], [50, 0]) // Moves up into place
@@ -74,6 +77,42 @@ const Footer = () => {
       viewport: { once: true }
   } : {}
 
+  const handleNewsletterSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!newsletterEmail) return
+
+    setNewsletterStatus('submitting')
+    setNewsletterMessage('')
+
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail }),
+      })
+
+      let data: { message?: string } = {}
+      try {
+        data = await response.json()
+      } catch {
+        data = {}
+      }
+
+      if (response.ok) {
+        setNewsletterStatus('success')
+        setNewsletterMessage(data.message || 'You are now subscribed.')
+        setNewsletterEmail('')
+        return
+      }
+
+      setNewsletterStatus('error')
+      setNewsletterMessage(data.message || 'Subscription failed. Please try again.')
+    } catch (error) {
+      setNewsletterStatus('error')
+      setNewsletterMessage('Subscription failed. Please try again.')
+    }
+  }
+
   return (
     <footer
       ref={footerRef}
@@ -86,7 +125,7 @@ const Footer = () => {
       >
         
         {/* Brand Column */}
-        <motion.div className="md:col-span-4 flex flex-col justify-between h-full" variants={itemVariants}>
+        <motion.div className="md:col-span-3 flex flex-col justify-between h-full" variants={itemVariants}>
           <div>
              <h2 className="text-white font-space-grotesk font-bold text-2xl md:text-3xl mb-2">Benedikt Schnupp</h2>
              <p className="text-white/50 font-inter text-sm max-w-xs leading-relaxed">
@@ -95,8 +134,45 @@ const Footer = () => {
           </div>
         </motion.div>
 
-        {/* Spacer */}
-        <div className="hidden md:block md:col-span-2"></div>
+        {/* Newsletter Column */}
+        <motion.div className="md:col-span-5 flex flex-col gap-4" variants={itemVariants}>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Newsletter</h3>
+            <p className="text-white/60 font-inter text-sm max-w-md">
+              Occasional updates about new projects and case studies.
+            </p>
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md">
+              <input
+                type="email"
+                required
+                value={newsletterEmail}
+                onChange={(event) => setNewsletterEmail(event.target.value)}
+                placeholder="your@email.com"
+                className="w-full rounded-full bg-white/5 border border-white/15 px-5 py-3 text-white placeholder:text-white/35 font-inter text-sm focus:outline-none focus:border-white/40 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={newsletterStatus === 'submitting'}
+                className="rounded-full px-6 py-3 bg-white text-black font-space-grotesk font-semibold text-sm hover:bg-white/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {newsletterStatus === 'submitting' ? 'Submitting...' : 'Subscribe'}
+              </button>
+            </form>
+            <p
+              className={`font-inter text-xs ${
+                newsletterStatus === 'error' ? 'text-red-300' : 'text-white/55'
+              }`}
+              aria-live="polite"
+            >
+              {newsletterMessage || 'No spam. Unsubscribe anytime.'}
+            </p>
+            <p className="font-inter text-[11px] text-white/35">
+              By subscribing, you agree to our{' '}
+              <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+        </motion.div>
 
         {/* Links Column: Sitemap */}
         <motion.div className="md:col-span-2 flex flex-col gap-4" variants={itemVariants}>
