@@ -4,6 +4,7 @@ import { NextSeo } from 'next-seo'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navigation from '../../components/Navigation'
 import Footer from '../../components/Footer'
+import HubLinkCard from '../../components/HubLinkCard'
 import { getAllProjects, Project } from '../../lib/markdown'
 import { getAllWorkHubContent, type WorkHubContent } from '../../lib/work-hub-content'
 import Link from 'next/link'
@@ -13,7 +14,6 @@ import {
   FILTER_OPTIONS,
   type WorkFilter,
   getProjectCategoryTags,
-  getProjectsForHub,
   WORK_HUB_SLUGS,
 } from '../../lib/work-hubs'
 
@@ -156,16 +156,27 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
 
                         <div className="mt-6 w-full">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-2xl md:text-[28px] font-inter font-bold text-black tracking-tight group-hover:text-neutral-600 transition-colors duration-300">
+                            <h3 className={`text-2xl ${
+                                  !isFeatured ? 'md:text-[36px] leading-[1] md:w-[90%]' : 'md:text-[20px] leading-[1.2] md:w-[80%]'
+                                } font-inter font-bold text-black tracking-tight group-hover:text-neutral-600 transition-colors duration-300`}>
                               {project.title}
                             </h3>
-                            {project.subtitle && (
+                            {project.subtitle && !isFeatured && (
+                              <p
+                                className={`mt-3 text-neutral-500 text-sm md:text-base font-inter leading-relaxed ${
+                                  !isFeatured ? 'md:w-[85%] font-bold' : ''
+                                }`}
+                              >
+                                {project.subtitle}
+                              </p>
+                            )}
+                            {project.excerpts && !isFeatured && (
                               <p
                                 className={`mt-3 text-neutral-500 text-sm md:text-base font-inter leading-relaxed ${
                                   !isFeatured ? 'md:w-[85%]' : ''
                                 }`}
                               >
-                                {project.subtitle}
+                                {project.excerpts}
                               </p>
                             )}
                           </div>
@@ -192,26 +203,14 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {orderedHubContent.map((content) => (
-                  <Link
+                  <HubLinkCard
                     key={`bottom-${content.slug}`}
                     href={`/work/${content.slug}`}
-                    className="group rounded-2xl border border-neutral-200 bg-white p-5 md:p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
-                  >
-                    <h3 className="font-space-grotesk text-xl font-bold tracking-tight text-black">
-                      {content.pageTitle}
-                    </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-neutral-600 font-inter line-clamp-3">
-                      {content.cardDescription}
-                    </p>
-                    <div className="mt-5 flex items-center justify-between text-sm">
-                      <span className="font-inter text-neutral-500">
-                        {getProjectsForHub(projects, content.slug).length} projects
-                      </span>
-                      <span className="font-space-grotesk font-semibold text-black transition-transform group-hover:translate-x-1">
-                        Open hub →
-                      </span>
-                    </div>
-                  </Link>
+                    title={content.pageTitle}
+                    description={content.cardDescription}
+                    accentColor={content.headerColor}
+                    eyebrow={content.navLabel}
+                  />
                 ))}
               </div>
             </section>
