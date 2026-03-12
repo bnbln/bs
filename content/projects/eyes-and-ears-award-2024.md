@@ -1,11 +1,16 @@
 ---
 id: 3
 title: Multiple Projects won an Eyes and Ears Award 2024
-subtitle: Grateful for the Work, the Process, and the People
+subtitle: 'Grateful for the Work, the Process, and the People'
 slug: eyes-and-ears-award-2024
 category: Award
-collaboration: [{Matthias Herrmann},{Hernan Gaete, hernangaete.com}, {Guy Raphael}]
-awards: [Eyes and Ears Award 2024]
+collaboration:
+  - Matthias Herrmann: null
+  - Hernan Gaete: null
+    hernangaete.com: null
+  - Guy Raphael: null
+awards:
+  - Eyes and Ears Award 2024
 excerpts: Recognition for excellence in design and creativity
 published: '2025-12-12'
 image: assets/Eyes and Ears 1080x1528.jpg
@@ -13,6 +18,8 @@ bgColor: '#f6396c'
 hasAnimation: false
 featured: true
 type: Design
+status: Published
+updatedAt: '2026-03-12T11:50:31.107Z'
 ---
 
 The Eyes and Ears Awards are among the most respected recognitions in European audiovisual design, celebrating strong ideas, thoughtful craft, and collaborative work across motion graphics, broadcast design, and digital media. Being part of this community alone already means a lot.

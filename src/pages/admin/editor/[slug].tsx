@@ -83,7 +83,98 @@ interface CollaborationPerson {
     url: string;
 }
 
+type EditorFolder = 'projects' | 'archive';
+type EditorProjectStatus = 'Draft' | 'Published';
+
 const PROJECT_TYPE_OPTIONS = ['Design', 'UX/UI', 'Developement'] as const;
+const mapProjectTypeToContentHubs = (value: string): string[] => {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return [];
+    if (normalized.includes('ux') && normalized.includes('ui')) return ['ux-ui'];
+    if (normalized.includes('develop') || normalized === 'dev') return ['development'];
+    if (normalized.includes('design')) return ['design'];
+    return [];
+};
+
+const readQueryString = (value: string | string[] | undefined): string => {
+    if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : '';
+    return typeof value === 'string' ? value : '';
+};
+
+const quoteYaml = (value: string): string => JSON.stringify(value);
+
+function buildNewProjectDocument({
+    id,
+    slug,
+    folder,
+    title,
+    subtitle,
+    category,
+    excerpt,
+    featured,
+}: {
+    id: number;
+    slug: string;
+    folder: EditorFolder;
+    title: string;
+    subtitle: string;
+    category: string;
+    excerpt: string;
+    featured: boolean;
+}): { markdown: string; project: Project } {
+    const now = new Date();
+    const published = now.toISOString().slice(0, 10);
+    const updatedAt = now.toISOString();
+    const status: EditorProjectStatus = folder === 'archive' ? 'Draft' : 'Published';
+    const projectType = 'Design';
+    const contentHubs = mapProjectTypeToContentHubs(projectType);
+
+    const markdown = [
+        '---',
+        `id: ${id}`,
+        `title: ${quoteYaml(title)}`,
+        `subtitle: ${quoteYaml(subtitle)}`,
+        `slug: ${slug}`,
+        `category: ${quoteYaml(category)}`,
+        `published: '${published}'`,
+        `status: ${quoteYaml(status)}`,
+        `updatedAt: ${quoteYaml(updatedAt)}`,
+        `content-hubs: ${JSON.stringify(contentHubs)}`,
+        "image: 'assets/heroimage-bg.jpg'",
+        `excerpts: ${quoteYaml(excerpt)}`,
+        "bgColor: '#E5E7EB'",
+        'hasAnimation: false',
+        `featured: ${featured ? 'true' : 'false'}`,
+        `type: ${JSON.stringify([projectType])}`,
+        `description: ${quoteYaml(excerpt || subtitle || title)}`,
+        '---',
+        `# ${title}`,
+        '',
+        'Neuer Entwurf. Inhalt folgt.',
+        '',
+    ].join('\n');
+
+    const project: Project = {
+        id,
+        title,
+        subtitle,
+        slug,
+        category,
+        excerpts: excerpt,
+        published,
+        status,
+        updatedAt,
+        contentHubs: contentHubs as Project['contentHubs'],
+        description: excerpt || subtitle,
+        bgColor: '#E5E7EB',
+        image: 'assets/heroimage-bg.jpg',
+        hasAnimation: false,
+        featured,
+        type: [projectType],
+    };
+
+    return { markdown, project };
+}
 
 const toPreviewSource = (assetPath: string): string => resolveAssetPath(assetPath || '');
 
@@ -913,12 +1004,14 @@ function FrontmatterEditor({
     recentImageAssets,
     recentVideoAssets,
     onUploadImage,
+    folder,
 }: {
     block: Block;
     updateBlock: (id: string, updates: Partial<Block>) => void;
     recentImageAssets: AssetLibraryEntry[];
     recentVideoAssets: AssetLibraryEntry[];
     onUploadImage: (file: File) => Promise<string | null>;
+    folder: EditorFolder;
 }) {
     const [data, setData] = useState<Record<string, any> | null>(null);
     const [rawMode, setRawMode] = useState(false);
@@ -989,6 +1082,8 @@ function FrontmatterEditor({
         collaboration = [],
         excerpts = '',
         published = '',
+        status = 'Published',
+        updatedAt = '',
         description = '',
         bgColor = '',
         image = '',
@@ -1010,12 +1105,33 @@ function FrontmatterEditor({
         ? [selectedType, ...PROJECT_TYPE_OPTIONS]
         : [...PROJECT_TYPE_OPTIONS];
     const animationData: Record<string, any> = animationSequence && typeof animationSequence === 'object' ? animationSequence : {};
+    const normalizedStatus: EditorProjectStatus = folder === 'archive'
+        ? 'Draft'
+        : status === 'Draft' ? 'Draft' : 'Published';
+    const publishedValue = typeof published === 'string' ? published : '';
+    const updatedAtValue = typeof updatedAt === 'string'
+        ? updatedAt
+        : updatedAt instanceof Date
+            ? updatedAt.toISOString()
+            : '';
 
     const updateCollaborationPerson = (index: number, key: 'name' | 'url', value: string) => {
         const nextPeople = [...collaborationPeople];
         const base = nextPeople[index] || { name: '', url: '' };
         nextPeople[index] = { ...base, [key]: value };
         handleChange('collaboration', serializeCollaborationPeople(nextPeople));
+    };
+
+    const handleTypeChange = (nextType: string) => {
+        if (!data) return;
+        const mappedContentHubs = mapProjectTypeToContentHubs(nextType);
+        const nextData = {
+            ...data,
+            type: nextType ? [nextType] : [],
+            'content-hubs': mappedContentHubs,
+        };
+        setData(nextData);
+        saveToBlock(nextData);
     };
 
     const addCollaborationPerson = () => {
@@ -1056,14 +1172,26 @@ function FrontmatterEditor({
                         </div>
                         <div>
                             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Publish Date (YYYY-MM-DD)</label>
-                            <input type="text" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={published} onChange={e => handleChange('published', e.target.value)} />
+                            <input type="text" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={publishedValue} onChange={e => handleChange('published', e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Status</label>
+                            <select
+                                className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black disabled:cursor-not-allowed disabled:opacity-70"
+                                value={normalizedStatus}
+                                onChange={(event) => handleChange('status', event.target.value === 'Draft' ? 'Draft' : 'Published')}
+                                disabled={folder === 'archive'}
+                            >
+                                <option value="Draft">Draft</option>
+                                <option value="Published">Published</option>
+                            </select>
                         </div>
                         <div>
                             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project Type</label>
                             <select
                                 className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black"
                                 value={selectedType}
-                                onChange={(event) => handleChange('type', event.target.value ? [event.target.value] : [])}
+                                onChange={(event) => handleTypeChange(event.target.value)}
                             >
                                 <option value="">Not set</option>
                                 {typeOptions.map((entry) => (
@@ -1072,6 +1200,15 @@ function FrontmatterEditor({
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Updated At (auto on save)</label>
+                            <input
+                                type="text"
+                                className="w-full rounded-lg border bg-slate-100 p-2.5 text-sm text-slate-600"
+                                value={updatedAtValue || 'Wird beim Speichern gesetzt'}
+                                readOnly
+                            />
                         </div>
                         <div className="md:col-span-2">
                             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Excerpt (Hero Intro)</label>
@@ -1135,7 +1272,7 @@ function FrontmatterEditor({
 
                 <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
                     <div className="mb-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Taxonomy</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Classification</p>
                         <h3 className="mt-1 text-lg font-bold text-slate-900">Category & Awards</h3>
                     </div>
                     <div className="space-y-4">
@@ -1348,6 +1485,14 @@ export default function EditorPage() {
         ? (folderParam[0] === 'archive' ? 'archive' : 'projects')
         : (folderParam === 'archive' ? 'archive' : 'projects');
     const folderQuery = folder === 'archive' ? '?folder=archive' : '';
+    const newParam = readQueryString(router.query.new).toLowerCase();
+    const isNewDocument = newParam === '1' || newParam === 'true' || newParam === 'yes';
+    const queryTitle = readQueryString(router.query.title).trim();
+    const querySubtitle = readQueryString(router.query.subtitle).trim();
+    const queryCategory = readQueryString(router.query.category).trim();
+    const queryExcerpt = readQueryString(router.query.excerpt).trim();
+    const queryFeatured = readQueryString(router.query.featured).toLowerCase();
+    const queryId = Number(readQueryString(router.query.id));
 
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [initialProject, setInitialProject] = useState<Project | null>(null);
@@ -1520,41 +1665,112 @@ export default function EditorPage() {
 
     useEffect(() => {
         if (!slug) return;
+        let cancelled = false;
 
-        // Fetch all projects for references and the current project data
-        fetch('/api/admin/projects')
-            .then(res => res.json())
-            .then(data => {
-                const liveProjects = data.projects || [];
-                const archivedProjects = data.archivedProjects || [];
-                const combinedProjects = [...liveProjects, ...archivedProjects];
-                setAllProjects(combinedProjects);
-                const activeList = folder === 'archive' ? archivedProjects : liveProjects;
-                const proj = activeList.find((p: Project) => p.slug === slug) || combinedProjects.find((p: Project) => p.slug === slug);
-                if (proj) setInitialProject(proj);
-            });
-
-        // Fetch raw markdown
-        fetch(`/api/admin/project/${slug}${folderQuery}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.content) {
-                    setBlocks(parseMarkdownToBlocks(data.content));
+        const loadEditor = async () => {
+            setLoading(true);
+            try {
+                const projectsResponse = await fetch('/api/admin/projects');
+                const projectsPayload = await projectsResponse.json().catch(() => ({}));
+                if (!projectsResponse.ok) {
+                    throw new Error(projectsPayload?.error || 'Projekte konnten nicht geladen werden.');
                 }
-                setLoading(false);
-            });
-    }, [slug, folder, folderQuery]);
+
+                const liveProjects = Array.isArray(projectsPayload?.projects) ? projectsPayload.projects : [];
+                const archivedProjects = Array.isArray(projectsPayload?.archivedProjects) ? projectsPayload.archivedProjects : [];
+                const combinedProjects = [...liveProjects, ...archivedProjects] as Project[];
+                if (cancelled) return;
+                setAllProjects(combinedProjects);
+
+                const activeList = (folder === 'archive' ? archivedProjects : liveProjects) as Project[];
+                const projectInFolder = activeList.find((project) => project.slug === slug);
+                const projectAny = combinedProjects.find((project) => project.slug === slug);
+                const existingProject = projectInFolder || projectAny;
+
+                if (isNewDocument && !projectInFolder) {
+                    const maxId = combinedProjects.reduce((max: number, project) => {
+                        const value = Number(project.id);
+                        return Number.isFinite(value) ? Math.max(max, value) : max;
+                    }, 0);
+                    const nextId = Number.isFinite(queryId) && queryId > 0 ? queryId : maxId + 1;
+                    const featuredFromQuery = ['1', 'true', 'yes', 'on'].includes(queryFeatured);
+                    const cleanTitle = queryTitle || slug;
+                    const seed = buildNewProjectDocument({
+                        id: nextId,
+                        slug,
+                        folder,
+                        title: cleanTitle,
+                        subtitle: querySubtitle || 'Draft',
+                        category: queryCategory || 'Draft',
+                        excerpt: queryExcerpt || 'Neuer Artikelentwurf.',
+                        featured: featuredFromQuery,
+                    });
+                    if (cancelled) return;
+                    setInitialProject(seed.project);
+                    setBlocks(parseMarkdownToBlocks(seed.markdown));
+                    return;
+                }
+
+                if (existingProject) {
+                    if (cancelled) return;
+                    setInitialProject(existingProject);
+                }
+
+                const markdownResponse = await fetch(`/api/admin/project/${slug}${folderQuery}`);
+                const markdownPayload = await markdownResponse.json().catch(() => ({}));
+                if (!markdownResponse.ok) {
+                    throw new Error(markdownPayload?.error || 'Markdown konnte nicht geladen werden.');
+                }
+                if (!cancelled && typeof markdownPayload?.content === 'string') {
+                    setBlocks(parseMarkdownToBlocks(markdownPayload.content));
+                }
+            } catch (loadError) {
+                if (!cancelled) {
+                    const message = loadError instanceof Error ? loadError.message : 'Editor konnte nicht geladen werden.';
+                    alert(message);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void loadEditor();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [folder, folderQuery, isNewDocument, queryCategory, queryExcerpt, queryFeatured, queryId, querySubtitle, queryTitle, slug]);
 
     const handleSave = async () => {
         if (!slug) return;
         setSaving(true);
-        const md = serializeBlocksToMarkdown(blocks);
-        await fetch(`/api/admin/project/${slug}${folderQuery}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: md })
-        });
-        setSaving(false);
+        try {
+            const md = serializeBlocksToMarkdown(blocks);
+            const response = await fetch(`/api/admin/project/${slug}${folderQuery}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: md })
+            });
+
+            const payload = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(payload?.error || 'Speichern fehlgeschlagen.');
+            }
+
+            if (payload?.content && typeof payload.content === 'string') {
+                setBlocks(parseMarkdownToBlocks(payload.content));
+            }
+            if (isNewDocument) {
+                await router.replace(`/admin/editor/${slug}${folderQuery}`);
+            }
+        } catch (saveError) {
+            const message = saveError instanceof Error ? saveError.message : 'Speichern fehlgeschlagen.';
+            alert(message);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const updateBlock = (id: string, updates: Partial<Block>) => {
@@ -2700,6 +2916,7 @@ export default function EditorPage() {
 
     const canRotatePreview = previewViewport === 'mobile' || previewViewport === 'tablet';
     const effectivePreviewZoom = previewViewport === 'desktop' ? 75 : previewZoom;
+    const previewScale = effectivePreviewZoom / 100;
 
     const editorContentLayout = useMemo(() => {
         const minPageMargin = viewportWidth >= 1024 ? 32 : 16;
@@ -2819,6 +3036,7 @@ export default function EditorPage() {
                                     recentImageAssets={recentImageAssets}
                                     recentVideoAssets={recentVideoAssets}
                                     onUploadImage={uploadImageAsset}
+                                    folder={folder}
                                 />
                                 </div>
                             </div>
@@ -2937,7 +3155,8 @@ export default function EditorPage() {
                                     style={{
                                         width: previewFrame.width,
                                         height: previewFrame.height,
-                                        transform: `scale(${effectivePreviewZoom / 100})`,
+                                        transform: previewViewport === 'full' ? 'none' : `scale(${previewScale})`,
+                                        overflow: previewViewport === 'full' ? 'hidden' : undefined,
                                     }}
                                 >
                                     {!iframeReady && (
@@ -2949,7 +3168,13 @@ export default function EditorPage() {
                                         ref={iframeRef}
                                         src={`/admin/preview/${slug || ''}`}
                                         className="w-full h-full border-none"
-                                        style={{ pointerEvents: 'auto' }}
+                                        style={{
+                                            pointerEvents: 'auto',
+                                            width: previewViewport === 'full' ? `${100 / previewScale}%` : undefined,
+                                            height: previewViewport === 'full' ? `${100 / previewScale}%` : undefined,
+                                            transform: previewViewport === 'full' ? `scale(${previewScale})` : undefined,
+                                            transformOrigin: previewViewport === 'full' ? 'top left' : undefined,
+                                        }}
                                         title="Device Simulator"
                                     />
                                 </div>

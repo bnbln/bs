@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { DashboardProject } from './types'
-import { formatCategory } from './utils'
+import { formatCategory, formatDateTime } from './utils'
 
 const projectEditorHref = (project: DashboardProject): string =>
   project.folder === 'archive'
@@ -8,7 +8,7 @@ const projectEditorHref = (project: DashboardProject): string =>
     : `/admin/editor/${project.slug}`
 
 const projectPreviewHref = (project: DashboardProject): string =>
-  project.isArchived ? projectEditorHref(project) : `/project/${project.slug}`
+  project.status === 'Draft' ? projectEditorHref(project) : `/project/${project.slug}`
 
 function FeaturedProjectsPreview({ project }: { project: DashboardProject }) {
   return (
@@ -60,7 +60,19 @@ function WorkPagePreview({ project }: { project: DashboardProject }) {
   )
 }
 
-export default function ProjectPreviewCard({ project }: { project: DashboardProject }) {
+interface ProjectPreviewCardProps {
+  project: DashboardProject
+  showFeaturedPreview?: boolean
+  showWorkPreview?: boolean
+}
+
+export default function ProjectPreviewCard({
+  project,
+  showFeaturedPreview = true,
+  showWorkPreview = true,
+}: ProjectPreviewCardProps) {
+  const contentHubs = Array.isArray(project.contentHubs) ? project.contentHubs : []
+
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_16px_30px_-22px_rgba(15,23,42,0.45)] transition-shadow hover:shadow-[0_26px_40px_-24px_rgba(15,23,42,0.45)]">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -68,6 +80,7 @@ export default function ProjectPreviewCard({ project }: { project: DashboardProj
           <p className="text-xs uppercase tracking-[0.14em] text-slate-400">{project.slug}</p>
           <h3 className="mt-1 text-lg font-bold leading-tight text-slate-900">{project.title}</h3>
           <p className="mt-2 line-clamp-2 text-sm text-slate-500">{project.excerptText || project.subtitle}</p>
+          <p className="mt-2 text-xs text-slate-400">Updated: {formatDateTime(project.updatedAt)}</p>
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
@@ -80,18 +93,44 @@ export default function ProjectPreviewCard({ project }: { project: DashboardProj
           </span>
           <span
             className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
-              project.isArchived ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
+              project.status === 'Draft' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
             }`}
           >
-            {project.isArchived ? 'Archive' : 'Published'}
+            {project.status}
+          </span>
+          <span
+            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
+              project.isArchived ? 'bg-orange-100 text-orange-700' : 'bg-indigo-100 text-indigo-700'
+            }`}
+          >
+            {project.isArchived ? 'Archive Folder' : 'Live Folder'}
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <FeaturedProjectsPreview project={project} />
-        <WorkPagePreview project={project} />
-      </div>
+      {contentHubs.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {contentHubs.map((hub) => (
+            <span
+              key={`${project.slug}-${hub}`}
+              className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600"
+            >
+              @{hub}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {showFeaturedPreview || showWorkPreview ? (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {showFeaturedPreview && <FeaturedProjectsPreview project={project} />}
+          {showWorkPreview && <WorkPagePreview project={project} />}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs text-slate-500">
+          Preview ausgeblendet
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4">
         <p className="text-xs text-slate-400">{project.filePath}</p>
@@ -102,7 +141,7 @@ export default function ProjectPreviewCard({ project }: { project: DashboardProj
             rel="noreferrer"
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
           >
-            {project.isArchived ? 'Draft View' : 'Open Site'}
+            {project.status === 'Draft' ? 'Draft View' : 'Open Site'}
           </Link>
           <Link
             href={projectEditorHref(project)}

@@ -12,7 +12,7 @@ export default function AdminDashboardPage() {
   const { projects, archivedProjects, sitePages, totals, loading, error } = useAdminContent()
 
   const recentPosts = [...projects, ...archivedProjects]
-    .sort((a, b) => b.published.localeCompare(a.published))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 8)
 
   const dynamicPagesCount = sitePages.filter((page) => page.dynamic).length
@@ -68,13 +68,14 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="mt-4 space-y-2">
                   {recentPosts.map((post) => (
-                    <div
+                    <Link
                       key={`${post.folder}-${post.slug}`}
+                      href={post.folder === 'archive' ? `/admin/editor/${post.slug}?folder=archive` : `/admin/editor/${post.slug}`}
                       className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-800">{post.title}</p>
-                        <p className="text-xs text-slate-500">{post.slug}</p>
+                        <p className="text-xs text-slate-500">{post.slug} · {formatDateTime(post.updatedAt)}</p>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -85,13 +86,13 @@ export default function AdminDashboardPage() {
                         )}
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${
-                            post.isArchived ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
+                            post.status === 'Draft' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
                           }`}
                         >
-                          {post.isArchived ? 'Archive' : 'Published'}
+                          {post.status}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -129,7 +130,7 @@ export default function AdminDashboardPage() {
                 <p className="text-[11px] uppercase tracking-[0.2em] text-slate-300">System Health</p>
                 <p className="mt-2 text-2xl font-black">{loading ? 'Syncing...' : 'Ready'}</p>
                 <p className="mt-2 text-sm text-slate-300">
-                  Letztes Projekt-Datum: {recentPosts[0] ? formatDateTime(recentPosts[0].published) : '-'}
+                  Letztes Update: {recentPosts[0] ? formatDateTime(recentPosts[0].updatedAt) : '-'}
                 </p>
                 <p className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-xs text-white/85">
                   <Sparkles size={12} />

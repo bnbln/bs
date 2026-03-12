@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { useMemo, useState, type FormEvent } from 'react'
+import { useRouter } from 'next/router'
 import type { GetServerSideProps } from 'next'
 import { PlusCircle, RefreshCcw } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import KpiCard from '../../components/admin/KpiCard'
 import ProjectPreviewCard from '../../components/admin/ProjectPreviewCard'
 import StatePanel from '../../components/admin/StatePanel'
-import type { NewArticleFormState } from '../../components/admin/types'
+import type { DashboardProject, NewArticleFormState } from '../../components/admin/types'
 import { useAdminContent } from '../../components/admin/useAdminContent'
 import { slugify } from '../../components/admin/utils'
 import { requireAdminServerSideProps } from '../../lib/admin-auth'
@@ -22,38 +23,145 @@ const initialFormState: NewArticleFormState = {
 }
 
 type PostView = 'published' | 'archive'
+type SortField = 'updatedAt' | 'published' | 'id' | 'title'
+type SortDirection = 'desc' | 'asc'
+type StatusFilter = 'all' | 'published' | 'draft'
+type FeaturedFilter = 'all' | 'featured' | 'standard'
+
+const comparePosts = (a: DashboardProject, b: DashboardProject, field: SortField): number => {
+  if (field === 'title') return a.title.localeCompare(b.title)
+  if (field === 'id') return Number(a.id) - Number(b.id)
+  if (field === 'published') return a.published.localeCompare(b.published)
+  return a.updatedAt.localeCompare(b.updatedAt)
+}
 
 export default function AdminPostsPage() {
+  const router = useRouter()
   const { projects, archivedProjects, totals, loading, error, reload } = useAdminContent()
 
   const [view, setView] = useState<PostView>('published')
   const [query, setQuery] = useState('')
+  const [sortField, setSortField] = useState<SortField>('updatedAt')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>('all')
+  const [showFeaturedPreview, setShowFeaturedPreview] = useState(true)
+  const [showWorkPreview, setShowWorkPreview] = useState(true)
 
   const [formState, setFormState] = useState<NewArticleFormState>(initialFormState)
   const [slugTouched, setSlugTouched] = useState(false)
-  const [creating, setCreating] = useState(false)
+  const [openingEditor, setOpeningEditor] = useState(false)
   const [createError, setCreateError] = useState('')
-  const [createSuccess, setCreateSuccess] = useState('')
 
+  const allPosts = useMemo(() => [...projects, ...archivedProjects], [archivedProjects, projects])
   const activePosts = view === 'published' ? projects : archivedProjects
+
+  const getNextProjectId = () =>
+    allPosts.reduce((max, post) => {
+      const id = Number(post.id)
+      return Number.isFinite(id) ? Math.max(max, id) : max
+    }, 0) + 1
+
+  const buildUniqueDraftSlug = (seedId: number) => {
+    const existingSlugs = new Set(allPosts.map((post) => post.slug))
+    let candidate = `draft-${seedId}`
+    let suffix = seedId
+
+    while (existingSlugs.has(candidate)) {
+      suffix += 1
+      candidate = `draft-${suffix}`
+    }
+
+    return candidate
+  }
+
+  const openEditorForNewPost = async ({
+    id,
+    slug,
+    folder,
+    title,
+    subtitle,
+    category,
+    excerpt,
+    featured,
+  }: {
+    id: number
+    slug: string
+    folder: 'projects' | 'archive'
+    title: string
+    subtitle: string
+    category: string
+    excerpt: string
+    featured: boolean
+  }) => {
+    setOpeningEditor(true)
+    try {
+      const params = new URLSearchParams({
+        new: '1',
+        folder,
+        id: String(id),
+        title,
+        subtitle,
+        category,
+        excerpt,
+        featured: featured ? '1' : '0',
+      })
+      await router.push(`/admin/editor/${slug}?${params.toString()}`)
+    } catch (creationError) {
+      setCreateError(creationError instanceof Error ? creationError.message : 'Editor konnte nicht geoeffnet werden.')
+    } finally {
+      setOpeningEditor(false)
+    }
+  }
+
+  const handleQuickDraft = async () => {
+    setCreateError('')
+    const nextId = getNextProjectId()
+    const draftSlug = buildUniqueDraftSlug(nextId)
+
+    await openEditorForNewPost({
+      id: nextId,
+      slug: draftSlug,
+      folder: 'archive',
+      title: `Draft ${nextId}`,
+      subtitle: 'Draft',
+      category: 'Draft',
+      excerpt: '',
+      featured: false,
+    })
+  }
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) return activePosts
+    const searched = !normalizedQuery
+      ? activePosts
+      : activePosts.filter((post) => {
+          return (
+            post.title.toLowerCase().includes(normalizedQuery) ||
+            post.slug.toLowerCase().includes(normalizedQuery) ||
+            post.filePath.toLowerCase().includes(normalizedQuery)
+          )
+        })
 
-    return activePosts.filter((post) => {
-      return (
-        post.title.toLowerCase().includes(normalizedQuery) ||
-        post.slug.toLowerCase().includes(normalizedQuery) ||
-        post.filePath.toLowerCase().includes(normalizedQuery)
-      )
+    const byStatus = searched.filter((post) => {
+      if (statusFilter === 'all') return true
+      if (statusFilter === 'draft') return post.status === 'Draft'
+      return post.status === 'Published'
     })
-  }, [activePosts, query])
+
+    const byFeatured = byStatus.filter((post) => {
+      if (featuredFilter === 'all') return true
+      if (featuredFilter === 'featured') return post.featured
+      return !post.featured
+    })
+
+    const sorted = [...byFeatured].sort((a, b) => comparePosts(a, b, sortField))
+    return sortDirection === 'asc' ? sorted : sorted.reverse()
+  }, [activePosts, featuredFilter, query, sortDirection, sortField, statusFilter])
 
   const handleCreateArticle = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setCreateError('')
-    setCreateSuccess('')
 
     const trimmedTitle = formState.title.trim()
     const trimmedSlug = formState.slug.trim()
@@ -68,36 +176,25 @@ export default function AdminPostsPage() {
       return
     }
 
-    setCreating(true)
-    try {
-      const response = await fetch('/api/admin/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formState,
-          title: trimmedTitle,
-          slug: trimmedSlug,
-        }),
-      })
-
-      const payload = (await response.json()) as { error?: string }
-      if (!response.ok) {
-        throw new Error(payload.error || 'Artikel konnte nicht angelegt werden.')
-      }
-
-      setFormState({
-        ...initialFormState,
-        folder: formState.folder,
-      })
-      setSlugTouched(false)
-      setCreateSuccess('Artikel erfolgreich angelegt.')
-      await reload()
-      setView(formState.folder === 'archive' ? 'archive' : 'published')
-    } catch (creationError) {
-      setCreateError(creationError instanceof Error ? creationError.message : 'Erstellen fehlgeschlagen.')
-    } finally {
-      setCreating(false)
+    const postsInTargetFolder = formState.folder === 'archive' ? archivedProjects : projects
+    const existsInFolder = postsInTargetFolder.some((post) => post.slug === trimmedSlug)
+    if (existsInFolder) {
+      setCreateError(`Ein Artikel mit dem Slug "${trimmedSlug}" existiert bereits in dieser Ansicht.`)
+      return
     }
+
+    const nextId = getNextProjectId()
+
+    await openEditorForNewPost({
+      id: nextId,
+      slug: trimmedSlug,
+      folder: formState.folder,
+      title: trimmedTitle,
+      subtitle: formState.subtitle.trim(),
+      category: formState.category.trim(),
+      excerpt: formState.excerpt.trim(),
+      featured: formState.featured,
+    })
   }
 
   return (
@@ -137,15 +234,27 @@ export default function AdminPostsPage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">New Post</h3>
-                <p className="text-sm text-slate-500">Direkt als Published oder Archive anlegen.</p>
+                <p className="text-sm text-slate-500">Oeffnet den Editor mit leerem Dokument. Datei wird erst beim ersten Save angelegt.</p>
               </div>
-              <Link
-                href="/admin/settings"
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-              >
-                <PlusCircle size={13} />
-                SEO danach in Settings pflegen
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleQuickDraft()
+                  }}
+                  disabled={openingEditor}
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <PlusCircle size={13} />
+                  Leeren Draft direkt oeffnen
+                </button>
+                <Link
+                  href="/admin/settings"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  SEO danach in Settings pflegen
+                </Link>
+              </div>
             </div>
 
             <form onSubmit={handleCreateArticle} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -229,47 +338,108 @@ export default function AdminPostsPage() {
 
               <button
                 type="submit"
-                disabled={creating}
+                disabled={openingEditor}
                 className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {creating ? 'Erstelle...' : 'Artikel erstellen'}
+                {openingEditor ? 'Oeffne Editor...' : 'Im Editor erstellen'}
               </button>
             </form>
 
             {createError && <p className="mt-3 text-sm text-red-600">{createError}</p>}
-            {createSuccess && <p className="mt-3 text-sm text-emerald-600">{createSuccess}</p>}
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_16px_30px_-22px_rgba(15,23,42,0.45)]">
-            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
-                <button
-                  type="button"
-                  onClick={() => setView('published')}
-                  className={`rounded-full px-3 py-1 text-sm font-semibold transition-colors ${
-                    view === 'published' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Published ({projects.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView('archive')}
-                  className={`rounded-full px-3 py-1 text-sm font-semibold transition-colors ${
-                    view === 'archive' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Archive ({archivedProjects.length})
-                </button>
+            <div className="mb-4 space-y-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setView('published')}
+                    className={`rounded-full px-3 py-1 text-sm font-semibold transition-colors ${
+                      view === 'published' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Published ({projects.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView('archive')}
+                    className={`rounded-full px-3 py-1 text-sm font-semibold transition-colors ${
+                      view === 'archive' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Archive ({archivedProjects.length})
+                  </button>
+                </div>
+
+                <input
+                  type="text"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:min-w-[260px]"
+                  placeholder="Suche nach Titel oder Slug"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
               </div>
 
-              <input
-                type="text"
-                className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:min-w-[260px]"
-                placeholder="Suche nach Titel oder Slug"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
+              <div className="grid grid-cols-1 gap-2 lg:grid-cols-6">
+                <select
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  value={sortField}
+                  onChange={(event) => setSortField(event.target.value as SortField)}
+                >
+                  <option value="updatedAt">Sort: Aktualisierung</option>
+                  <option value="published">Sort: Published</option>
+                  <option value="id">Sort: ID</option>
+                  <option value="title">Sort: Titel</option>
+                </select>
+
+                <select
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  value={sortDirection}
+                  onChange={(event) => setSortDirection(event.target.value as SortDirection)}
+                >
+                  <option value="desc">Absteigend</option>
+                  <option value="asc">Aufsteigend</option>
+                </select>
+
+                <select
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                >
+                  <option value="all">Status: Alle</option>
+                  <option value="published">Status: Published</option>
+                  <option value="draft">Status: Draft</option>
+                </select>
+
+                <select
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  value={featuredFilter}
+                  onChange={(event) => setFeaturedFilter(event.target.value as FeaturedFilter)}
+                >
+                  <option value="all">Featured: Alle</option>
+                  <option value="featured">Featured only</option>
+                  <option value="standard">Ohne Featured</option>
+                </select>
+
+                <label className="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={showFeaturedPreview}
+                    onChange={(event) => setShowFeaturedPreview(event.target.checked)}
+                  />
+                  Featured-Preview
+                </label>
+
+                <label className="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={showWorkPreview}
+                    onChange={(event) => setShowWorkPreview(event.target.checked)}
+                  />
+                  Work-Preview
+                </label>
+              </div>
             </div>
 
             {loading ? (
@@ -279,7 +449,12 @@ export default function AdminPostsPage() {
             ) : (
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 {filteredPosts.map((project) => (
-                  <ProjectPreviewCard key={`${project.folder}-${project.slug}`} project={project} />
+                  <ProjectPreviewCard
+                    key={`${project.folder}-${project.slug}`}
+                    project={project}
+                    showFeaturedPreview={showFeaturedPreview}
+                    showWorkPreview={showWorkPreview}
+                  />
                 ))}
               </div>
             )}

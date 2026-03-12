@@ -100,7 +100,7 @@ const Footer = () => {
 
       if (response.ok) {
         setNewsletterStatus('success')
-        setNewsletterMessage(data.message || 'You are now subscribed.')
+        setNewsletterMessage(data.message || 'You\'re on the list!')
         setNewsletterEmail('')
         return
       }
@@ -181,7 +181,7 @@ const Footer = () => {
 
           {/* Newsletter Row */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter">Newsletter</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter">Mailing List</h3>
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 w-full md:max-w-2xl">
                 <input

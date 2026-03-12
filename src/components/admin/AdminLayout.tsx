@@ -4,6 +4,7 @@ import {
   BarChart3,
   FileText,
   FolderKanban,
+  Orbit,
   Layers,
   Search,
   Settings,
@@ -16,6 +17,7 @@ interface AdminLayoutCounts {
   pages?: number
   livePosts?: number
   archivedPosts?: number
+  hubs?: number
   files?: number
 }
 
@@ -76,6 +78,13 @@ export default function AdminLayout({
             : undefined,
       },
       {
+        key: 'hubs',
+        label: 'Hubs',
+        href: '/admin/hubs',
+        icon: <Orbit size={16} />,
+        badge: typeof counts?.hubs === 'number' ? String(counts.hubs) : undefined,
+      },
+      {
         key: 'files',
         label: 'Files',
         href: '/admin/files',
@@ -89,7 +98,7 @@ export default function AdminLayout({
         icon: <Settings size={16} />,
       },
     ]
-  }, [counts?.archivedPosts, counts?.files, counts?.livePosts, counts?.pages])
+  }, [counts?.archivedPosts, counts?.files, counts?.hubs, counts?.livePosts, counts?.pages])
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_0%_0%,#f4f8ff_0%,#edf1f7_45%,#e6ebf2_100%)] px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
@@ -137,7 +146,7 @@ export default function AdminLayout({
                 Workflow
               </p>
               <p className="mt-2 leading-relaxed">
-                `Dashboard` fuer Kennzahlen, `Posts` fuer Inhalte, `Settings` fuer SEO und
+                `Dashboard` fuer Kennzahlen, `Posts` fuer Artikel, `Hubs` fuer Content-Hub-Markdown, `Settings` fuer SEO und
                 Seitendefinitionen.
               </p>
             </div>

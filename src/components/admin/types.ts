@@ -1,7 +1,7 @@
 import type { Project, ProjectFolder } from '../../lib/markdown'
 import type { SeoConfig } from '../../lib/seo'
 
-export type AdminSection = 'dashboard' | 'pages' | 'posts' | 'files' | 'settings'
+export type AdminSection = 'dashboard' | 'pages' | 'posts' | 'hubs' | 'files' | 'settings'
 
 export interface DashboardProject extends Project {
   folder: ProjectFolder
@@ -21,6 +21,18 @@ export interface DashboardResponse {
   projects?: DashboardProject[]
   archivedProjects?: DashboardProject[]
   sitePages?: SitePageSummary[]
+}
+
+export interface WorkHubSummary {
+  slug: string
+  navLabel: string
+  pageTitle: string
+  filePath: string
+  updatedAt: string
+}
+
+export interface WorkHubListResponse {
+  hubs: WorkHubSummary[]
 }
 
 export interface SeoApiResponse {

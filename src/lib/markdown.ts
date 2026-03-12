@@ -4,11 +4,19 @@ import matter from 'gray-matter'
 import { remark } from 'remark'
 import html from 'remark-html'
 import { resolveProjectAssets } from './assets'
+import type { WorkHubSlug } from './work-hubs'
 
 const projectsDirectory = path.join(process.cwd(), 'content/projects')
 const archiveProjectsDirectory = path.join(projectsDirectory, 'archive')
 
 export type ProjectFolder = 'projects' | 'archive'
+export type ProjectStatus = 'Draft' | 'Published'
+
+const CONTENT_HUB_VALUES: WorkHubSlug[] = ['design', 'ux-ui', 'development']
+
+interface ProjectQueryOptions {
+  includeDrafts?: boolean
+}
 
 export interface Project {
   id: number
@@ -22,6 +30,9 @@ export interface Project {
   type?: string | string[]
   excerpts: string
   published: string
+  status: ProjectStatus
+  updatedAt: string
+  contentHubs?: WorkHubSlug[]
   description?: string
   bgColor?: string
   image: string
@@ -59,6 +70,37 @@ export interface Project {
   contentHtml?: string
 }
 
+function toProjectStatus(value: unknown, fallback: ProjectStatus): ProjectStatus {
+  if (typeof value !== 'string') return fallback
+  const normalized = value.trim().toLowerCase()
+
+  if (normalized === 'draft') return 'Draft'
+  if (normalized === 'published') return 'Published'
+  return fallback
+}
+
+function normalizeDateString(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback
+  const trimmed = value.trim()
+  if (!trimmed) return fallback
+  return trimmed
+}
+
+function normalizeContentHubs(value: unknown): WorkHubSlug[] {
+  const rawValues = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(',')
+      : []
+
+  const normalized = rawValues
+    .map((entry) => String(entry).trim().toLowerCase())
+    .map((entry) => (entry === 'uxui' || entry === 'uiux' ? 'ux-ui' : entry))
+    .filter((entry): entry is WorkHubSlug => CONTENT_HUB_VALUES.includes(entry as WorkHubSlug))
+
+  return Array.from(new Set(normalized))
+}
+
 function getAllProjectSlugsFromDirectory(directory: string): string[] {
   if (!fs.existsSync(directory)) {
     return []
@@ -70,15 +112,25 @@ function getAllProjectSlugsFromDirectory(directory: string): string[] {
     .map(fileName => fileName.replace(/\.md$/, ''))
 }
 
-function getProjectBySlugFromDirectory(slug: string, directory: string): Project {
+function getProjectBySlugFromDirectory(slug: string, directory: string, folder: ProjectFolder): Project {
   const fullPath = path.join(directory, `${slug}.md`)
   const fileContents = fs.readFileSync(fullPath, 'utf8')
   const { data, content } = matter(fileContents)
+  const frontmatter = data as Record<string, unknown>
+  const contentHubs = normalizeContentHubs(frontmatter.contentHubs ?? frontmatter['content-hubs'])
+  const fallbackPublished = normalizeDateString(frontmatter.published, '1970-01-01')
+  const fallbackUpdatedAt = `${fallbackPublished}T00:00:00.000Z`
+  const normalizedStatus = folder === 'archive'
+    ? 'Draft'
+    : toProjectStatus(frontmatter.status, 'Published')
 
-  const project = {
+  const project: Project = {
     slug,
     content,
-    ...data
+    ...frontmatter,
+    status: normalizedStatus,
+    updatedAt: normalizeDateString(frontmatter.updatedAt, fallbackUpdatedAt),
+    contentHubs,
   } as Project
 
   return resolveProjectAssets(project)
@@ -88,16 +140,21 @@ function sortProjectsByPublishedDate(projects: Project[]): Project[] {
   return projects.sort((a, b) => (a.published > b.published ? -1 : 1))
 }
 
-export function getAllProjectSlugs(): string[] {
-  return getAllProjectSlugsFromDirectory(projectsDirectory)
+export function isPublishedProject(project: Project): boolean {
+  return project.status === 'Published'
 }
 
-export function getAllProjects(): Project[] {
-  const slugs = getAllProjectSlugs()
-  const projects = slugs.map(slug => getProjectBySlugFromDirectory(slug, projectsDirectory))
+export function getAllProjectSlugs(options: ProjectQueryOptions = {}): string[] {
+  return getAllProjects(options).map((project) => project.slug)
+}
+
+export function getAllProjects(options: ProjectQueryOptions = {}): Project[] {
+  const slugs = getAllProjectSlugsFromDirectory(projectsDirectory)
+  const projects = slugs.map((slug) => getProjectBySlugFromDirectory(slug, projectsDirectory, 'projects'))
+  const visibleProjects = options.includeDrafts ? projects : projects.filter(isPublishedProject)
 
   // Sort by published date, newest first
-  return sortProjectsByPublishedDate(projects)
+  return sortProjectsByPublishedDate(visibleProjects)
 }
 
 export function getAllArchivedProjectSlugs(): string[] {
@@ -106,16 +163,16 @@ export function getAllArchivedProjectSlugs(): string[] {
 
 export function getAllArchivedProjects(): Project[] {
   const slugs = getAllArchivedProjectSlugs()
-  const projects = slugs.map(slug => getProjectBySlugFromDirectory(slug, archiveProjectsDirectory))
+  const projects = slugs.map((slug) => getProjectBySlugFromDirectory(slug, archiveProjectsDirectory, 'archive'))
   return sortProjectsByPublishedDate(projects)
 }
 
 export function getProjectBySlug(slug: string): Project {
-  return getProjectBySlugFromDirectory(slug, projectsDirectory)
+  return getProjectBySlugFromDirectory(slug, projectsDirectory, 'projects')
 }
 
 export function getArchivedProjectBySlug(slug: string): Project {
-  return getProjectBySlugFromDirectory(slug, archiveProjectsDirectory)
+  return getProjectBySlugFromDirectory(slug, archiveProjectsDirectory, 'archive')
 }
 
 export async function getProjectWithHtml(slug: string): Promise<Project> {
@@ -150,7 +207,7 @@ export function getProjectsData(): {
 
 // Get projects for static generation
 export function getStaticProjectPaths() {
-  const slugs = getAllProjectSlugs()
+  const slugs = getAllProjects().map((project) => project.slug)
   return slugs.map(slug => ({
     params: { slug }
   }))
