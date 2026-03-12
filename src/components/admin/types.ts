@@ -1,7 +1,7 @@
 import type { Project, ProjectFolder } from '../../lib/markdown'
 import type { SeoConfig } from '../../lib/seo'
 
-export type AdminSection = 'dashboard' | 'pages' | 'posts' | 'files' | 'settings'
+export type AdminSection = 'dashboard' | 'pages' | 'posts' | 'hubs' | 'files' | 'settings'
 
 export interface DashboardProject extends Project {
   folder: ProjectFolder
@@ -23,6 +23,18 @@ export interface DashboardResponse {
   sitePages?: SitePageSummary[]
 }
 
+export interface WorkHubSummary {
+  slug: string
+  navLabel: string
+  pageTitle: string
+  filePath: string
+  updatedAt: string
+}
+
+export interface WorkHubListResponse {
+  hubs: WorkHubSummary[]
+}
+
 export interface SeoApiResponse {
   config: SeoConfig
   generated: {
@@ -33,6 +45,7 @@ export interface SeoApiResponse {
 }
 
 export type AdminFileKind = 'image' | 'video' | 'audio' | 'document' | 'markdown' | 'other'
+export type AdminFilesStorage = 'local' | 'blob'
 
 export interface AdminFileEntry {
   id: string
@@ -47,7 +60,9 @@ export interface AdminFileEntry {
 }
 
 export interface FilesApiResponse {
+  storage: AdminFilesStorage
   files: AdminFileEntry[]
+  folders: string[]
   summary: {
     totalFiles: number
     totalBytes: number
@@ -58,6 +73,13 @@ export interface FilesApiResponse {
       blob: number
     }
   }
+}
+
+export interface AdminBlobMoveMapping {
+  fromPath: string
+  toPath: string
+  fromUrl: string
+  toUrl: string
 }
 
 export interface NewArticleFormState {

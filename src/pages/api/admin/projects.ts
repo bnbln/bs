@@ -7,7 +7,8 @@ import {
     getProjectBySlug,
     getArchivedProjectBySlug,
     Project,
-    ProjectFolder
+    ProjectFolder,
+    ProjectStatus
 } from '../../../lib/markdown'
 
 const projectsDirectory = path.join(process.cwd(), 'content/projects')
@@ -64,8 +65,10 @@ function getExcerpt(project: Project): string {
 }
 
 function toAdminProject(project: Project, folder: ProjectFolder): AdminProjectSummary {
+    const status: ProjectStatus = folder === 'archive' ? 'Draft' : project.status
     return {
         ...project,
+        status,
         folder,
         isArchived: folder === 'archive',
         filePath: folder === 'archive'
@@ -132,7 +135,8 @@ function createProjectMarkdown({
     slug,
     category,
     excerpt,
-    featured
+    featured,
+    folder
 }: {
     nextId: number
     title: string
@@ -141,8 +145,12 @@ function createProjectMarkdown({
     category: string
     excerpt: string
     featured: boolean
+    folder: ProjectFolder
 }): string {
-    const publishedDate = new Date().toISOString().slice(0, 10)
+    const now = new Date()
+    const publishedDate = now.toISOString().slice(0, 10)
+    const updatedAt = now.toISOString()
+    const status: ProjectStatus = folder === 'archive' ? 'Draft' : 'Published'
 
     return [
         '---',
@@ -152,6 +160,9 @@ function createProjectMarkdown({
         `slug: ${slug}`,
         `category: ${quoteYaml(category)}`,
         `published: '${publishedDate}'`,
+        `status: ${quoteYaml(status)}`,
+        `updatedAt: ${quoteYaml(updatedAt)}`,
+        "content-hubs: ['design']",
         "image: assets/heroimage-bg.jpg",
         `excerpt: ${quoteYaml(excerpt)}`,
         "bgColor: '#E5E7EB'",
@@ -166,8 +177,8 @@ function createProjectMarkdown({
     ].join('\n')
 }
 
-function handleGet(req: NextApiRequest, res: NextApiResponse) {
-    const projects = getAllProjects().map((project) => toAdminProject(project, 'projects'))
+function handleGet(_req: NextApiRequest, res: NextApiResponse) {
+    const projects = getAllProjects({ includeDrafts: true }).map((project) => toAdminProject(project, 'projects'))
     const archivedProjects = getAllArchivedProjects().map((project) => toAdminProject(project, 'archive'))
     const sitePages = collectSitePages()
 
@@ -203,7 +214,7 @@ function handlePost(req: NextApiRequest, res: NextApiResponse) {
         return res.status(409).json({ error: `An article with slug "${slug}" already exists in ${folder}.` })
     }
 
-    const allProjects = [...getAllProjects(), ...getAllArchivedProjects()]
+    const allProjects = [...getAllProjects({ includeDrafts: true }), ...getAllArchivedProjects()]
     const nextId = allProjects.reduce((maxId, project) => {
         const projectId = Number(project.id)
         if (Number.isFinite(projectId)) return Math.max(maxId, projectId)
@@ -217,7 +228,8 @@ function handlePost(req: NextApiRequest, res: NextApiResponse) {
         slug,
         category,
         excerpt,
-        featured
+        featured,
+        folder
     })
 
     fs.writeFileSync(targetFilePath, markdown, 'utf8')

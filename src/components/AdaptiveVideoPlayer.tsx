@@ -11,6 +11,9 @@ interface AdaptiveVideoPlayerProps {
   loop?: boolean;
   muted?: boolean;
   minimal?: boolean; // wenn true: kein UI/Overlay, direkt <video> autoplay muted loop
+  startMuted?: boolean;
+  hideReplayOnEnd?: boolean;
+  onEnded?: () => void;
 }
 
 // Lightweight mobile detection hook
@@ -40,7 +43,10 @@ const AdaptiveVideoPlayer: React.FC<AdaptiveVideoPlayerProps> = ({
   className = '',
   loop = false,
   muted = false,
-  minimal = false
+  minimal = false,
+  startMuted = false,
+  hideReplayOnEnd = false,
+  onEnded
 }) => {
   const isMobile = useIsMobile();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -76,6 +82,7 @@ const AdaptiveVideoPlayer: React.FC<AdaptiveVideoPlayerProps> = ({
           playsInline
           muted={true || muted}
           loop={loop}
+          onEnded={onEnded}
         />
       </div>
     );
@@ -89,6 +96,9 @@ const AdaptiveVideoPlayer: React.FC<AdaptiveVideoPlayerProps> = ({
           thumbnailUrl={thumbnailUrl}
           color={color}
           startPlaying={autoStart}
+          startMuted={startMuted || muted}
+          hideReplayOnEnd={hideReplayOnEnd}
+          onEnded={onEnded}
         />
       </div>
     );
@@ -133,6 +143,7 @@ const AdaptiveVideoPlayer: React.FC<AdaptiveVideoPlayerProps> = ({
           playsInline
           loop={loop}
           muted={muted || shouldPlay}
+          onEnded={onEnded}
         />
       )}
     </div>

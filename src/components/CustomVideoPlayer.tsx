@@ -7,6 +7,9 @@ interface CustomVideoPlayerProps {
   thumbnailUrl?: string;
   color?: string;
   startPlaying?: boolean;
+  startMuted?: boolean;
+  hideReplayOnEnd?: boolean;
+  onEnded?: () => void;
 }
 
 // Custom slider component for seek and volume
@@ -85,7 +88,10 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   videoUrl,
   thumbnailUrl,
   color = '#319795',
-  startPlaying = false
+  startPlaying = false,
+  startMuted = false,
+  hideReplayOnEnd = false,
+  onEnded
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerWrapperRef = useRef<HTMLDivElement>(null);
@@ -94,7 +100,8 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   // --- State for Custom Controls ---
   const [isPlaying, setIsPlaying] = useState(false); // Always start paused
   const [volume, setVolume] = useState(0.8);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(startMuted);
+  const [hasEnded, setHasEnded] = useState(false);
   const [playedSeconds, setPlayedSeconds] = useState(0);
   const [duration, setDuration] = useState(0);
   const [seeking, setSeeking] = useState(false);
@@ -125,6 +132,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   const handlePlayPause = useCallback(() => {
     if (!videoRef.current) return;
     if (!isPlaying) {
+      setHasEnded(false);
       if (!hasInteracted) setHasInteracted(true);
       displayControls();
       videoRef.current.play();
@@ -198,7 +206,11 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
     setIsReady(true);
   };
 
-  const handleEnded = () => setIsPlaying(false);
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setHasEnded(true);
+    onEnded?.();
+  };
 
   const handleToggleFullscreen = () => {
     if (screenfull.isEnabled && playerWrapperRef.current) {
@@ -209,11 +221,12 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   // --- Handler for clicking the main video area ---
   const handleVideoAreaClick = useCallback(() => {
     if (isReady) {
+      if (hideReplayOnEnd && hasEnded) return;
       if (!hasInteracted) setHasInteracted(true);
       handlePlayPause();
       displayControls();
     }
-  }, [isReady, handlePlayPause, displayControls, hasInteracted]);
+  }, [displayControls, handlePlayPause, hasEnded, hasInteracted, hideReplayOnEnd, isReady]);
 
   // --- Keyboard Listener for Space Bar ---
   useEffect(() => {
@@ -263,6 +276,10 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       videoRef.current.muted = isMuted;
     }
   }, [volume, isMuted]);
+
+  useEffect(() => {
+    setIsMuted(startMuted);
+  }, [startMuted]);
 
   // --- Fallback to set ready state if events don't fire ---
   useEffect(() => {
@@ -343,7 +360,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
          </div>
       )}
 
-      {isReady && !isPlaying && (
+      {isReady && !isPlaying && (!hasEnded || !hideReplayOnEnd) && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <button
             aria-label="Play"
@@ -358,7 +375,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         </div>
       )}
 
-      {isReady && hasInteracted && (
+      {isReady && hasInteracted && (!hasEnded || !hideReplayOnEnd) && (
         <div
           className={`absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-40 backdrop-blur-sm z-20 transition-all duration-300 ease-in-out ${
             showControls 

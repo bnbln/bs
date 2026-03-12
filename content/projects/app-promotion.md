@@ -11,6 +11,8 @@ bgColor: '#97ABBA'
 hasAnimation: false
 featured: true
 type: Design
+status: Draft
+updatedAt: '2026-03-12T11:50:31.107Z'
 ---
 
 For this HbbTV spot, the goal was simple: make the red button feel like an invitation, not a technical feature.

@@ -161,15 +161,6 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
                                 } font-inter font-bold text-black tracking-tight group-hover:text-neutral-600 transition-colors duration-300`}>
                               {project.title}
                             </h3>
-                            {project.subtitle && !isFeatured && (
-                              <p
-                                className={`mt-3 text-neutral-500 text-sm md:text-base font-inter leading-relaxed ${
-                                  !isFeatured ? 'md:w-[85%] font-bold' : ''
-                                }`}
-                              >
-                                {project.subtitle}
-                              </p>
-                            )}
                             {project.excerpts && !isFeatured && (
                               <p
                                 className={`mt-3 text-neutral-500 text-sm md:text-base font-inter leading-relaxed ${

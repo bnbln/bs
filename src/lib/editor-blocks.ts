@@ -1,4 +1,4 @@
-export type BlockType = 'frontmatter' | 'text' | 'header' | 'list' | 'small-text' | 'mockup' | 'callout' | 'palette' | 'gallery' | 'project-ref' | 'video' | 'code' | 'animation-sequence' | 'stats' | 'font' | 'three';
+export type BlockType = 'frontmatter' | 'text' | 'header' | 'list' | 'small-text' | 'mockup' | 'callout' | 'palette' | 'gallery' | 'project-ref' | 'video' | 'code' | 'animation-sequence' | 'stats' | 'font' | 'three' | 'paste';
 
 export interface Block {
     id: string;

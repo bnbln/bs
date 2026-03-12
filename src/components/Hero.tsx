@@ -121,7 +121,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
         style={{ x: fgX, y: fgY, scale: 1.05 }}
       >
         <Image
-          src="/assets/heroimage-fg.webp"
+          src="/assets/heroimage-fg-v2.webp"
           alt=""
           aria-hidden="true"
           fill

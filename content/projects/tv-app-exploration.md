@@ -2,7 +2,7 @@
 title: From Mobile News App to Living-Room Platform
 subtitle: UX/UI Design for TV Interface and Explorations with Apple VisionOS
 date: '2026-03-09'
-description: Wie ich die iOS/Android Tablet‑ & Phone‑UX/UI für eine News‑ und Doku‑Streaming‑App als dev‑ready Paket übergeben habe — mit Design System, 100+ Komponenten/States, Screen Notes und iterativ verifizierten Flows.
+description: Building on the original mobile UX of the streaming news app, the next step was translating the product to the big screen. Instead of redesigning the experience, the goal was to extend the existing product architecture.
 tags:
   - ux-ui
   - mobile-app-design
@@ -24,7 +24,7 @@ type:
   - UX/UI
 id: 41
 published: '2024-10-10'
-excerpts: Wie ich die iOS/Android Tablet‑ & Phone‑UX/UI für eine News‑ und Doku‑Streaming‑App als dev‑ready Paket übergeben habe — mit Design System, 100+ Komponenten/States, Screen Notes und iterativ verifizierten Flows.
+excerpts: Translating the mobile UX of a product to the big screen. Instead of redesigning the experience, the goal was to extend the existing product architecture.
 video: ''
 featured: false
 ---

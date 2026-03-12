@@ -4,6 +4,7 @@ import {
   BarChart3,
   FileText,
   FolderKanban,
+  Orbit,
   Layers,
   Search,
   Settings,
@@ -16,6 +17,7 @@ interface AdminLayoutCounts {
   pages?: number
   livePosts?: number
   archivedPosts?: number
+  hubs?: number
   files?: number
 }
 
@@ -36,9 +38,9 @@ interface NavigationItem {
   badge?: string
 }
 
-function badgeClass(active: boolean) {
-  return active
-    ? 'bg-white/25 text-white border border-white/40'
+function badgeClass(isActive: boolean) {
+  return isActive
+    ? 'bg-white text-slate-900 border border-transparent shadow-sm'
     : 'bg-white text-slate-500 border border-slate-200'
 }
 
@@ -56,114 +58,122 @@ export default function AdminLayout({
         key: 'dashboard',
         label: 'Dashboard',
         href: '/admin',
-        icon: <BarChart3 size={16} />,
+        icon: <BarChart3 size={18} />,
       },
       {
         key: 'pages',
         label: 'Pages',
         href: '/admin/pages',
-        icon: <Layers size={16} />,
+        icon: <Layers size={18} />,
         badge: typeof counts?.pages === 'number' ? String(counts.pages) : undefined,
       },
       {
         key: 'posts',
         label: 'Posts',
         href: '/admin/posts',
-        icon: <FileText size={16} />,
+        icon: <FileText size={18} />,
         badge:
           typeof counts?.livePosts === 'number' || typeof counts?.archivedPosts === 'number'
             ? `${counts?.livePosts || 0}/${counts?.archivedPosts || 0}`
             : undefined,
       },
       {
+        key: 'hubs',
+        label: 'Hubs',
+        href: '/admin/hubs',
+        icon: <Orbit size={18} />,
+        badge: typeof counts?.hubs === 'number' ? String(counts.hubs) : undefined,
+      },
+      {
         key: 'files',
         label: 'Files',
         href: '/admin/files',
-        icon: <FolderKanban size={16} />,
+        icon: <FolderKanban size={18} />,
         badge: typeof counts?.files === 'number' ? String(counts.files) : undefined,
       },
       {
         key: 'settings',
         label: 'Settings',
         href: '/admin/settings',
-        icon: <Settings size={16} />,
+        icon: <Settings size={18} />,
       },
     ]
-  }, [counts?.archivedPosts, counts?.files, counts?.livePosts, counts?.pages])
+  }, [counts?.archivedPosts, counts?.files, counts?.hubs, counts?.livePosts, counts?.pages])
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_0%_0%,#f4f8ff_0%,#edf1f7_45%,#e6ebf2_100%)] px-4 py-6 sm:px-8 lg:px-10 lg:py-8">
-      <div className="mx-auto max-w-[1560px]">
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="rounded-[28px] border border-white/60 bg-white/80 p-5 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] backdrop-blur">
-            <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-5 text-white">
-              <p className="text-[11px] uppercase tracking-[0.26em] text-slate-300">Local Editor</p>
-              <h1 className="mt-2 text-xl font-black tracking-tight">Control Center</h1>
-              <p className="mt-2 text-sm text-slate-300">
-                Seiten, Posts, Files und SEO in einer klaren Admin-Architektur.
-              </p>
-            </div>
+    <div className="min-h-screen bg-[#FDFBF7] px-4 py-6 sm:px-8 lg:px-10 lg:py-8 font-sans text-slate-800 selection:bg-indigo-100 selection:text-indigo-900">
+      <div className="mx-auto max-w-[1600px] h-[calc(100vh-48px)] lg:h-[calc(100vh-64px)] grid lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8">
+        {/* Sticky Sidebar */}
+        <aside className="sticky top-6 lg:top-8 h-fit lg:h-full flex flex-col rounded-[40px] bg-white p-6 shadow-[0_20px_60px_-15px_rgba(15,23,42,0.05)] border border-slate-100/50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-full -mr-16 -mt-16 pointer-events-none"></div>
 
-            <nav className="mt-5 space-y-1">
-              {navigation.map((item) => {
-                const isActive = active === item.key
-                return (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={`group flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          <div className="rounded-[28px] bg-slate-900 p-6 text-white shadow-xl shadow-slate-900/10 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-white/10 text-white backdrop-blur-md border border-white/20">
+                <Sparkles size={18} className="text-white relative z-10 drop-shadow-md" fill="currentColor" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400">Environment</p>
+                <h1 className="mt-0.5 text-lg font-black tracking-tight leading-tight">Local CMS</h1>
+              </div>
+            </div>
+          </div>
+
+          <nav className="mt-8 flex-1 space-y-2 relative z-10">
+            {navigation.map((item) => {
+              const isActive = active === item.key
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className={`group flex items-center justify-between gap-3 rounded-full px-5 py-3.5 text-[15px] font-bold transition-all ${isActive
+                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20 ring-1 ring-slate-900/50'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                     }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}>{item.icon}</span>
-                      {item.label}
+                >
+                  <span className="flex items-center gap-4">
+                    <span className={`transition-transform duration-300 ${isActive ? 'text-white scale-110' : 'text-slate-400 group-hover:text-slate-600 group-hover:scale-110'}`}>{item.icon}</span>
+                    <span className="tracking-wide">{item.label}</span>
+                  </span>
+                  {item.badge && (
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wider ${badgeClass(isActive)}`}>
+                      {item.badge}
                     </span>
-                    {item.badge && (
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeClass(isActive)}`}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                )
-              })}
-            </nav>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
 
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              <p className="flex items-center gap-2 font-semibold text-slate-800">
-                <Sparkles size={14} className="text-amber-500" />
-                Workflow
-              </p>
-              <p className="mt-2 leading-relaxed">
-                `Dashboard` fuer Kennzahlen, `Posts` fuer Inhalte, `Settings` fuer SEO und
-                Seitendefinitionen.
-              </p>
-            </div>
-          </aside>
+          <div className="mt-auto pt-8 relative z-10 border-t border-slate-100">
+            <Link
+              href="/"
+              className="flex items-center gap-4 rounded-full px-5 py-3.5 text-[15px] font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all border border-transparent hover:border-slate-200 group"
+            >
+              <Orbit size={18} className="text-slate-400 group-hover:text-slate-600 transition-transform duration-300 group-hover:-rotate-90 group-hover:scale-110" />
+              <span className="tracking-wide">Exit Admin</span>
+            </Link>
+          </div>
+        </aside>
 
-          <div className="space-y-6">
-            <header className="rounded-[28px] border border-white/60 bg-white/80 p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] backdrop-blur">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Admin</p>
-                  <h2 className="mt-1 text-3xl font-black tracking-tight text-slate-900">{title}</h2>
-                  <p className="mt-2 max-w-3xl text-sm text-slate-500">{description}</p>
-                </div>
+        {/* Scrollable Main Area */}
+        <div className="flex flex-col gap-6 lg:gap-8 overflow-y-auto pr-2 pb-16 custom-scrollbar">
+          {title && active !== 'dashboard' && (
+            <header className="shrink-0 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between rounded-[40px] bg-white p-6 lg:px-10 lg:py-7 shadow-[0_20px_60px_-15px_rgba(15,23,42,0.05)] border border-slate-100/50 border-t-0 border-l-0">
+              <div>
+                <h2 className="text-[28px] font-black tracking-tight text-slate-900 leading-none">{title}</h2>
+                {description && <p className="mt-2 text-[15px] text-slate-500 font-medium">{description}</p>}
+              </div>
 
-                <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
-                    <Search size={14} className="text-slate-400" />
-                    <span className="truncate">Search (coming soon)</span>
-                  </div>
-                  {actions}
-                </div>
+              <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+                {actions}
               </div>
             </header>
+          )}
 
+          <main className="flex-1 w-full mx-auto pb-10">
             {children}
-          </div>
+          </main>
         </div>
       </div>
     </div>

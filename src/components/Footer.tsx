@@ -6,6 +6,9 @@ import { ArrowUpRight } from 'lucide-react'
 const Footer = () => {
   const currentYear = new Date().getFullYear()
   const [isDesktop, setIsDesktop] = useState(false)
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [newsletterMessage, setNewsletterMessage] = useState('')
   const footerRef = useRef<HTMLElement>(null)
   
   // Motion values for scroll-linked animation
@@ -41,7 +44,7 @@ const Footer = () => {
         window.removeEventListener('resize', checkDesktop)
         window.removeEventListener('scroll', handleScroll)
     }
-  }, [])
+  }, [revealProgress])
 
   // Derived animations from revealProgress (0 to 1)
   const y = useTransform(revealProgress, [0, 1], [50, 0]) // Moves up into place
@@ -74,6 +77,43 @@ const Footer = () => {
       viewport: { once: true }
   } : {}
 
+  const handleNewsletterSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!newsletterEmail) return
+
+    setNewsletterStatus('submitting')
+    setNewsletterMessage('')
+
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail }),
+      })
+
+      let data: { message?: string } = {}
+      try {
+        data = await response.json()
+      } catch {
+        data = {}
+      }
+
+      if (response.ok) {
+        setNewsletterStatus('success')
+        setNewsletterMessage(data.message || 'You\'re on the list!')
+        setNewsletterEmail('')
+        return
+      }
+
+      setNewsletterStatus('error')
+      setNewsletterMessage(data.message || 'Subscription failed. Please try again.')
+    } catch (error) {
+      setNewsletterStatus('error')
+      setNewsletterMessage('Subscription failed. Please try again.')
+    }
+  }
+  const hasNewsletterInput = newsletterEmail.trim().length > 0
+
   return (
     <footer
       ref={footerRef}
@@ -86,7 +126,7 @@ const Footer = () => {
       >
         
         {/* Brand Column */}
-        <motion.div className="md:col-span-4 flex flex-col justify-between h-full" variants={itemVariants}>
+        <motion.div className="md:col-span-3 flex flex-col justify-between h-full" variants={itemVariants}>
           <div>
              <h2 className="text-white font-space-grotesk font-bold text-2xl md:text-3xl mb-2">Benedikt Schnupp</h2>
              <p className="text-white/50 font-inter text-sm max-w-xs leading-relaxed">
@@ -95,49 +135,114 @@ const Footer = () => {
           </div>
         </motion.div>
 
-        {/* Spacer */}
-        <div className="hidden md:block md:col-span-2"></div>
-
-        {/* Links Column: Sitemap */}
-        <motion.div className="md:col-span-2 flex flex-col gap-4" variants={itemVariants}>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Sitemap</h3>
+        <motion.div className="md:col-span-9 flex flex-col gap-10" variants={itemVariants}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
+            {/* Links Column: Sitemap */}
             <div className="flex flex-col gap-4">
-              <Link href="/about" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
-                About
-              </Link>
-              <Link href="/work" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
-                Work
-              </Link>
-              <Link href="/contact" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
-                Contact
-              </Link>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Sitemap</h3>
+                <div className="flex flex-col gap-4">
+                  <Link href="/about" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
+                    About
+                  </Link>
+                  <Link href="/work" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
+                    Work
+                  </Link>
+                  <Link href="/contact" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
+                    Contact
+                  </Link>
+                </div>
             </div>
-        </motion.div>
 
-        {/* Links Column: Socials */}
-        <motion.div className="md:col-span-2 flex flex-col gap-4" variants={itemVariants}>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Socials</h3>
-            <a 
-                href="https://linkedin.com/in/benedikt-schnupp-928112116" 
-                target="_blank" 
-                rel="noopener"
-                className="group flex items-center gap-1 text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
-            >
-                LinkedIn <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
-            </a>
-            <a 
-                href="mailto:mail@benediktschnupp.com"
-                className="group flex items-center gap-1 text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
-            >
-                Email <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
-            </a>
-        </motion.div>
+            {/* Links Column: Socials */}
+            <div className="flex flex-col gap-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Socials</h3>
+                <a 
+                    href="https://linkedin.com/in/benedikt-schnupp-928112116" 
+                    target="_blank" 
+                    rel="noopener"
+                    className="group flex items-center gap-1 text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
+                >
+                    LinkedIn <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
+                </a>
+                <a 
+                    href="mailto:mail@benediktschnupp.com"
+                    className="group flex items-center gap-1 text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
+                >
+                    Email <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
+                </a>
+            </div>
 
-        {/* Links Column: Legal */}
-        <motion.div className="md:col-span-2 flex flex-col gap-4" variants={itemVariants}>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Legal</h3>
-            <Link href="/datenschutzerklaerung" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Privacy</Link>
-            <Link href="/impressum" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Imprint</Link>
+            {/* Links Column: Legal */}
+            <div className="flex flex-col gap-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Legal</h3>
+                <Link href="/datenschutzerklaerung" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Privacy</Link>
+                <Link href="/impressum" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Imprint</Link>
+            </div>
+          </div>
+
+          {/* Newsletter Row */}
+          <div className="flex flex-col gap-4 my-12">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Mailing List</h3>
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 w-full md:max-w-2xl">
+                <input
+                  type="email"
+                  required
+                  value={newsletterEmail}
+                  onChange={(event) => setNewsletterEmail(event.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full rounded-full bg-white/5 border border-white/15 px-5 py-3 text-white placeholder:text-white/35 font-inter text-base md:text-sm focus:outline-none focus:border-white/40 transition-colors sm:max-w-[350px]"
+                />
+                <button
+                  type="submit"
+                  disabled={newsletterStatus === 'submitting'}
+                  className="w-full sm:w-auto rounded-full px-6 py-3 bg-white text-black font-space-grotesk font-semibold text-sm hover:bg-white/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {newsletterStatus === 'submitting' ? 'Submitting...' : 'Subscribe'}
+                </button>
+              </form>
+              <div className="hidden md:flex md:flex-col md:gap-2 shrink-0">
+                {newsletterMessage && (
+                  <p
+                    className={`font-inter text-xs ${
+                      newsletterStatus === 'error' ? 'text-red-300' : 'text-white/55'
+                    }`}
+                    aria-live="polite"
+                  >
+                    {newsletterMessage}
+                  </p>
+                )}
+                {hasNewsletterInput && (
+                  <p className="font-inter text-[11px] text-white/35">
+                    By subscribing, you agree to our{' '}
+                    <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+                )}
+              </div>
+            </div>
+            {newsletterMessage && (
+              <p
+                className={`font-inter text-xs ${
+                  newsletterStatus === 'error' ? 'text-red-300' : 'text-white/55'
+                } md:hidden`}
+                aria-live="polite"
+              >
+                {newsletterMessage}
+              </p>
+            )}
+            {hasNewsletterInput && (
+              <p className="md:hidden font-inter text-[11px] text-white/35">
+                By subscribing, you agree to our{' '}
+                <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+            )}
+          </div>
         </motion.div>
 
       </motion.div>

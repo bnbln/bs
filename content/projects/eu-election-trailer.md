@@ -17,6 +17,7 @@ image: assets/EU_wahl.webp
 video: assets/Eu Wahl Loop.mp4
 hasAnimation: true
 featured: false
+featuredMedia: https://f33qiggog7gxjoua.public.blob.vercel-storage.com/projects/TR000X5A.mp4
 type: Design
 ---
 
@@ -63,4 +64,4 @@ The result? A motion-driven trailer full of structure, rhythm and European energ
 
 # The Trailer
 
-[video](assets/TR000X5A.mp4|assets/EU_wahl.webp)
+[video](https://f33qiggog7gxjoua.public.blob.vercel-storage.com/projects/TR000X5A.mp4|assets/EU_wahl.webp)

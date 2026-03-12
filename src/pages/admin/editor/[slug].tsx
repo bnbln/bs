@@ -83,7 +83,98 @@ interface CollaborationPerson {
     url: string;
 }
 
+type EditorFolder = 'projects' | 'archive';
+type EditorProjectStatus = 'Draft' | 'Published';
+
 const PROJECT_TYPE_OPTIONS = ['Design', 'UX/UI', 'Developement'] as const;
+const mapProjectTypeToContentHubs = (value: string): string[] => {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return [];
+    if (normalized.includes('ux') && normalized.includes('ui')) return ['ux-ui'];
+    if (normalized.includes('develop') || normalized === 'dev') return ['development'];
+    if (normalized.includes('design')) return ['design'];
+    return [];
+};
+
+const readQueryString = (value: string | string[] | undefined): string => {
+    if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : '';
+    return typeof value === 'string' ? value : '';
+};
+
+const quoteYaml = (value: string): string => JSON.stringify(value);
+
+function buildNewProjectDocument({
+    id,
+    slug,
+    folder,
+    title,
+    subtitle,
+    category,
+    excerpt,
+    featured,
+}: {
+    id: number;
+    slug: string;
+    folder: EditorFolder;
+    title: string;
+    subtitle: string;
+    category: string;
+    excerpt: string;
+    featured: boolean;
+}): { markdown: string; project: Project } {
+    const now = new Date();
+    const published = now.toISOString().slice(0, 10);
+    const updatedAt = now.toISOString();
+    const status: EditorProjectStatus = folder === 'archive' ? 'Draft' : 'Published';
+    const projectType = 'Design';
+    const contentHubs = mapProjectTypeToContentHubs(projectType);
+
+    const markdown = [
+        '---',
+        `id: ${id}`,
+        `title: ${quoteYaml(title)}`,
+        `subtitle: ${quoteYaml(subtitle)}`,
+        `slug: ${slug}`,
+        `category: ${quoteYaml(category)}`,
+        `published: '${published}'`,
+        `status: ${quoteYaml(status)}`,
+        `updatedAt: ${quoteYaml(updatedAt)}`,
+        `content-hubs: ${JSON.stringify(contentHubs)}`,
+        "image: 'assets/heroimage-bg.jpg'",
+        `excerpts: ${quoteYaml(excerpt)}`,
+        "bgColor: '#E5E7EB'",
+        'hasAnimation: false',
+        `featured: ${featured ? 'true' : 'false'}`,
+        `type: ${JSON.stringify([projectType])}`,
+        `description: ${quoteYaml(excerpt || subtitle || title)}`,
+        '---',
+        `# ${title}`,
+        '',
+        'Neuer Entwurf. Inhalt folgt.',
+        '',
+    ].join('\n');
+
+    const project: Project = {
+        id,
+        title,
+        subtitle,
+        slug,
+        category,
+        excerpts: excerpt,
+        published,
+        status,
+        updatedAt,
+        contentHubs: contentHubs as Project['contentHubs'],
+        description: excerpt || subtitle,
+        bgColor: '#E5E7EB',
+        image: 'assets/heroimage-bg.jpg',
+        hasAnimation: false,
+        featured,
+        type: [projectType],
+    };
+
+    return { markdown, project };
+}
 
 const toPreviewSource = (assetPath: string): string => resolveAssetPath(assetPath || '');
 
@@ -655,9 +746,11 @@ function AssetSelectionField({
 function AddMenu({
     onAdd,
     variant = 'inline',
+    copiedBlock = null,
 }: {
     onAdd: (type: BlockType) => void,
-    variant?: 'inline' | 'footer'
+    variant?: 'inline' | 'footer',
+    copiedBlock?: { type: 'copy' | 'cut', block: Block } | null,
 }) {
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -781,6 +874,26 @@ function AddMenu({
             </div>
 
             <div className="overflow-y-auto p-2">
+                {copiedBlock && (
+                    <div className="mb-2 border-b border-slate-100 pb-2 flex">
+                        <button
+                            onClick={() => {
+                                onAdd('paste');
+                                setOpen(false);
+                            }}
+                            className="flex flex-1 items-center justify-start gap-4 rounded-xl border border-indigo-200 bg-indigo-50 p-2.5 hover:border-indigo-400 hover:bg-indigo-100 transition-colors"
+                        >
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white shadow-sm font-bold text-indigo-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                            </span>
+                            <div className="flex flex-col text-left">
+                                <span className="text-sm font-bold text-indigo-900 leading-tight">Paste Block</span>
+                                <span className="text-[10px] text-indigo-600/70 font-semibold uppercase tracking-wider">{copiedBlock.type} {copiedBlock.block.type}</span>
+                            </div>
+                        </button>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-3 gap-2">
                     {menuItems.map((item) => (
                         <button
@@ -907,18 +1020,69 @@ function FontBlockEditor({ block, updateBlock }: { block: Block, updateBlock: (i
 
 
 // --- Main Editor Component ---
+
+function SectionCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-[32px] border border-white bg-white p-6 md:p-8 shadow-[0_10px_40px_-15px_rgba(15,23,42,0.1)] ring-1 ring-slate-100 mb-8 last:mb-0 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-2 h-full bg-slate-100 transition-colors"></div>
+            <div className="mb-6 pl-4 border-b border-slate-100/80 pb-6">
+                <h4 className="text-[19px] font-black tracking-tight text-slate-900">{title}</h4>
+                {subtitle && <p className="mt-1.5 text-[15px] font-medium text-slate-500 leading-relaxed">{subtitle}</p>}
+            </div>
+            <div className="mt-6 pl-4">{children}</div>
+        </div>
+    )
+}
+
+function FieldLabel({ text }: { text: string }) {
+    return <label className="text-[11px] font-black uppercase tracking-widest text-slate-500 pl-3 block mb-2">{text}</label>
+}
+
+function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+    return (
+        <input
+            {...props}
+            className={`w-full rounded-full border border-slate-200 bg-slate-50 px-5 py-3.5 text-[15px] font-medium text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${props.className || ''}`}
+        />
+    )
+}
+
+function SelectInput(props: React.InputHTMLAttributes<HTMLSelectElement>) {
+    return (
+        <select
+            {...props as any}
+            className={`w-full rounded-full border border-slate-200 bg-slate-50 px-5 py-3.5 text-[15px] font-medium text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all appearance-none cursor-pointer ${props.className || ''}`}
+            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 1.25rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em', ...props.style }}
+        />
+    )
+}
+
+function StyledTextArea({ value, onChange, placeholder, rows }: { value: string, onChange: (val: string) => void, placeholder?: string, rows?: number }) {
+    return (
+        <AutoResizeTextarea
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            rows={rows || 3}
+            className="w-full rounded-[24px] border border-slate-200 bg-slate-50 p-5 text-[15px] font-medium text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all custom-scrollbar min-h-[120px]"
+        />
+    )
+}
+
 function FrontmatterEditor({
     block,
     updateBlock,
     recentImageAssets,
     recentVideoAssets,
     onUploadImage,
+    folder,
 }: {
     block: Block;
     updateBlock: (id: string, updates: Partial<Block>) => void;
     recentImageAssets: AssetLibraryEntry[];
     recentVideoAssets: AssetLibraryEntry[];
     onUploadImage: (file: File) => Promise<string | null>;
+    folder: EditorFolder;
 }) {
     const [data, setData] = useState<Record<string, any> | null>(null);
     const [rawMode, setRawMode] = useState(false);
@@ -989,6 +1153,8 @@ function FrontmatterEditor({
         collaboration = [],
         excerpts = '',
         published = '',
+        status = 'Published',
+        updatedAt = '',
         description = '',
         bgColor = '',
         image = '',
@@ -998,7 +1164,8 @@ function FrontmatterEditor({
         featured = false,
         type = [],
         id = 0,
-        awards = []
+        awards = [],
+        client = ''
     } = data;
 
     const toCommaStr = (arr: any) => Array.isArray(arr) ? arr.join(', ') : (typeof arr === 'string' ? arr : '');
@@ -1010,12 +1177,33 @@ function FrontmatterEditor({
         ? [selectedType, ...PROJECT_TYPE_OPTIONS]
         : [...PROJECT_TYPE_OPTIONS];
     const animationData: Record<string, any> = animationSequence && typeof animationSequence === 'object' ? animationSequence : {};
+    const normalizedStatus: EditorProjectStatus = folder === 'archive'
+        ? 'Draft'
+        : status === 'Draft' ? 'Draft' : 'Published';
+    const publishedValue = typeof published === 'string' ? published : '';
+    const updatedAtValue = typeof updatedAt === 'string'
+        ? updatedAt
+        : updatedAt instanceof Date
+            ? updatedAt.toISOString()
+            : '';
 
     const updateCollaborationPerson = (index: number, key: 'name' | 'url', value: string) => {
         const nextPeople = [...collaborationPeople];
         const base = nextPeople[index] || { name: '', url: '' };
         nextPeople[index] = { ...base, [key]: value };
         handleChange('collaboration', serializeCollaborationPeople(nextPeople));
+    };
+
+    const handleTypeChange = (nextType: string) => {
+        if (!data) return;
+        const mappedContentHubs = mapProjectTypeToContentHubs(nextType);
+        const nextData = {
+            ...data,
+            type: nextType ? [nextType] : [],
+            'content-hubs': mappedContentHubs,
+        };
+        setData(nextData);
+        saveToBlock(nextData);
     };
 
     const addCollaborationPerson = () => {
@@ -1030,192 +1218,207 @@ function FrontmatterEditor({
     };
 
     return (
-        <div className="flex flex-col gap-6 text-neutral-800">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <section className="md:col-span-2 rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/70 p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
-                    <div className="mb-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Identity</p>
-                        <h3 className="mt-1 text-lg font-bold text-slate-900">Project Core</h3>
+        <div className="flex flex-col gap-0 text-neutral-800">
+            <SectionCard title="Project Core" subtitle="Identity, Slug, Description & Lifecycle">
+                <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-12">
+                    {/* Text Unit (Full Width) */}
+                    <div className="space-y-1.5 md:col-span-12">
+                        <FieldLabel text="Project Title" />
+                        <TextInput value={title} onChange={e => handleChange('title', e.target.value)} />
                     </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="md:col-span-2">
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project Title</label>
-                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm font-semibold transition-colors focus:border-black focus:bg-white focus:ring-black" value={title} onChange={e => handleChange('title', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project ID</label>
-                            <input type="number" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={id} onChange={e => handleChange('id', parseInt(e.target.value) || 0)} />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">URL Slug</label>
-                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={slug} onChange={e => handleChange('slug', e.target.value)} />
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Subtitle</label>
-                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={subtitle} onChange={e => handleChange('subtitle', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Publish Date (YYYY-MM-DD)</label>
-                            <input type="text" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={published} onChange={e => handleChange('published', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project Type</label>
-                            <select
-                                className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black"
-                                value={selectedType}
-                                onChange={(event) => handleChange('type', event.target.value ? [event.target.value] : [])}
-                            >
-                                <option value="">Not set</option>
-                                {typeOptions.map((entry) => (
-                                    <option key={entry} value={entry}>
-                                        {entry}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Excerpt (Hero Intro)</label>
-                            <AutoResizeTextarea className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={excerpts} onChange={val => handleChange('excerpts', val)} rows={3} />
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">SEO Description</label>
-                            <AutoResizeTextarea className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={description} onChange={val => handleChange('description', val)} rows={2} />
-                        </div>
+                    <div className="space-y-1.5 md:col-span-12">
+                        <FieldLabel text="Subtitle" />
+                        <TextInput value={subtitle} onChange={e => handleChange('subtitle', e.target.value)} />
                     </div>
-                </section>
+                    <div className="space-y-1.5 md:col-span-12">
+                        <FieldLabel text="Project Type" />
+                        <SelectInput
+                            value={selectedType}
+                            onChange={(event) => handleTypeChange(event.target.value)}
+                        >
+                            <option value="">Not set</option>
+                            {typeOptions.map((entry) => (
+                                <option key={entry} value={entry}>
+                                    {entry}
+                                </option>
+                            ))}
+                        </SelectInput>
+                    </div>
+                    <div className="space-y-1.5 md:col-span-12">
+                        <FieldLabel text="Excerpt (Hero Intro)" />
+                        <StyledTextArea value={excerpts} onChange={val => handleChange('excerpts', val)} rows={3} />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-12 mb-4">
+                        <FieldLabel text="SEO Description" />
+                        <StyledTextArea value={description} onChange={val => handleChange('description', val)} rows={2} />
+                    </div>
 
-                <section className="md:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
-                    <div className="mb-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Media</p>
-                        <h3 className="mt-1 text-lg font-bold text-slate-900">Hero Assets</h3>
+                    {/* 3-Col Row: Publish Date, Status, Updated At */}
+                    <div className="space-y-1.5 md:col-span-4 border-t border-slate-100 pt-6">
+                        <FieldLabel text="Publish Date (YYYY-MM-DD)" />
+                        <TextInput value={publishedValue} onChange={e => handleChange('published', e.target.value)} />
                     </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="md:col-span-2">
-                            <AssetSelectionField
-                                label="Cover / Hero Image"
-                                value={image}
-                                onChange={(next) => handleChange('image', next)}
-                                placeholder="assets/..."
-                                kind="image"
-                                recentAssets={recentImageAssets}
-                                onUploadImage={onUploadImage}
-                                helperText="Du kannst aus Recent Files waehlen oder direkt ein Bild als weboptimiertes .webp hochladen."
-                            />
-                        </div>
-                        <div className="md:col-span-2">
-                            <AssetSelectionField
-                                label="Cover Video Loop (Optional override)"
-                                value={video}
-                                onChange={(next) => handleChange('video', next)}
-                                placeholder="assets/..."
-                                kind="video"
-                                recentAssets={recentVideoAssets}
-                                helperText="Video-Dateien kommen aus den recent assets unter public/assets."
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Project Brand Color</label>
-                            <div className="flex items-center gap-2 overflow-hidden rounded-lg border bg-neutral-50 pr-2.5 focus-within:ring-1 focus-within:ring-black">
-                                <input type="color" className="h-10 w-10 cursor-pointer border-r border-transparent bg-transparent p-0 object-cover" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} />
-                                <input className="flex-1 border-none bg-transparent p-2.5 text-sm font-mono focus:ring-0" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} placeholder="#007EFF" />
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-2 md:justify-end">
-                            <label className="flex items-center gap-3 rounded-lg border bg-neutral-50 p-3">
-                                <input type="checkbox" id="featured" className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black" checked={featured} onChange={e => handleChange('featured', e.target.checked)} />
-                                <span className="text-sm font-semibold text-neutral-700">Featured Project</span>
-                            </label>
-                            <label className="flex items-center gap-3 rounded-lg border bg-neutral-50 p-3">
-                                <input type="checkbox" id="hasAnimation" className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black" checked={hasAnimation} onChange={e => handleChange('hasAnimation', e.target.checked)} />
-                                <span className="text-sm font-semibold text-neutral-700">Hero Animation Sequence</span>
-                            </label>
-                        </div>
+                    <div className="space-y-1.5 md:col-span-4 border-t border-slate-100 pt-6">
+                        <FieldLabel text="Status" />
+                        <SelectInput
+                            value={normalizedStatus}
+                            onChange={(event) => handleChange('status', event.target.value === 'Draft' ? 'Draft' : 'Published')}
+                            disabled={folder === 'archive'}
+                            className="disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            <option value="Draft">Draft</option>
+                            <option value="Published">Published</option>
+                        </SelectInput>
                     </div>
-                </section>
+                    <div className="space-y-1.5 md:col-span-4 border-t border-slate-100 pt-6">
+                        <FieldLabel text="Updated At (Auto)" />
+                        <TextInput
+                            value={updatedAtValue || 'Wird beim Speichern gesetzt'}
+                            readOnly
+                            className="bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200"
+                        />
+                    </div>
 
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
-                    <div className="mb-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Taxonomy</p>
-                        <h3 className="mt-1 text-lg font-bold text-slate-900">Category & Awards</h3>
+                    {/* 2-Col Row: Project ID, Slug */}
+                    <div className="space-y-1.5 md:col-span-6 mt-2">
+                        <FieldLabel text="Project ID" />
+                        <TextInput type="number" value={id} onChange={e => handleChange('id', parseInt(e.target.value) || 0)} />
                     </div>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Category (Comma separated)</label>
-                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={toCommaStr(category)} onChange={e => handleChange('category', fromCommaStr(e.target.value))} />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Awards (Comma separated)</label>
-                            <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={toCommaStr(awards)} onChange={e => handleChange('awards', fromCommaStr(e.target.value))} />
-                        </div>
+                    <div className="space-y-1.5 md:col-span-6 mt-2">
+                        <FieldLabel text="URL Slug" />
+                        <TextInput value={slug} onChange={e => handleChange('slug', e.target.value)} />
                     </div>
-                </section>
+                </div>
+            </SectionCard>
 
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
-                    <div className="mb-4 flex items-center justify-between gap-2">
-                        <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Collaboration</p>
-                            <h3 className="mt-1 text-lg font-bold text-slate-900">People & Links</h3>
+            <SectionCard title="Hero Assets" subtitle="Media & Visual Setup">
+                <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-2">
+                    <div className="space-y-1.5 md:col-span-2">
+                        <AssetSelectionField
+                            label="Cover / Hero Image"
+                            value={image}
+                            onChange={(next) => handleChange('image', next)}
+                            placeholder="assets/..."
+                            kind="image"
+                            recentAssets={recentImageAssets}
+                            onUploadImage={onUploadImage}
+                            helperText="Aus Recent Files wählen oder direkt hochladen."
+                        />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                        <AssetSelectionField
+                            label="Cover Video Loop (Optional)"
+                            value={video}
+                            onChange={(next) => handleChange('video', next)}
+                            placeholder="assets/..."
+                            kind="video"
+                            recentAssets={recentVideoAssets}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <FieldLabel text="Project Brand Color" />
+                        <div className="flex items-center gap-2 overflow-hidden rounded-full border border-slate-200 bg-slate-50 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all pl-2">
+                            <input type="color" className="h-8 w-8 cursor-pointer rounded-full border-none bg-transparent p-0" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} />
+                            <input className="flex-1 w-full bg-transparent border-none py-3.5 text-[15px] font-mono text-slate-800 focus:outline-none" value={bgColor} onChange={e => handleChange('bgColor', e.target.value)} placeholder="#007EFF" />
                         </div>
+                    </div>
+                    <div className="flex items-center gap-6 pt-6">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-5 h-5 rounded-lg border-slate-300 text-slate-900 focus:ring-slate-900/20 focus:ring-offset-0 bg-slate-50 transition-all cursor-pointer" checked={featured} onChange={e => handleChange('featured', e.target.checked)} />
+                            <span className="text-[15px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Featured Project</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" className="w-5 h-5 rounded-lg border-slate-300 text-slate-900 focus:ring-slate-900/20 focus:ring-offset-0 bg-slate-50 transition-all cursor-pointer" checked={hasAnimation} onChange={e => handleChange('hasAnimation', e.target.checked)} />
+                            <span className="text-[15px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Has Animation</span>
+                        </label>
+                    </div>
+                </div>
+            </SectionCard>
+
+            <SectionCard title="Category & Awards" subtitle="Tags und Klassifizierung">
+                <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-3">
+                    <div className="space-y-1.5">
+                        <FieldLabel text="Category (Comma sep.)" />
+                        <TextInput value={toCommaStr(category)} onChange={e => handleChange('category', fromCommaStr(e.target.value))} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <FieldLabel text="Awards (Comma sep.)" />
+                        <TextInput value={toCommaStr(awards)} onChange={e => handleChange('awards', fromCommaStr(e.target.value))} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <FieldLabel text="Client" />
+                        <TextInput value={client} onChange={e => handleChange('client', e.target.value)} placeholder="e.g. Apple" />
+                    </div>
+                </div>
+            </SectionCard>
+
+            <SectionCard title="Collaboration" subtitle="Beteiligte Personen & Partner">
+                {collaborationPeople.length === 0 ? (
+                    <div className="mb-4 text-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                        <p className="text-sm font-medium text-slate-500">Noch keine Personen hinterlegt.</p>
                         <button
                             type="button"
                             onClick={addCollaborationPerson}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                            className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100 uppercase tracking-widest shadow-sm"
                         >
-                            <Plus size={13} />
-                            Add
+                            <Plus size={14} /> Add Person
                         </button>
                     </div>
-                    {collaborationPeople.length === 0 ? (
-                        <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-500">
-                            Noch keine Personen hinterlegt. Fuege ueber <strong>+</strong> einen Namen und optional eine URL hinzu.
-                        </p>
-                    ) : (
-                        <div className="space-y-2">
-                            {collaborationPeople.map((person, index) => (
-                                <div key={`${person.name}-${index}`} className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 md:grid-cols-[1fr_1fr_auto]">
-                                    <input
-                                        className="w-full rounded-lg border bg-white p-2.5 text-sm transition-colors focus:border-black focus:ring-black"
+                ) : (
+                    <div className="space-y-3 mb-5">
+                        {collaborationPeople.map((person, index) => (
+                            <div key={`${person.name}-${index}`} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 md:flex-row md:items-center">
+                                <div className="flex-1 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <TextInput
                                         value={person.name}
                                         onChange={(event) => updateCollaborationPerson(index, 'name', event.target.value)}
                                         placeholder="Name"
+                                        className="!py-2.5 text-sm"
                                     />
-                                    <input
-                                        className="w-full rounded-lg border bg-white p-2.5 text-sm transition-colors focus:border-black focus:ring-black"
+                                    <TextInput
                                         value={person.url}
                                         onChange={(event) => updateCollaborationPerson(index, 'url', event.target.value)}
                                         placeholder="URL (optional)"
+                                        className="!py-2.5 text-sm"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeCollaborationPerson(index)}
-                                        className="inline-flex h-[42px] items-center justify-center rounded-lg border border-red-200 bg-white px-3 text-red-500 transition-colors hover:bg-red-50"
-                                        aria-label="Remove collaborator"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {hasAnimation && (
-                    <section className="md:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.55)] md:p-6">
-                        <div className="mb-4">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Animation</p>
-                            <h3 className="mt-1 text-lg font-bold text-slate-900">Scrub Sequence Paths</h3>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div className="md:col-span-2">
-                                <AssetSelectionField
-                                    label="Desktop Video Path (.mp4)"
-                                    value={animationData.videoPath || ''}
-                                    onChange={(next) => handleChange('animationSequence', { ...animationData, videoPath: next })}
-                                    kind="video"
-                                    recentAssets={recentVideoAssets}
-                                    placeholder="assets/..."
-                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeCollaborationPerson(index)}
+                                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-red-200 bg-white text-red-500 transition-colors hover:bg-red-50 shadow-sm self-end md:self-auto"
+                                    aria-label="Remove collaborator"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
                             </div>
+                        ))}
+                    </div>
+                )}
+                {collaborationPeople.length > 0 && (
+                    <button
+                        type="button"
+                        onClick={addCollaborationPerson}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100 uppercase tracking-widest shadow-sm"
+                    >
+                        <Plus size={14} /> Add Person
+                    </button>
+                )}
+            </SectionCard>
+
+            {hasAnimation && (
+                <SectionCard title="Scrub Sequence Paths" subtitle="Animation Video Pfade">
+                    <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-2">
+                        <div className="space-y-1.5 md:col-span-2">
+                            <AssetSelectionField
+                                label="Desktop Video Path (.mp4)"
+                                value={animationData.videoPath || ''}
+                                onChange={(next) => handleChange('animationSequence', { ...animationData, videoPath: next })}
+                                kind="video"
+                                recentAssets={recentVideoAssets}
+                                placeholder="assets/..."
+                            />
+                        </div>
+                        <div className="space-y-1.5">
                             <AssetSelectionField
                                 label="Safari Native Video Path"
                                 value={animationData.safariVideoPath || ''}
@@ -1224,6 +1427,8 @@ function FrontmatterEditor({
                                 recentAssets={recentVideoAssets}
                                 placeholder="assets/..."
                             />
+                        </div>
+                        <div className="space-y-1.5">
                             <AssetSelectionField
                                 label="Mobile Video Path"
                                 value={animationData.mobileVideoPath || ''}
@@ -1232,25 +1437,25 @@ function FrontmatterEditor({
                                 recentAssets={recentVideoAssets}
                                 placeholder="assets/..."
                             />
-                            <div>
-                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Total Frame Count</label>
-                                <input type="number" className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={animationData.frameCount || 0} onChange={e => handleChange('animationSequence', { ...animationData, frameCount: parseInt(e.target.value || '0', 10) || 0 })} />
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-neutral-500">Legacy Spritesheet Path (Optional)</label>
-                                <input className="w-full rounded-lg border bg-neutral-50 p-2.5 text-sm transition-colors focus:border-black focus:bg-white focus:ring-black" value={animationData.spritesheetPath || ''} onChange={e => handleChange('animationSequence', { ...animationData, spritesheetPath: e.target.value })} />
-                            </div>
                         </div>
-                    </section>
-                )}
-            </div>
+                        <div className="space-y-1.5">
+                            <FieldLabel text="Total Frame Count" />
+                            <TextInput type="number" value={animationData.frameCount || 0} onChange={e => handleChange('animationSequence', { ...animationData, frameCount: parseInt(e.target.value || '0', 10) || 0 })} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <FieldLabel text="Legacy Spritesheet Path" />
+                            <TextInput value={animationData.spritesheetPath || ''} onChange={e => handleChange('animationSequence', { ...animationData, spritesheetPath: e.target.value })} />
+                        </div>
+                    </div>
+                </SectionCard>
+            )}
 
-            <div className="mt-2 border-t border-slate-100 pt-4">
-                <button onClick={() => setRawMode(true)} className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 transition-colors hover:text-black">
+            <div className="mt-2 border-t border-slate-100 pt-4 px-2">
+                <button onClick={() => setRawMode(true)} className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 transition-colors hover:text-black hover:bg-neutral-100 px-3 py-1.5 rounded-full w-max">
                     <Code size={12} /> View Raw Context
                 </button>
             </div>
-        </div>
+        </div >
     );
 }
 
@@ -1262,6 +1467,8 @@ function SortableBlockRow({
     isActive,
     renderBlockEditor,
     deleteBlock,
+    handleBlockAction,
+    copiedBlock,
     addBlock,
     focusBlockAndSyncPreview,
 }: {
@@ -1272,6 +1479,8 @@ function SortableBlockRow({
     isActive: boolean,
     renderBlockEditor: (block: Block) => React.ReactNode,
     deleteBlock: (id: string) => void,
+    handleBlockAction: (action: 'copy' | 'cut', block: Block) => void,
+    copiedBlock: { type: 'copy' | 'cut', block: Block } | null,
     addBlock: (index: number, type: BlockType) => void,
     focusBlockAndSyncPreview: (block: Block, bodyIndex: number) => void,
 }) {
@@ -1283,7 +1492,7 @@ function SortableBlockRow({
             value={block}
             dragListener={false}
             dragControls={dragControls}
-            dragElastic={0.03}
+            dragElastic={0}
             dragMomentum={false}
             transition={{ layout: { duration: 0.14, ease: 'easeOut' } }}
             whileDrag={{
@@ -1314,12 +1523,32 @@ function SortableBlockRow({
                     {renderBlockEditor(block)}
                 </div>
 
-                {/* Delete */}
-                <div className="w-8 flex flex-col items-center h-12 justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1">
+                {/* Block actions */}
+                <div className="w-8 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1 gap-1">
                     {!isFrontmatter && (
-                        <button onClick={() => deleteBlock(block.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-colors">
-                            <Trash2 size={16} />
-                        </button>
+                        <>
+                            <button
+                                onClick={() => handleBlockAction('copy', block)}
+                                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-md transition-colors"
+                                title="Copy Block"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                            <button
+                                onClick={() => handleBlockAction('cut', block)}
+                                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-md transition-colors"
+                                title="Cut Block"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                            </button>
+                            <button
+                                onClick={() => deleteBlock(block.id)}
+                                className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-colors"
+                                title="Delete Block"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
@@ -1329,7 +1558,7 @@ function SortableBlockRow({
                 <div className="relative mt-2 h-0">
                     <div className="absolute inset-x-0 top-0 flex -translate-y-1/2 justify-center">
                         <div className={`rounded-full bg-[#f7f9fc] px-2 py-1 transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                            <AddMenu onAdd={(type) => addBlock(index, type)} variant="inline" />
+                            <AddMenu onAdd={(type) => addBlock(index, type)} variant="inline" copiedBlock={copiedBlock} />
                         </div>
                     </div>
                 </div>
@@ -1348,6 +1577,14 @@ export default function EditorPage() {
         ? (folderParam[0] === 'archive' ? 'archive' : 'projects')
         : (folderParam === 'archive' ? 'archive' : 'projects');
     const folderQuery = folder === 'archive' ? '?folder=archive' : '';
+    const newParam = readQueryString(router.query.new).toLowerCase();
+    const isNewDocument = newParam === '1' || newParam === 'true' || newParam === 'yes';
+    const queryTitle = readQueryString(router.query.title).trim();
+    const querySubtitle = readQueryString(router.query.subtitle).trim();
+    const queryCategory = readQueryString(router.query.category).trim();
+    const queryExcerpt = readQueryString(router.query.excerpt).trim();
+    const queryFeatured = readQueryString(router.query.featured).toLowerCase();
+    const queryId = Number(readQueryString(router.query.id));
 
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [initialProject, setInitialProject] = useState<Project | null>(null);
@@ -1369,6 +1606,9 @@ export default function EditorPage() {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [iframeReady, setIframeReady] = useState(false);
     const previewResizingRef = useRef(false);
+
+    // Block Clipboard State
+    const [copiedBlock, setCopiedBlock] = useState<{ type: 'copy' | 'cut', block: Block } | null>(null);
 
     const loadAssetLibrary = useCallback(async () => {
         try {
@@ -1516,45 +1756,117 @@ export default function EditorPage() {
         previewResizingRef.current = true;
         document.body.style.cursor = 'ew-resize';
         document.body.style.userSelect = 'none';
+        event.currentTarget.setPointerCapture(event.pointerId);
     }, []);
 
     useEffect(() => {
         if (!slug) return;
+        let cancelled = false;
 
-        // Fetch all projects for references and the current project data
-        fetch('/api/admin/projects')
-            .then(res => res.json())
-            .then(data => {
-                const liveProjects = data.projects || [];
-                const archivedProjects = data.archivedProjects || [];
-                const combinedProjects = [...liveProjects, ...archivedProjects];
-                setAllProjects(combinedProjects);
-                const activeList = folder === 'archive' ? archivedProjects : liveProjects;
-                const proj = activeList.find((p: Project) => p.slug === slug) || combinedProjects.find((p: Project) => p.slug === slug);
-                if (proj) setInitialProject(proj);
-            });
-
-        // Fetch raw markdown
-        fetch(`/api/admin/project/${slug}${folderQuery}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.content) {
-                    setBlocks(parseMarkdownToBlocks(data.content));
+        const loadEditor = async () => {
+            setLoading(true);
+            try {
+                const projectsResponse = await fetch('/api/admin/projects');
+                const projectsPayload = await projectsResponse.json().catch(() => ({}));
+                if (!projectsResponse.ok) {
+                    throw new Error(projectsPayload?.error || 'Projekte konnten nicht geladen werden.');
                 }
-                setLoading(false);
-            });
-    }, [slug, folder, folderQuery]);
+
+                const liveProjects = Array.isArray(projectsPayload?.projects) ? projectsPayload.projects : [];
+                const archivedProjects = Array.isArray(projectsPayload?.archivedProjects) ? projectsPayload.archivedProjects : [];
+                const combinedProjects = [...liveProjects, ...archivedProjects] as Project[];
+                if (cancelled) return;
+                setAllProjects(combinedProjects);
+
+                const activeList = (folder === 'archive' ? archivedProjects : liveProjects) as Project[];
+                const projectInFolder = activeList.find((project) => project.slug === slug);
+                const projectAny = combinedProjects.find((project) => project.slug === slug);
+                const existingProject = projectInFolder || projectAny;
+
+                if (isNewDocument && !projectInFolder) {
+                    const maxId = combinedProjects.reduce((max: number, project) => {
+                        const value = Number(project.id);
+                        return Number.isFinite(value) ? Math.max(max, value) : max;
+                    }, 0);
+                    const nextId = Number.isFinite(queryId) && queryId > 0 ? queryId : maxId + 1;
+                    const featuredFromQuery = ['1', 'true', 'yes', 'on'].includes(queryFeatured);
+                    const cleanTitle = queryTitle || slug;
+                    const seed = buildNewProjectDocument({
+                        id: nextId,
+                        slug,
+                        folder,
+                        title: cleanTitle,
+                        subtitle: querySubtitle || 'Draft',
+                        category: queryCategory || 'Draft',
+                        excerpt: queryExcerpt || 'Neuer Artikelentwurf.',
+                        featured: featuredFromQuery,
+                    });
+                    if (cancelled) return;
+                    setInitialProject(seed.project);
+                    setBlocks(parseMarkdownToBlocks(seed.markdown));
+                    return;
+                }
+
+                if (existingProject) {
+                    if (cancelled) return;
+                    setInitialProject(existingProject);
+                }
+
+                const markdownResponse = await fetch(`/api/admin/project/${slug}${folderQuery}`);
+                const markdownPayload = await markdownResponse.json().catch(() => ({}));
+                if (!markdownResponse.ok) {
+                    throw new Error(markdownPayload?.error || 'Markdown konnte nicht geladen werden.');
+                }
+                if (!cancelled && typeof markdownPayload?.content === 'string') {
+                    setBlocks(parseMarkdownToBlocks(markdownPayload.content));
+                }
+            } catch (loadError) {
+                if (!cancelled) {
+                    const message = loadError instanceof Error ? loadError.message : 'Editor konnte nicht geladen werden.';
+                    alert(message);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void loadEditor();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [folder, folderQuery, isNewDocument, queryCategory, queryExcerpt, queryFeatured, queryId, querySubtitle, queryTitle, slug]);
 
     const handleSave = async () => {
         if (!slug) return;
         setSaving(true);
-        const md = serializeBlocksToMarkdown(blocks);
-        await fetch(`/api/admin/project/${slug}${folderQuery}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: md })
-        });
-        setSaving(false);
+        try {
+            const md = serializeBlocksToMarkdown(blocks);
+            const response = await fetch(`/api/admin/project/${slug}${folderQuery}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: md })
+            });
+
+            const payload = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(payload?.error || 'Speichern fehlgeschlagen.');
+            }
+
+            if (payload?.content && typeof payload.content === 'string') {
+                setBlocks(parseMarkdownToBlocks(payload.content));
+            }
+            if (isNewDocument) {
+                await router.replace(`/admin/editor/${slug}${folderQuery}`);
+            }
+        } catch (saveError) {
+            const message = saveError instanceof Error ? saveError.message : 'Speichern fehlgeschlagen.';
+            alert(message);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const updateBlock = (id: string, updates: Partial<Block>) => {
@@ -1572,6 +1884,25 @@ export default function EditorPage() {
             content: '',
             fenceInfo: ''
         };
+
+        if (type === 'paste') {
+            if (!copiedBlock) return;
+            const pastedBlock = {
+                ...copiedBlock.block,
+                id: generateId()
+            };
+            const newBlocks = [...blocks];
+            newBlocks.splice(index + 1, 0, pastedBlock);
+
+            if (copiedBlock.type === 'cut') {
+                const finalBlocks = newBlocks.filter(b => b.id !== copiedBlock.block.id);
+                setBlocks(finalBlocks);
+                setCopiedBlock(null);
+            } else {
+                setBlocks(newBlocks);
+            }
+            return;
+        }
 
         if (type === 'mockup') {
             newBlock.fenceInfo = '```mockup type="iphone" image="" bgColor="#F5F5F7"';
@@ -1648,11 +1979,7 @@ export default function EditorPage() {
 
     const renderBlockEditor = (block: Block) => {
         if (block.type === 'frontmatter') {
-            return (
-                <div className="bg-neutral-100 p-4 border rounded font-mono text-xs text-neutral-500 overflow-hidden text-ellipsis whitespace-nowrap h-12 flex items-center">
-                    Frontmatter details (Stored at Top)
-                </div>
-            );
+            return null; // Frontmatter is edited in the Header View
         }
 
         if (block.type === 'header') return <HeaderBlockEditor block={block} updateBlock={updateBlock} accentColor={editorAccentColor} />;
@@ -2683,16 +3010,16 @@ export default function EditorPage() {
 
         if (previewViewport === 'mobile') {
             return {
-                width: portrait ? '393px' : '852px',
-                height: portrait ? '852px' : '393px',
+                width: portrait ? '414px' : '896px',
+                height: portrait ? '896px' : '414px',
                 chrome: 'device' as const,
                 label: portrait ? 'Mobile Portrait' : 'Mobile Landscape',
             };
         }
 
         return {
-            width: portrait ? '834px' : '1194px',
-            height: portrait ? '1194px' : '834px',
+            width: portrait ? '820px' : '1180px',
+            height: portrait ? '1180px' : '820px',
             chrome: 'device' as const,
             label: portrait ? 'Tablet Portrait' : 'Tablet Landscape',
         };
@@ -2700,6 +3027,7 @@ export default function EditorPage() {
 
     const canRotatePreview = previewViewport === 'mobile' || previewViewport === 'tablet';
     const effectivePreviewZoom = previewViewport === 'desktop' ? 75 : previewZoom;
+    const previewScale = effectivePreviewZoom / 100;
 
     const editorContentLayout = useMemo(() => {
         const minPageMargin = viewportWidth >= 1024 ? 32 : 16;
@@ -2790,37 +3118,15 @@ export default function EditorPage() {
                         }}
                     >
                         {viewMode === 'header' && blocks.find(b => b.type === 'frontmatter') && (
-                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_42px_-28px_rgba(15,23,42,0.65)]">
-                                <div className="border-b border-slate-200 bg-[radial-gradient(circle_at_0%_0%,#eef4ff_0%,#f8fbff_45%,#ffffff_100%)] px-6 py-5 md:px-8">
-                                    <div className="flex flex-wrap items-start justify-between gap-4">
-                                        <div className="max-w-2xl">
-                                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Header View</p>
-                                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Frontmatter, Hero & Metadata</h2>
-                                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                                                Hier konfigurierst du alle Header-relevanten Projektangaben: Identity, Hero-Assets, Featured-Status, Type und Collaboration.
-                                            </p>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
-                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-                                                {folder === 'archive' ? 'Archive Draft' : 'Published'}
-                                            </span>
-                                            {slug && (
-                                                <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
-                                                    {slug}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-6 md:p-8">
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-12">
                                 <FrontmatterEditor
                                     block={blocks.find(b => b.type === 'frontmatter')!}
                                     updateBlock={updateBlock}
                                     recentImageAssets={recentImageAssets}
                                     recentVideoAssets={recentVideoAssets}
                                     onUploadImage={uploadImageAsset}
+                                    folder={folder}
                                 />
-                                </div>
                             </div>
                         )}
 
@@ -2841,6 +3147,8 @@ export default function EditorPage() {
                                             isActive={isActive}
                                             renderBlockEditor={renderBlockEditor}
                                             deleteBlock={deleteBlock}
+                                            handleBlockAction={(action, block) => setCopiedBlock({ type: action, block })}
+                                            copiedBlock={copiedBlock}
                                             addBlock={addBlock}
                                             focusBlockAndSyncPreview={focusBlockAndSyncPreview}
                                         />
@@ -2851,7 +3159,7 @@ export default function EditorPage() {
 
                         {viewMode === 'body' && (
                             <div className="mt-12 flex justify-center pb-24 relative z-20 animate-in fade-in duration-500 delay-150">
-                                <AddMenu onAdd={(type) => addBlock(blocks.length - 1, type)} variant="footer" />
+                                <AddMenu onAdd={(type) => addBlock(blocks.length - 1, type)} variant="footer" copiedBlock={copiedBlock} />
                             </div>
                         )}
 
@@ -2933,11 +3241,12 @@ export default function EditorPage() {
                         <div className={`flex-1 overflow-auto hide-scrollbar relative flex ${previewViewport === 'full' ? 'justify-stretch items-stretch p-0' : 'justify-center items-start pt-8 pb-32 px-4'}`}>
                             {previewProject && (
                                 <div
-                                    className={`bg-white shadow-2xl relative transition-all duration-300 ease-out flex origin-top ${previewFrame.chrome === 'device' ? 'rounded-[36px] border-[8px] border-slate-800 ring-1 ring-black/10 overflow-hidden' : ''} ${previewFrame.chrome === 'desktop' ? 'rounded-2xl border border-slate-200 overflow-hidden' : ''} ${previewViewport === 'full' ? 'origin-top-left' : ''}`}
+                                    className={`bg-white shadow-2xl relative transition-all duration-300 ease-out origin-top ${previewFrame.chrome === 'device' ? 'rounded-[36px] border-[8px] border-slate-800 ring-1 ring-black/10 overflow-hidden' : ''} ${previewFrame.chrome === 'desktop' ? 'rounded-2xl border border-slate-200 overflow-hidden' : ''} ${previewViewport === 'full' ? 'origin-top-left' : ''}`}
                                     style={{
                                         width: previewFrame.width,
                                         height: previewFrame.height,
-                                        transform: `scale(${effectivePreviewZoom / 100})`,
+                                        transform: previewViewport === 'full' ? 'none' : `scale(${previewScale})`,
+                                        overflow: previewViewport === 'full' ? 'hidden' : undefined,
                                     }}
                                 >
                                     {!iframeReady && (
@@ -2949,7 +3258,16 @@ export default function EditorPage() {
                                         ref={iframeRef}
                                         src={`/admin/preview/${slug || ''}`}
                                         className="w-full h-full border-none"
-                                        style={{ pointerEvents: 'auto' }}
+                                        style={{
+                                            display: 'block',
+                                            pointerEvents: 'auto',
+                                            width: previewViewport === 'full' ? `${100 / previewScale}%` : undefined,
+                                            height: previewViewport === 'full' ? `${100 / previewScale}%` : undefined,
+                                            maxWidth: previewViewport === 'full' ? 'none' : undefined,
+                                            maxHeight: previewViewport === 'full' ? 'none' : undefined,
+                                            transform: previewViewport === 'full' ? `scale(${previewScale})` : undefined,
+                                            transformOrigin: previewViewport === 'full' ? 'top left' : undefined,
+                                        }}
                                         title="Device Simulator"
                                     />
                                 </div>
