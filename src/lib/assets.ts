@@ -30,6 +30,7 @@ export function resolveAssetPath(assetPath: string): string {
 export function resolveProjectAssets<T extends {
   image?: string;
   video?: string;
+  featuredMedia?: string;
   pageVideo?: string;
   heroImage?: string;
   heroLottie?: string;
@@ -71,6 +72,14 @@ export function resolveProjectAssets<T extends {
   // Resolve video path (existing background video)
   if (resolved.video) {
     resolved.video = resolveAssetPath(resolved.video)
+  }
+
+  // Resolve featured media pair: "video|poster"
+  if (resolved.featuredMedia) {
+    const [videoPathRaw, posterPathRaw] = resolved.featuredMedia.split('|').map((part) => part.trim())
+    const resolvedVideoPath = videoPathRaw ? resolveAssetPath(videoPathRaw) : ''
+    const resolvedPosterPath = posterPathRaw ? resolveAssetPath(posterPathRaw) : ''
+    resolved.featuredMedia = resolvedPosterPath ? `${resolvedVideoPath}|${resolvedPosterPath}` : resolvedVideoPath
   }
 
   // Resolve page video path

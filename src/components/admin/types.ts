@@ -45,6 +45,7 @@ export interface SeoApiResponse {
 }
 
 export type AdminFileKind = 'image' | 'video' | 'audio' | 'document' | 'markdown' | 'other'
+export type AdminFilesStorage = 'local' | 'blob'
 
 export interface AdminFileEntry {
   id: string
@@ -59,7 +60,9 @@ export interface AdminFileEntry {
 }
 
 export interface FilesApiResponse {
+  storage: AdminFilesStorage
   files: AdminFileEntry[]
+  folders: string[]
   summary: {
     totalFiles: number
     totalBytes: number
@@ -70,6 +73,13 @@ export interface FilesApiResponse {
       blob: number
     }
   }
+}
+
+export interface AdminBlobMoveMapping {
+  fromPath: string
+  toPath: string
+  fromUrl: string
+  toUrl: string
 }
 
 export interface NewArticleFormState {

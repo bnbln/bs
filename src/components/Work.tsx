@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
 import dynamic from 'next/dynamic';
+import AdaptiveVideoPlayer from './AdaptiveVideoPlayer';
 
 const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
 
@@ -37,6 +38,22 @@ interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
 
 type CssVarsStyle = React.CSSProperties & Record<`--${string}`, string | number>;
 
+interface FeaturedMediaConfig {
+  videoSrc: string;
+  posterSrc?: string;
+}
+
+function parseFeaturedMedia(value?: string): FeaturedMediaConfig | null {
+  if (!value) return null;
+  const [videoSrcRaw, posterSrcRaw] = value.split('|').map((part) => part.trim());
+  if (!videoSrcRaw) return null;
+
+  return {
+    videoSrc: videoSrcRaw,
+    posterSrc: posterSrcRaw || undefined,
+  };
+}
+
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgress, pageMargin, totalCards, setHoveredProject }) => {
   const router = useRouter();
   // Detect fine pointer (avoid hover / cursor logic on touch devices)
@@ -63,11 +80,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const [spritesheetLoaded, setSpritesheetLoaded] = useState(false);
   const [spritesheetDisplayReady, setSpritesheetDisplayReady] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
+  const [showFeaturedPlayer, setShowFeaturedPlayer] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
   const [preferNativeVideoScrub, setPreferNativeVideoScrub] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isSafariDesktop, setIsSafariDesktop] = useState(false);
+  const featuredMedia = useMemo(() => parseFeaturedMedia(project.featuredMedia), [project.featuredMedia]);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -589,6 +608,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const handleProjectClick = useCallback(() => {
     router.push(`/project/${project.slug}`);
   }, [router, project.slug]);
+
+  const stopClickPropagation = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+  }, []);
+
+  const handleFeaturedPlayerButtonClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (showFeaturedPlayer) {
+      handleProjectClick();
+      return;
+    }
+    setShowFeaturedPlayer(true);
+  }, [handleProjectClick, showFeaturedPlayer]);
 
   // Handle video loading for animation sequence
   const handleVideoLoad = useCallback(() => {
@@ -1355,6 +1387,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // iOS: extra bottom gap between cards since they now have permanent margins + border-radius (not fullscreen).
   const iosCardGap = 24;
+  const shouldHideCardMedia = showFeaturedPlayer && Boolean(featuredMedia?.videoSrc);
 
   return (
     <div
@@ -1391,11 +1424,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url('${project.image}')`,
-            opacity: useSafariMobileFreezeFrame
-              ? 1
-              : useSpritesheetScrubbing
-                ? (spritesheetDisplayReady ? 0 : 1)
-                : (showAnimation ? 0 : 1),
+            opacity: shouldHideCardMedia
+              ? 0
+              : useSafariMobileFreezeFrame
+                ? 1
+                : useSpritesheetScrubbing
+                  ? (spritesheetDisplayReady ? 0 : 1)
+                  : (showAnimation ? 0 : 1),
             transition: useSpritesheetScrubbing ? 'opacity 180ms ease-out' : animationOpacityTransition
           }}
         />
@@ -1405,7 +1440,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           <div
             className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
             style={{
-              opacity: showAnimation ? 1 : 0,
+              opacity: shouldHideCardMedia ? 0 : (showAnimation ? 1 : 0),
               transition: animationOpacityTransition
             }}
           >
@@ -1453,7 +1488,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           <div
             className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
             style={{
-              opacity: spritesheetDisplayReady ? 1 : 0,
+              opacity: shouldHideCardMedia ? 0 : (spritesheetDisplayReady ? 1 : 0),
               transition: animationOpacityTransition
             }}
           >
@@ -1488,7 +1523,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           <div
             className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
             style={{
-              opacity: showAnimation ? 1 : 0,
+              opacity: shouldHideCardMedia ? 0 : (showAnimation ? 1 : 0),
               transition: animationOpacityTransition
             }}
           >
@@ -1514,7 +1549,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
         {/* Lottie Animation Sequence */}
         {project.heroLottie && mounted && (
-          <div className="absolute inset-0 w-full h-full pointer-events-none">
+          <div
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ opacity: shouldHideCardMedia ? 0 : 1, transition: animationOpacityTransition }}
+          >
             <LottiePlayer
               src={project.heroLottie}
               className="w-full h-full absolute inset-0 mix-blend-normal"
@@ -1533,14 +1571,72 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
             muted
             loop
             playsInline
+            style={{ opacity: shouldHideCardMedia ? 0 : 1, transition: animationOpacityTransition }}
           >
             <source src={project.video} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         )}
 
+        {featuredMedia?.videoSrc && (
+          <>
+            <motion.button
+              className="absolute top-4 left-4 z-50 bg-black/80 hover:bg-black text-white rounded-full shadow-lg backdrop-blur-sm px-3 py-2 flex items-center gap-2"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ duration: 0.1, ease: "easeOut" }}
+              onClick={handleFeaturedPlayerButtonClick}
+              aria-label={showFeaturedPlayer ? `Open article ${project.title}` : `Play featured media for ${project.title}`}
+            >
+              {showFeaturedPlayer ? (
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M7 17L17 7" />
+                  <path d="M8 7h9v9" />
+                </svg>
+              ) : (
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4"
+                  fill="currentColor"
+                >
+                  <path d="M8 5.5v13l10-6.5-10-6.5z" />
+                </svg>
+              )}
+              <span className="text-xs font-semibold uppercase tracking-wide">
+                {showFeaturedPlayer ? 'Artikel öffnen' : 'Play'}
+              </span>
+            </motion.button>
+            {showFeaturedPlayer && (
+              <motion.div
+                className="absolute inset-0 z-40"
+                onClick={stopClickPropagation}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.28, ease: "easeOut" }}
+              >
+                <AdaptiveVideoPlayer
+                  videoUrl={featuredMedia.videoSrc}
+                  thumbnailUrl={featuredMedia.posterSrc || project.image}
+                  autoStart={true}
+                  color={project.bgColor || '#0094ff'}
+                  aspect="h-full"
+                  className="rounded-none"
+                />
+              </motion.div>
+            )}
+          </>
+        )}
+
         {/* Subtle loading indicator for animations (hidden on Safari mobile – freeze frame) */}
-        {project.hasAnimation && project.animationSequence && !useSafariMobileFreezeFrame && !isAnimationReady && !(useVideoScrubbing && preferNativeVideoScrub) && (
+        {project.hasAnimation && project.animationSequence && !useSafariMobileFreezeFrame && !shouldHideCardMedia && !isAnimationReady && !(useVideoScrubbing && preferNativeVideoScrub) && (
           <div className="absolute top-6 right-6 z-20 pointer-events-none">
             <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-2xl">
               <svg className="animate-spin h-3.5 w-3.5 text-white/90" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1557,30 +1653,32 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         )}
 
         {/* Mobile arrow button (mobile only) */}
-        <motion.button
-          className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{
-            duration: 0.1,
-            ease: "easeOut"
-          }}
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            handleProjectClick();
-          }}
-          style={{
-            transform: 'translateZ(0)', // Force hardware acceleration
-            willChange: 'transform', // Optimize for animations
-          }}
-        >
-          <img
-            src={arrowSvg}
-            alt="View project"
-            className="w-4 h-4"
-            style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
-          />
-        </motion.button>
+        {!showFeaturedPlayer && (
+          <motion.button
+            className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{
+              duration: 0.1,
+              ease: "easeOut"
+            }}
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              handleProjectClick();
+            }}
+            style={{
+              transform: 'translateZ(0)', // Force hardware acceleration
+              willChange: 'transform', // Optimize for animations
+            }}
+          >
+            <img
+              src={arrowSvg}
+              alt="View project"
+              className="w-4 h-4"
+              style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
+            />
+          </motion.button>
+        )}
       </motion.div>
     </div>
   );

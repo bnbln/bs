@@ -37,6 +37,7 @@ export interface Project {
   bgColor?: string
   image: string
   video?: string // Existing field for background videos
+  featuredMedia?: string // Optional featured media pair: "video|poster"
   pageVideo?: string // New field for page-specific videos
   heroImage?: string // Optional: separates hero image from generic image
   heroLottie?: string // Optional: renders a Lottie animation

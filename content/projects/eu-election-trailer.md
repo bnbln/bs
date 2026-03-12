@@ -17,6 +17,7 @@ image: assets/EU_wahl.webp
 video: assets/Eu Wahl Loop.mp4
 hasAnimation: true
 featured: false
+featuredMedia: assets/TR000X5A.mp4|assets/EU_wahl.webp
 type: Design
 ---
 

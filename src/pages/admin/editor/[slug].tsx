@@ -3151,7 +3151,7 @@ export default function EditorPage() {
                         <div className={`flex-1 overflow-auto hide-scrollbar relative flex ${previewViewport === 'full' ? 'justify-stretch items-stretch p-0' : 'justify-center items-start pt-8 pb-32 px-4'}`}>
                             {previewProject && (
                                 <div
-                                    className={`bg-white shadow-2xl relative transition-all duration-300 ease-out flex origin-top ${previewFrame.chrome === 'device' ? 'rounded-[36px] border-[8px] border-slate-800 ring-1 ring-black/10 overflow-hidden' : ''} ${previewFrame.chrome === 'desktop' ? 'rounded-2xl border border-slate-200 overflow-hidden' : ''} ${previewViewport === 'full' ? 'origin-top-left' : ''}`}
+                                    className={`bg-white shadow-2xl relative transition-all duration-300 ease-out origin-top ${previewFrame.chrome === 'device' ? 'rounded-[36px] border-[8px] border-slate-800 ring-1 ring-black/10 overflow-hidden' : ''} ${previewFrame.chrome === 'desktop' ? 'rounded-2xl border border-slate-200 overflow-hidden' : ''} ${previewViewport === 'full' ? 'origin-top-left' : ''}`}
                                     style={{
                                         width: previewFrame.width,
                                         height: previewFrame.height,
@@ -3169,9 +3169,12 @@ export default function EditorPage() {
                                         src={`/admin/preview/${slug || ''}`}
                                         className="w-full h-full border-none"
                                         style={{
+                                            display: 'block',
                                             pointerEvents: 'auto',
                                             width: previewViewport === 'full' ? `${100 / previewScale}%` : undefined,
                                             height: previewViewport === 'full' ? `${100 / previewScale}%` : undefined,
+                                            maxWidth: previewViewport === 'full' ? 'none' : undefined,
+                                            maxHeight: previewViewport === 'full' ? 'none' : undefined,
                                             transform: previewViewport === 'full' ? `scale(${previewScale})` : undefined,
                                             transformOrigin: previewViewport === 'full' ? 'top left' : undefined,
                                         }}
