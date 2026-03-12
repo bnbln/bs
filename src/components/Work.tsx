@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
 import dynamic from 'next/dynamic';
-import AdaptiveVideoPlayer from './AdaptiveVideoPlayer';
 
 const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
 
@@ -25,6 +24,10 @@ const VIDEO_SCROLL_START_OFFSET = '99%'; // start when card is about 1% visible
 const VIDEO_SCROLL_END_OFFSET = '-120%'; // continue scrubbing after the card starts transitioning away
 const VIDEO_SCROLL_START_RATIO = Number.parseFloat(VIDEO_SCROLL_START_OFFSET) / 100;
 const VIDEO_SCROLL_END_RATIO = Number.parseFloat(VIDEO_SCROLL_END_OFFSET) / 100;
+const FEATURED_MEDIA_COUNTDOWN_DELAY_MS = 300;
+const FEATURED_MEDIA_COUNTDOWN_DURATION_MS = 2200;
+const FEATURED_MEDIA_SCROLL_IDLE_MS = 100;
+const FEATURED_MEDIA_PRIMARY_VISIBLE_RATIO = 0.55;
 const loadedSpritesheetPathCache = new Set<string>();
 
 interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -33,6 +36,8 @@ interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   sectionProgress: MotionValue<number>;
   pageMargin: number;
   totalCards: number;
+  activeFeaturedProjectId: string | null;
+  setActiveFeaturedProjectId: React.Dispatch<React.SetStateAction<string | null>>;
   setHoveredProject: (project: Project | null) => void;
 }
 
@@ -54,7 +59,16 @@ function parseFeaturedMedia(value?: string): FeaturedMediaConfig | null {
   };
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgress, pageMargin, totalCards, setHoveredProject }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({
+  project,
+  index,
+  sectionProgress,
+  pageMargin,
+  totalCards,
+  activeFeaturedProjectId,
+  setActiveFeaturedProjectId,
+  setHoveredProject
+}) => {
   const router = useRouter();
   // Detect fine pointer (avoid hover / cursor logic on touch devices)
   const [hasFinePointer, setHasFinePointer] = useState(false);
@@ -81,15 +95,28 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const [spritesheetDisplayReady, setSpritesheetDisplayReady] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   const [showFeaturedPlayer, setShowFeaturedPlayer] = useState(false);
+  const [isFeaturedCountdownActive, setIsFeaturedCountdownActive] = useState(false);
+  const [featuredCountdownProgress, setFeaturedCountdownProgress] = useState(0);
+  const [hasFeaturedVideoEnded, setHasFeaturedVideoEnded] = useState(false);
+  const [hasFeaturedPlaybackStarted, setHasFeaturedPlaybackStarted] = useState(false);
+  const [isFeaturedPlaying, setIsFeaturedPlaying] = useState(false);
+  const [isFeaturedMuted, setIsFeaturedMuted] = useState(true);
+  const [isFeaturedFadingOut, setIsFeaturedFadingOut] = useState(false);
+  const [isCardInViewport, setIsCardInViewport] = useState(false);
+  const [cardViewportRatio, setCardViewportRatio] = useState(0);
+  const [isScrollSettled, setIsScrollSettled] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
   const [preferNativeVideoScrub, setPreferNativeVideoScrub] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isSafariDesktop, setIsSafariDesktop] = useState(false);
   const featuredMedia = useMemo(() => parseFeaturedMedia(project.featuredMedia), [project.featuredMedia]);
+  const hasFeaturedMedia = Boolean(featuredMedia?.videoSrc);
+  const isDesktopFeaturedMediaEnabled = hasFeaturedMedia;
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const featuredVideoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const spritesheetSequenceRef = useRef<HTMLDivElement>(null);
   const spritesheetCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -118,6 +145,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
   const previousSpritesheetPathRef = useRef<string | null>(null);
   const scrollRangePxRef = useRef<number>(0);
   const effectiveScrollRangePxRef = useRef<number>(0);
+  const featuredFadeOutTimeoutRef = useRef<number | null>(null);
 
   const selectedSpritesheetPath = useMemo(() => {
     if (!project.animationSequence) return undefined;
@@ -204,7 +232,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   useEffect(() => {
     const target = scrollTrackRef.current;
-    if (!target || !project.hasAnimation || !project.animationSequence) return;
+    if (!target) return;
+
+    const shouldTrackViewport =
+      (project.hasAnimation && Boolean(project.animationSequence)) ||
+      hasFeaturedMedia;
+    if (!shouldTrackViewport) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -215,7 +248,97 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
     observer.observe(target);
     return () => observer.disconnect();
-  }, [project.hasAnimation, project.animationSequence]);
+  }, [hasFeaturedMedia, project.animationSequence, project.hasAnimation]);
+
+  useEffect(() => {
+    if (!isDesktopFeaturedMediaEnabled) {
+      setIsCardInViewport(false);
+      setCardViewportRatio(0);
+      return;
+    }
+
+    const target = containerRef.current;
+    if (!target) return;
+
+    let frameId: number | null = null;
+
+    const updateViewportState = () => {
+      frameId = null;
+
+      const rect = target.getBoundingClientRect();
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+      const visibleWidth = Math.max(0, Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0));
+      const visibleHeight = Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
+      const visibleArea = visibleWidth * visibleHeight;
+      const totalArea = Math.max(1, rect.width * rect.height);
+      const ratio = Math.max(0, Math.min(1, visibleArea / totalArea));
+
+      setIsCardInViewport(visibleArea > 0);
+      setCardViewportRatio(ratio);
+    };
+
+    const requestViewportUpdate = () => {
+      if (frameId !== null) return;
+      frameId = requestAnimationFrame(updateViewportState);
+    };
+
+    requestViewportUpdate();
+    window.addEventListener('scroll', requestViewportUpdate, { passive: true });
+    window.addEventListener('resize', requestViewportUpdate);
+
+    const resizeObserver = new ResizeObserver(requestViewportUpdate);
+    resizeObserver.observe(target);
+
+    return () => {
+      window.removeEventListener('scroll', requestViewportUpdate);
+      window.removeEventListener('resize', requestViewportUpdate);
+      resizeObserver.disconnect();
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [isDesktopFeaturedMediaEnabled]);
+
+  useEffect(() => {
+    if (!isDesktopFeaturedMediaEnabled) {
+      setIsScrollSettled(false);
+      return;
+    }
+
+    let frameId: number | null = null;
+    let lastScrollY = window.scrollY;
+    let lastChangeAt = performance.now();
+
+    const updateSettledState = (next: boolean) => {
+      setIsScrollSettled((prev) => (prev === next ? prev : next));
+    };
+
+    const tick = () => {
+      const now = performance.now();
+      const currentScrollY = window.scrollY;
+
+      if (Math.abs(currentScrollY - lastScrollY) > 0.5) {
+        lastScrollY = currentScrollY;
+        lastChangeAt = now;
+        updateSettledState(false);
+      } else {
+        const settled = now - lastChangeAt >= FEATURED_MEDIA_SCROLL_IDLE_MS;
+        updateSettledState(settled);
+      }
+
+      frameId = requestAnimationFrame(tick);
+    };
+
+    frameId = requestAnimationFrame(tick);
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [isDesktopFeaturedMediaEnabled]);
 
   const spritesheetSequenceStyle = useMemo<CssVarsStyle>(() => ({
     '--sprite-count': spriteCount,
@@ -613,14 +736,292 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     event.stopPropagation();
   }, []);
 
-  const handleFeaturedPlayerButtonClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleFeaturedMuteToggle = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    if (showFeaturedPlayer) {
-      handleProjectClick();
+    setIsFeaturedMuted((prev) => !prev);
+  }, []);
+
+  const resetFeaturedPlayerState = useCallback((options?: {
+    releaseOwnership?: boolean;
+  }) => {
+    const { releaseOwnership = false } = options || {};
+    if (featuredFadeOutTimeoutRef.current !== null) {
+      window.clearTimeout(featuredFadeOutTimeoutRef.current);
+      featuredFadeOutTimeoutRef.current = null;
+    }
+
+    const video = featuredVideoRef.current;
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+      video.muted = true;
+    }
+
+    setShowFeaturedPlayer(false);
+    setIsFeaturedPlaying(false);
+    setIsFeaturedMuted(true);
+    setIsFeaturedCountdownActive(false);
+    setFeaturedCountdownProgress(0);
+    setHasFeaturedVideoEnded(false);
+    setIsFeaturedFadingOut(false);
+
+    if (releaseOwnership) {
+      setActiveFeaturedProjectId((current) => (current === project.slug ? null : current));
+    }
+  }, [project.slug, setActiveFeaturedProjectId]);
+
+  const startFeaturedPlayback = useCallback((restartFromStart: boolean) => {
+    setActiveFeaturedProjectId(project.slug);
+
+    setIsFeaturedCountdownActive(false);
+    setFeaturedCountdownProgress(0);
+    setIsFeaturedFadingOut(false);
+    setHasFeaturedVideoEnded(false);
+    setIsFeaturedMuted(true);
+
+    if (!showFeaturedPlayer) {
+      setShowFeaturedPlayer(true);
       return;
     }
-    setShowFeaturedPlayer(true);
-  }, [handleProjectClick, showFeaturedPlayer]);
+
+    const video = featuredVideoRef.current;
+    if (!video) return;
+    if (restartFromStart) video.currentTime = 0;
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => undefined);
+    }
+  }, [project.slug, setActiveFeaturedProjectId, showFeaturedPlayer]);
+
+  const handleFeaturedPlayPauseToggle = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+
+    setActiveFeaturedProjectId(project.slug);
+
+    if (!showFeaturedPlayer) {
+      startFeaturedPlayback(true);
+      return;
+    }
+
+    const video = featuredVideoRef.current;
+    if (!video) return;
+
+    if (isFeaturedPlaying) {
+      video.pause();
+      return;
+    }
+
+    if (hasFeaturedVideoEnded || video.ended) {
+      video.currentTime = 0;
+      setHasFeaturedVideoEnded(false);
+      setIsFeaturedFadingOut(false);
+    }
+
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => undefined);
+    }
+  }, [hasFeaturedVideoEnded, isFeaturedPlaying, project.slug, setActiveFeaturedProjectId, showFeaturedPlayer, startFeaturedPlayback]);
+
+  const handleFeaturedVideoEnded = useCallback(() => {
+    setIsFeaturedPlaying(false);
+    setHasFeaturedVideoEnded(true);
+    setIsFeaturedFadingOut(true);
+  }, []);
+
+  useEffect(() => {
+    if (isDesktopFeaturedMediaEnabled) return;
+    resetFeaturedPlayerState({ releaseOwnership: true });
+    setIsCardInViewport(false);
+    setCardViewportRatio(0);
+    setIsScrollSettled(false);
+  }, [isDesktopFeaturedMediaEnabled, resetFeaturedPlayerState]);
+
+  useEffect(() => {
+    if (!isDesktopFeaturedMediaEnabled) return;
+    if (isCardInViewport) return;
+    const shouldReset =
+      showFeaturedPlayer ||
+      isFeaturedCountdownActive ||
+      isFeaturedFadingOut ||
+      activeFeaturedProjectId === project.slug;
+    if (!shouldReset) return;
+    resetFeaturedPlayerState({ releaseOwnership: true });
+  }, [
+    activeFeaturedProjectId,
+    isCardInViewport,
+    isDesktopFeaturedMediaEnabled,
+    isFeaturedCountdownActive,
+    isFeaturedFadingOut,
+    project.slug,
+    resetFeaturedPlayerState,
+    showFeaturedPlayer,
+  ]);
+
+  useEffect(() => {
+    if (!isDesktopFeaturedMediaEnabled) return;
+    if (activeFeaturedProjectId === null || activeFeaturedProjectId === project.slug) return;
+    const shouldReset = showFeaturedPlayer || isFeaturedCountdownActive || isFeaturedFadingOut;
+    if (!shouldReset) return;
+    resetFeaturedPlayerState();
+  }, [
+    activeFeaturedProjectId,
+    isDesktopFeaturedMediaEnabled,
+    isFeaturedCountdownActive,
+    isFeaturedFadingOut,
+    project.slug,
+    resetFeaturedPlayerState,
+    showFeaturedPlayer,
+  ]);
+
+  useEffect(() => {
+    if (!showFeaturedPlayer) return;
+    if (activeFeaturedProjectId !== project.slug) return;
+    const video = featuredVideoRef.current;
+    if (!video) return;
+    video.currentTime = 0;
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => undefined);
+    }
+  }, [activeFeaturedProjectId, project.slug, showFeaturedPlayer]);
+
+  useEffect(() => {
+    const video = featuredVideoRef.current;
+    if (!video) return;
+    video.muted = isFeaturedMuted;
+  }, [isFeaturedMuted, showFeaturedPlayer]);
+
+  useEffect(() => {
+    if (!isFeaturedFadingOut) return;
+    if (featuredFadeOutTimeoutRef.current !== null) {
+      window.clearTimeout(featuredFadeOutTimeoutRef.current);
+    }
+    featuredFadeOutTimeoutRef.current = window.setTimeout(() => {
+      setShowFeaturedPlayer(false);
+      setIsFeaturedPlaying(false);
+      setIsFeaturedFadingOut(false);
+      featuredFadeOutTimeoutRef.current = null;
+    }, 280);
+
+    return () => {
+      if (featuredFadeOutTimeoutRef.current !== null) {
+        window.clearTimeout(featuredFadeOutTimeoutRef.current);
+        featuredFadeOutTimeoutRef.current = null;
+      }
+    };
+  }, [isFeaturedFadingOut]);
+
+  const canAutoStartFeaturedCountdown =
+    isDesktopFeaturedMediaEnabled &&
+    isCardInViewport &&
+    cardViewportRatio >= FEATURED_MEDIA_PRIMARY_VISIBLE_RATIO &&
+    isScrollSettled &&
+    !showFeaturedPlayer &&
+    !isFeaturedFadingOut &&
+    !hasFeaturedVideoEnded &&
+    !hasFeaturedPlaybackStarted;
+
+  useEffect(() => {
+    if (!canAutoStartFeaturedCountdown) return;
+    if (activeFeaturedProjectId !== null) return;
+    setActiveFeaturedProjectId((current) => {
+      if (current !== null) return current;
+      if (typeof document === 'undefined') return current;
+
+      const candidates = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-featured-autoplay-candidate="true"]')
+      );
+      if (candidates.length === 0) return current;
+
+      let bestCandidate: HTMLElement | null = null;
+      let bestTop = Number.POSITIVE_INFINITY;
+      let bestOrder = Number.POSITIVE_INFINITY;
+
+      for (const candidate of candidates) {
+        const rect = candidate.getBoundingClientRect();
+        const top = rect.top;
+        const order = Number(candidate.dataset.featuredOrder ?? Number.POSITIVE_INFINITY);
+        const safeTop = Number.isFinite(top) ? top : Number.POSITIVE_INFINITY;
+        const safeOrder = Number.isFinite(order) ? order : Number.POSITIVE_INFINITY;
+
+        const isHigherInViewport = safeTop < bestTop - 0.5;
+        const isSameTopAndHigherPriority =
+          Math.abs(safeTop - bestTop) <= 0.5 && safeOrder < bestOrder;
+
+        if (isHigherInViewport || isSameTopAndHigherPriority) {
+          bestTop = safeTop;
+          bestOrder = safeOrder;
+          bestCandidate = candidate;
+        }
+      }
+
+      if (!bestCandidate) return current;
+      const candidateSlug = bestCandidate.dataset.featuredItemId;
+      return candidateSlug ? candidateSlug : current;
+    });
+  }, [activeFeaturedProjectId, canAutoStartFeaturedCountdown, setActiveFeaturedProjectId]);
+
+  const canRunFeaturedCountdown =
+    canAutoStartFeaturedCountdown &&
+    activeFeaturedProjectId === project.slug;
+
+  const isFeaturedSessionActive =
+    showFeaturedPlayer ||
+    isFeaturedCountdownActive ||
+    isFeaturedFadingOut;
+
+  useEffect(() => {
+    if (activeFeaturedProjectId !== project.slug) return;
+    if (isFeaturedSessionActive) return;
+    if (canAutoStartFeaturedCountdown) return;
+    setActiveFeaturedProjectId((current) => (current === project.slug ? null : current));
+  }, [
+    activeFeaturedProjectId,
+    canAutoStartFeaturedCountdown,
+    isFeaturedSessionActive,
+    project.slug,
+    setActiveFeaturedProjectId,
+  ]);
+
+  useEffect(() => {
+    if (!canRunFeaturedCountdown) {
+      setIsFeaturedCountdownActive(false);
+      setFeaturedCountdownProgress(0);
+      return;
+    }
+
+    let delayTimer: number | null = null;
+    let countdownRaf: number | null = null;
+    let startedAt: number | null = null;
+
+    const tickCountdown = (timestamp: number) => {
+      if (startedAt === null) startedAt = timestamp;
+      const elapsedMs = timestamp - startedAt;
+      const progress = Math.min(1, elapsedMs / FEATURED_MEDIA_COUNTDOWN_DURATION_MS);
+      setFeaturedCountdownProgress(progress);
+
+      if (progress >= 1) {
+        startFeaturedPlayback(true);
+        return;
+      }
+
+      countdownRaf = requestAnimationFrame(tickCountdown);
+    };
+
+    delayTimer = window.setTimeout(() => {
+      setIsFeaturedCountdownActive(true);
+      setFeaturedCountdownProgress(0);
+      countdownRaf = requestAnimationFrame(tickCountdown);
+    }, FEATURED_MEDIA_COUNTDOWN_DELAY_MS);
+
+    return () => {
+      if (delayTimer !== null) window.clearTimeout(delayTimer);
+      if (countdownRaf !== null) cancelAnimationFrame(countdownRaf);
+      setIsFeaturedCountdownActive(false);
+      setFeaturedCountdownProgress(0);
+    };
+  }, [canRunFeaturedCountdown, startFeaturedPlayback]);
 
   // Handle video loading for animation sequence
   const handleVideoLoad = useCallback(() => {
@@ -1349,6 +1750,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
     }
   }, [scrollYProgress, project.hasAnimation, project.animationSequence, useSpritesheetScrubbing, useVideoScrubbing, loadedImages.length, showAnimation, updateImageFrame]);
 
+  useEffect(() => {
+    return () => {
+      setActiveFeaturedProjectId((current) => (current === project.slug ? null : current));
+    };
+  }, [project.slug, setActiveFeaturedProjectId]);
+
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
     return () => {
@@ -1360,6 +1767,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       }
       if (revealTimeoutRef.current) {
         clearTimeout(revealTimeoutRef.current);
+      }
+      if (featuredFadeOutTimeoutRef.current !== null) {
+        clearTimeout(featuredFadeOutTimeoutRef.current);
       }
       pendingFrame.current = -1;
       isSeekingRef.current = false;
@@ -1374,6 +1784,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       if (videoRef.current) {
         videoRef.current.pause();
       }
+      if (featuredVideoRef.current) {
+        featuredVideoRef.current.pause();
+      }
     };
   }, []);
 
@@ -1387,7 +1800,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
 
   // iOS: extra bottom gap between cards since they now have permanent margins + border-radius (not fullscreen).
   const iosCardGap = 24;
-  const shouldHideCardMedia = showFeaturedPlayer && Boolean(featuredMedia?.videoSrc);
+  const shouldHideCardMedia = isDesktopFeaturedMediaEnabled && showFeaturedPlayer && !isFeaturedFadingOut;
+  const featuredCountdownRadius = 10;
+  const featuredCountdownCircumference = 2 * Math.PI * featuredCountdownRadius;
+  const featuredCountdownDashoffset = featuredCountdownCircumference * (1 - Math.min(1, Math.max(0, featuredCountdownProgress)));
 
   return (
     <div
@@ -1398,6 +1814,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
       <motion.div
         ref={containerRef}
         className={`sticky w-full h-full cursor-pointer group ${isIOS ? '' : 'shadow-xl'}`}
+        data-featured-item-id={project.slug}
+        data-featured-order={index}
+        data-featured-autoplay-candidate={canAutoStartFeaturedCountdown ? 'true' : 'false'}
         style={{
           zIndex: index + 1,
           top: stickyTop,
@@ -1578,60 +1997,115 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
           </video>
         )}
 
-        {featuredMedia?.videoSrc && (
+        {isDesktopFeaturedMediaEnabled && featuredMedia && (
           <>
-            <motion.button
-              className="absolute top-4 left-4 z-50 bg-black/80 hover:bg-black text-white rounded-full shadow-lg backdrop-blur-sm px-3 py-2 flex items-center gap-2"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
-              onClick={handleFeaturedPlayerButtonClick}
-              aria-label={showFeaturedPlayer ? `Open article ${project.title}` : `Play featured media for ${project.title}`}
-            >
-              {showFeaturedPlayer ? (
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M7 17L17 7" />
-                  <path d="M8 7h9v9" />
-                </svg>
-              ) : (
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4"
-                  fill="currentColor"
-                >
-                  <path d="M8 5.5v13l10-6.5-10-6.5z" />
-                </svg>
-              )}
-              <span className="text-xs font-semibold uppercase tracking-wide">
-                {showFeaturedPlayer ? 'Artikel öffnen' : 'Play'}
-              </span>
-            </motion.button>
-            {showFeaturedPlayer && (
+            {(showFeaturedPlayer || isFeaturedFadingOut) && (
               <motion.div
-                className="absolute inset-0 z-40"
-                onClick={stopClickPropagation}
+                className="absolute inset-0 z-40 pointer-events-none"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: isFeaturedFadingOut ? 0 : 1 }}
                 transition={{ duration: 0.28, ease: "easeOut" }}
               >
-                <AdaptiveVideoPlayer
-                  videoUrl={featuredMedia.videoSrc}
-                  thumbnailUrl={featuredMedia.posterSrc || project.image}
-                  autoStart={true}
-                  color={project.bgColor || '#0094ff'}
-                  aspect="h-full"
-                  className="rounded-none"
-                />
+                <video
+                  ref={featuredVideoRef}
+                  src={featuredMedia.videoSrc}
+                  poster={featuredMedia.posterSrc || project.image}
+                  className="w-full h-full object-cover bg-black pointer-events-none"
+                  autoPlay
+                  muted={isFeaturedMuted}
+                  playsInline
+                  preload="metadata"
+                  onPlay={() => {
+                    setIsFeaturedPlaying(true);
+                    setHasFeaturedPlaybackStarted(true);
+                  }}
+                  onPause={() => setIsFeaturedPlaying(false)}
+                  onEnded={handleFeaturedVideoEnded}
+                >
+                  Your browser does not support the video tag.
+                </video>
               </motion.div>
             )}
+
+            <div
+              className="absolute bottom-4 right-4 z-50 flex items-center gap-2"
+              onClick={stopClickPropagation}
+            >
+              {!isFeaturedFadingOut && (
+                <button
+                  type="button"
+                  onClick={handleFeaturedPlayPauseToggle}
+                  className="relative h-11 w-11 rounded-full bg-black/80 hover:bg-black backdrop-blur-sm shadow-lg border border-white/15 flex items-center justify-center text-white transition-colors"
+                  aria-label={
+                    showFeaturedPlayer
+                      ? (isFeaturedPlaying ? `Pause featured video for ${project.title}` : `Play featured video for ${project.title}`)
+                      : `Play featured video for ${project.title}`
+                  }
+                >
+                  {!showFeaturedPlayer && isFeaturedCountdownActive && (
+                    <svg
+                      className="absolute inset-0 h-full w-full -rotate-90"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r={featuredCountdownRadius} fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="2" />
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r={featuredCountdownRadius}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeDasharray={featuredCountdownCircumference}
+                        strokeDashoffset={featuredCountdownDashoffset}
+                      />
+                    </svg>
+                  )}
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className={`w-4 h-4 transition-transform duration-200 ${!showFeaturedPlayer && isFeaturedCountdownActive ? 'scale-90' : 'scale-100'}`}
+                    fill={showFeaturedPlayer && isFeaturedPlaying ? 'none' : 'currentColor'}
+                    stroke={showFeaturedPlayer && isFeaturedPlaying ? 'currentColor' : undefined}
+                    strokeWidth={showFeaturedPlayer && isFeaturedPlaying ? '2.2' : undefined}
+                    strokeLinecap={showFeaturedPlayer && isFeaturedPlaying ? 'round' : undefined}
+                  >
+                    {showFeaturedPlayer && isFeaturedPlaying ? (
+                      <>
+                        <path d="M10 7v10" />
+                        <path d="M14 7v10" />
+                      </>
+                    ) : (
+                      <path d="M8 5.5v13l10-6.5-10-6.5z" />
+                    )}
+                  </svg>
+                </button>
+              )}
+
+              {showFeaturedPlayer && !isFeaturedFadingOut && (
+                <button
+                  type="button"
+                  className="h-11 w-11 rounded-full bg-black/80 hover:bg-black backdrop-blur-sm shadow-lg border border-white/15 text-white flex items-center justify-center transition-colors"
+                  onClick={handleFeaturedMuteToggle}
+                  aria-label={isFeaturedMuted ? `Unmute featured video for ${project.title}` : `Mute featured video for ${project.title}`}
+                >
+                  {isFeaturedMuted ? (
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 5L6 9H3v6h3l5 4V5z" />
+                      <path d="M23 9l-6 6" />
+                      <path d="M17 9l6 6" />
+                    </svg>
+                  ) : (
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 5L6 9H3v6h3l5 4V5z" />
+                      <path d="M15 9.5a4.5 4.5 0 010 5" />
+                      <path d="M18 7a8 8 0 010 10" />
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
           </>
         )}
 
@@ -1653,7 +2127,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, sectionProgre
         )}
 
         {/* Mobile arrow button (mobile only) */}
-        {!showFeaturedPlayer && (
+        {!showFeaturedPlayer && !isDesktopFeaturedMediaEnabled && (
           <motion.button
             className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
             whileHover={{ scale: 1.05 }}
@@ -1691,6 +2165,7 @@ interface WorkProps {
 const Work: React.FC<WorkProps> = ({ data }) => {
   const sectionRef = useRef<HTMLElement>(null);
   const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
+  const [activeFeaturedProjectId, setActiveFeaturedProjectId] = useState<string | null>(null);
 
   // Global cursor position
   const mouseX = useMotionValue(-100);
@@ -1765,6 +2240,8 @@ const Work: React.FC<WorkProps> = ({ data }) => {
           sectionProgress={sectionProgress}
           pageMargin={pageMargin}
           totalCards={data.length}
+          activeFeaturedProjectId={activeFeaturedProjectId}
+          setActiveFeaturedProjectId={setActiveFeaturedProjectId}
           setHoveredProject={setHoveredProject}
         />
       ))}

@@ -16,6 +16,7 @@ image: assets/Zeitreise.webp
 bgColor: '#CD412D'
 hasAnimation: false
 featured: false
+featuredMedia: assets/Zeitreise_Opener.mp4
 type: Design
 ---
 

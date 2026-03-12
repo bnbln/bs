@@ -112,6 +112,7 @@ const Footer = () => {
       setNewsletterMessage('Subscription failed. Please try again.')
     }
   }
+  const hasNewsletterInput = newsletterEmail.trim().length > 0
 
   return (
     <footer
@@ -180,8 +181,8 @@ const Footer = () => {
           </div>
 
           {/* Newsletter Row */}
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter">Mailing List</h3>
+          <div className="flex flex-col gap-4 my-12">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Mailing List</h3>
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 w-full md:max-w-2xl">
                 <input
@@ -190,7 +191,7 @@ const Footer = () => {
                   value={newsletterEmail}
                   onChange={(event) => setNewsletterEmail(event.target.value)}
                   placeholder="your@email.com"
-                  className="w-full rounded-full bg-white/5 border border-white/15 px-5 py-3 text-white placeholder:text-white/35 font-inter text-sm focus:outline-none focus:border-white/40 transition-colors"
+                  className="w-full rounded-full bg-white/5 border border-white/15 px-5 py-3 text-white placeholder:text-white/35 font-inter text-base md:text-sm focus:outline-none focus:border-white/40 transition-colors sm:max-w-[350px]"
                 />
                 <button
                   type="submit"
@@ -211,13 +212,15 @@ const Footer = () => {
                     {newsletterMessage}
                   </p>
                 )}
-                <p className="font-inter text-[11px] text-white/35">
-                  By subscribing, you agree to our{' '}
-                  <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
-                    Privacy Policy
-                  </Link>
-                  .
-                </p>
+                {hasNewsletterInput && (
+                  <p className="font-inter text-[11px] text-white/35">
+                    By subscribing, you agree to our{' '}
+                    <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+                )}
               </div>
             </div>
             {newsletterMessage && (
@@ -230,13 +233,15 @@ const Footer = () => {
                 {newsletterMessage}
               </p>
             )}
-            <p className="md:hidden font-inter text-[11px] text-white/35">
-              By subscribing, you agree to our{' '}
-              <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
-                Privacy Policy
-              </Link>
-              .
-            </p>
+            {hasNewsletterInput && (
+              <p className="md:hidden font-inter text-[11px] text-white/35">
+                By subscribing, you agree to our{' '}
+                <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+            )}
           </div>
         </motion.div>
 
