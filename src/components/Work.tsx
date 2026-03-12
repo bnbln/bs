@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, useScroll, useTransform, MotionValue, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
 import { useRouter } from 'next/router';
+import { FaPause, FaPlay, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
 import dynamic from 'next/dynamic';
@@ -38,6 +39,8 @@ interface ProjectCardProps extends React.ComponentPropsWithoutRef<'div'> {
   totalCards: number;
   activeFeaturedProjectId: string | null;
   setActiveFeaturedProjectId: React.Dispatch<React.SetStateAction<string | null>>;
+  countdownFeaturedProjectId: string | null;
+  setCountdownFeaturedProjectId: React.Dispatch<React.SetStateAction<string | null>>;
   setHoveredProject: (project: Project | null) => void;
 }
 
@@ -67,6 +70,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   totalCards,
   activeFeaturedProjectId,
   setActiveFeaturedProjectId,
+  countdownFeaturedProjectId,
+  setCountdownFeaturedProjectId,
   setHoveredProject
 }) => {
   const router = useRouter();
@@ -743,8 +748,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
   const resetFeaturedPlayerState = useCallback((options?: {
     releaseOwnership?: boolean;
+    releaseCountdownOwnership?: boolean;
   }) => {
-    const { releaseOwnership = false } = options || {};
+    const { releaseOwnership = false, releaseCountdownOwnership = false } = options || {};
     if (featuredFadeOutTimeoutRef.current !== null) {
       window.clearTimeout(featuredFadeOutTimeoutRef.current);
       featuredFadeOutTimeoutRef.current = null;
@@ -768,10 +774,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     if (releaseOwnership) {
       setActiveFeaturedProjectId((current) => (current === project.slug ? null : current));
     }
-  }, [project.slug, setActiveFeaturedProjectId]);
+    if (releaseCountdownOwnership) {
+      setCountdownFeaturedProjectId((current) => (current === project.slug ? null : current));
+    }
+  }, [project.slug, setActiveFeaturedProjectId, setCountdownFeaturedProjectId]);
 
   const startFeaturedPlayback = useCallback((restartFromStart: boolean) => {
     setActiveFeaturedProjectId(project.slug);
+    setCountdownFeaturedProjectId((current) => (current === project.slug ? null : current));
 
     setIsFeaturedCountdownActive(false);
     setFeaturedCountdownProgress(0);
@@ -791,7 +801,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     if (playPromise && typeof playPromise.catch === 'function') {
       playPromise.catch(() => undefined);
     }
-  }, [project.slug, setActiveFeaturedProjectId, showFeaturedPlayer]);
+  }, [project.slug, setActiveFeaturedProjectId, setCountdownFeaturedProjectId, showFeaturedPlayer]);
 
   const handleFeaturedPlayPauseToggle = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -831,7 +841,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
   useEffect(() => {
     if (isDesktopFeaturedMediaEnabled) return;
-    resetFeaturedPlayerState({ releaseOwnership: true });
+    resetFeaturedPlayerState({ releaseOwnership: true, releaseCountdownOwnership: true });
     setIsCardInViewport(false);
     setCardViewportRatio(0);
     setIsScrollSettled(false);
@@ -844,11 +854,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       showFeaturedPlayer ||
       isFeaturedCountdownActive ||
       isFeaturedFadingOut ||
-      activeFeaturedProjectId === project.slug;
+      activeFeaturedProjectId === project.slug ||
+      countdownFeaturedProjectId === project.slug;
     if (!shouldReset) return;
-    resetFeaturedPlayerState({ releaseOwnership: true });
+    resetFeaturedPlayerState({ releaseOwnership: true, releaseCountdownOwnership: true });
   }, [
     activeFeaturedProjectId,
+    countdownFeaturedProjectId,
     isCardInViewport,
     isDesktopFeaturedMediaEnabled,
     isFeaturedCountdownActive,
@@ -861,13 +873,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   useEffect(() => {
     if (!isDesktopFeaturedMediaEnabled) return;
     if (activeFeaturedProjectId === null || activeFeaturedProjectId === project.slug) return;
-    const shouldReset = showFeaturedPlayer || isFeaturedCountdownActive || isFeaturedFadingOut;
+    const shouldReset = showFeaturedPlayer || isFeaturedFadingOut;
     if (!shouldReset) return;
-    resetFeaturedPlayerState();
+    resetFeaturedPlayerState({ releaseCountdownOwnership: true });
   }, [
     activeFeaturedProjectId,
     isDesktopFeaturedMediaEnabled,
-    isFeaturedCountdownActive,
     isFeaturedFadingOut,
     project.slug,
     resetFeaturedPlayerState,
@@ -924,8 +935,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
   useEffect(() => {
     if (!canAutoStartFeaturedCountdown) return;
-    if (activeFeaturedProjectId !== null) return;
-    setActiveFeaturedProjectId((current) => {
+    if (countdownFeaturedProjectId !== null) return;
+    setCountdownFeaturedProjectId((current) => {
       if (current !== null) return current;
       if (typeof document === 'undefined') return current;
 
@@ -960,26 +971,34 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       const candidateSlug = bestCandidate.dataset.featuredItemId;
       return candidateSlug ? candidateSlug : current;
     });
-  }, [activeFeaturedProjectId, canAutoStartFeaturedCountdown, setActiveFeaturedProjectId]);
+  }, [canAutoStartFeaturedCountdown, countdownFeaturedProjectId, setCountdownFeaturedProjectId]);
 
   const canRunFeaturedCountdown =
     canAutoStartFeaturedCountdown &&
-    activeFeaturedProjectId === project.slug;
+    countdownFeaturedProjectId === project.slug;
 
-  const isFeaturedSessionActive =
+  useEffect(() => {
+    if (countdownFeaturedProjectId !== project.slug) return;
+    if (canAutoStartFeaturedCountdown) return;
+    setCountdownFeaturedProjectId((current) => (current === project.slug ? null : current));
+  }, [
+    canAutoStartFeaturedCountdown,
+    countdownFeaturedProjectId,
+    project.slug,
+    setCountdownFeaturedProjectId,
+  ]);
+
+  const isFeaturedPlayerSessionActive =
     showFeaturedPlayer ||
-    isFeaturedCountdownActive ||
     isFeaturedFadingOut;
 
   useEffect(() => {
     if (activeFeaturedProjectId !== project.slug) return;
-    if (isFeaturedSessionActive) return;
-    if (canAutoStartFeaturedCountdown) return;
+    if (isFeaturedPlayerSessionActive) return;
     setActiveFeaturedProjectId((current) => (current === project.slug ? null : current));
   }, [
     activeFeaturedProjectId,
-    canAutoStartFeaturedCountdown,
-    isFeaturedSessionActive,
+    isFeaturedPlayerSessionActive,
     project.slug,
     setActiveFeaturedProjectId,
   ]);
@@ -1753,8 +1772,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   useEffect(() => {
     return () => {
       setActiveFeaturedProjectId((current) => (current === project.slug ? null : current));
+      setCountdownFeaturedProjectId((current) => (current === project.slug ? null : current));
     };
-  }, [project.slug, setActiveFeaturedProjectId]);
+  }, [project.slug, setActiveFeaturedProjectId, setCountdownFeaturedProjectId]);
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
@@ -2062,24 +2082,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                       />
                     </svg>
                   )}
-                  <svg
+                  <span
                     aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className={`w-4 h-4 transition-transform duration-200 ${!showFeaturedPlayer && isFeaturedCountdownActive ? 'scale-90' : 'scale-100'}`}
-                    fill={showFeaturedPlayer && isFeaturedPlaying ? 'none' : 'currentColor'}
-                    stroke={showFeaturedPlayer && isFeaturedPlaying ? 'currentColor' : undefined}
-                    strokeWidth={showFeaturedPlayer && isFeaturedPlaying ? '2.2' : undefined}
-                    strokeLinecap={showFeaturedPlayer && isFeaturedPlaying ? 'round' : undefined}
+                    className={`flex items-center justify-center w-4 h-4 transition-transform duration-200 ${!showFeaturedPlayer && isFeaturedCountdownActive ? 'scale-90' : 'scale-100'}`}
                   >
                     {showFeaturedPlayer && isFeaturedPlaying ? (
-                      <>
-                        <path d="M10 7v10" />
-                        <path d="M14 7v10" />
-                      </>
+                      <FaPause className="h-3.5 w-3.5" />
                     ) : (
-                      <path d="M8 5.5v13l10-6.5-10-6.5z" />
+                      <FaPlay className="h-3.5 w-3.5 translate-x-[1px]" />
                     )}
-                  </svg>
+                  </span>
                 </button>
               )}
 
@@ -2091,17 +2103,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                   aria-label={isFeaturedMuted ? `Unmute featured video for ${project.title}` : `Mute featured video for ${project.title}`}
                 >
                   {isFeaturedMuted ? (
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M11 5L6 9H3v6h3l5 4V5z" />
-                      <path d="M23 9l-6 6" />
-                      <path d="M17 9l6 6" />
-                    </svg>
+                    <FaVolumeMute aria-hidden="true" className="w-4 h-4" />
                   ) : (
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M11 5L6 9H3v6h3l5 4V5z" />
-                      <path d="M15 9.5a4.5 4.5 0 010 5" />
-                      <path d="M18 7a8 8 0 010 10" />
-                    </svg>
+                    <FaVolumeUp aria-hidden="true" className="w-4 h-4" />
                   )}
                 </button>
               )}
@@ -2166,6 +2170,7 @@ const Work: React.FC<WorkProps> = ({ data }) => {
   const sectionRef = useRef<HTMLElement>(null);
   const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
   const [activeFeaturedProjectId, setActiveFeaturedProjectId] = useState<string | null>(null);
+  const [countdownFeaturedProjectId, setCountdownFeaturedProjectId] = useState<string | null>(null);
 
   // Global cursor position
   const mouseX = useMotionValue(-100);
@@ -2242,6 +2247,8 @@ const Work: React.FC<WorkProps> = ({ data }) => {
           totalCards={data.length}
           activeFeaturedProjectId={activeFeaturedProjectId}
           setActiveFeaturedProjectId={setActiveFeaturedProjectId}
+          countdownFeaturedProjectId={countdownFeaturedProjectId}
+          setCountdownFeaturedProjectId={setCountdownFeaturedProjectId}
           setHoveredProject={setHoveredProject}
         />
       ))}

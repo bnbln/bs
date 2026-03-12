@@ -193,11 +193,11 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
   const carouselLength = items.length
 
   return (
-    <section className="relative w-full overflow-hidden" id="work">
+    <section className="relative z-20 w-full overflow-x-hidden overflow-y-visible" id="work">
 
       {/* Section Title with Navigation */}
       <motion.div
-        className="w-full px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] mb-12"
+        className="relative z-40 w-full px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] mb-12"
         initial={{ x: 0, opacity: 1 }}
         whileInView={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -208,7 +208,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
             Recent News
           </h2>
 
-          <div className="flex gap-3">
+          <div className="relative z-50 flex gap-3">
             <MagneticButton>
               <motion.button
                 onClick={scrollLeft}
@@ -330,7 +330,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                       className="w-full h-full relative"
                       variants={{
                         initial: { scale: 1 },
-                        hover: { scale: 1.05 }
+                        hover: { scale: 1.02 }
                       }}
                       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                     >
@@ -372,31 +372,12 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
 
                 {/* Content Container */}
                 <div className="relative z-10 mt-auto flex flex-col">
-                  {/* Category - Slides Up on Hover */}
-                  <motion.div
-                    variants={{
-                      initial: { y: 10, opacity: 0, height: 0 },
-                      hover: { y: 0, opacity: 1, height: 'auto' }
-                    }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-2"
-                  >
-                    <p className="text-neutral-200 font-inter text-sm uppercase tracking-widest font-semibold">
-                      {Array.isArray(project.category) ? project.category.join(", ") : project.category}
-                    </p>
-                  </motion.div>
-
                   {/* Title */}
-                  <motion.h3
+                  <h3
                     className="text-white font-helvetica font-bold text-xl md:text-2xl leading-tight"
-                    variants={{
-                      initial: { y: 0 },
-                      hover: { y: -5 }
-                    }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   >
                     {project.title}
-                  </motion.h3>
+                  </h3>
                 </div>
               </motion.div>
             )

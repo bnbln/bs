@@ -136,7 +136,7 @@ const Footer = () => {
         </motion.div>
 
         <motion.div className="md:col-span-9 flex flex-col gap-10" variants={itemVariants}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
             {/* Links Column: Sitemap */}
             <div className="flex flex-col gap-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Sitemap</h3>
