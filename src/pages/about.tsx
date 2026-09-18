@@ -10,7 +10,7 @@ import Brands from '../components/Brands'
 import { brandLogos } from '../lib/brands'
 const Shuffle = dynamic(() => import('../components/Shuffle'), { ssr: false })
 import { getProjectsData, Project } from '../lib/markdown'
-import { ArrowUpRight, Linkedin, Copy, Calendar, Award, Briefcase, GraduationCap } from 'lucide-react'
+import { ArrowUpRight, Linkedin, Copy, Calendar, Award, Briefcase, GraduationCap, Plane } from 'lucide-react'
 import { buildPageSeo, getSeoConfig } from '../lib/seo'
 
 interface AboutPageProps {
@@ -41,9 +41,10 @@ const AboutPage = ({ data }: AboutPageProps) => {
    }
 
    const skills = [
-      "Web Development", "React / Next.js", "Three.js / WebGL",
-      "Motion Design", "3D Modeling", "Generative AI",
-      "Branding", "UI/UX Design", "After Effects"
+      "UI/UX Design", "Native App Design", "Brand Integration",
+      "Apple HIG / Material Design", "Prototyping", "UI Animation",
+      "React / Next.js", "Web Development", "Motion Design",
+      "After Effects", "Three.js / WebGL", "3D Modeling", "Generative AI"
    ]
 
    const baseTimelineEvents: TimelineEvent[] = [
@@ -65,7 +66,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
          title: "Bachelor of Arts",
          subject: "Medienmanagement & Kommunikationsdesign",
          location: "Hochschule für Medien (SRH Berlin)",
-         description: "Deep dive into the intersection of design, strategy, and technology.",
+         description: "Created a wide range of digital products throughout my studies, with extensive hands-on work in UI design, UX concepts, and interactive prototypes, alongside video projects. Connected design, strategy, and technology through practical product work.",
          icon: <GraduationCap className="w-5 h-5" />
       }
    ]
@@ -81,18 +82,25 @@ const AboutPage = ({ data }: AboutPageProps) => {
       },
       {
          year: "2019 - 2024",
-         title: "Motion & Brand Designer",
+         title: "UI & Motion Designer",
          location: "WeltN24 GmbH",
-         description: "Designed and animated on-air graphics, trailers, promotions, openers, advertising campaigns, and show designs, contributing to a +27% TV market share increase. Created event packages, visuals, sponsor loops, and live graphics for high-profile conferences.",
+         description: "Designed native interfaces for WELT’s media library apps in close collaboration with internal and external developers. Translated brand identity into native experiences following Apple’s Human Interface Guidelines and Material Design, alongside motion graphics for broadcast and digital formats.",
          icon: <Briefcase className="w-5 h-5" />,
          track: "Agency / Inhouse"
       },
       {
-         year: "2024 - Present",
-         title: "Senior Motion & Brand Designer",
+         year: "2024 - 2026",
+         title: "Senior Brand, Motion & UI Designer",
          location: "PREMIUM-GRUPPE",
-         description: "Developing corporate design and 360° communication for international media brands. Leading a creative team of three plus freelancers, and automating asset management with AI-driven workflows, reducing hand-off time by 50%.",
+         description: "Worked across brand, motion, and UI design for international media brands. Developed visual identities, digital interfaces, and motion for broadcast and campaigns, building on my experience with native platforms. UI animation and automated asset workflows helped bring consistency across formats.",
          icon: <Briefcase className="w-5 h-5" />,
+         track: "Agency / Inhouse"
+      },
+      {
+         year: "Next up",
+         title: "A new chapter is taking off",
+         description: "A change of perspective. More soon.",
+         icon: <Plane className="w-5 h-5 text-neutral-400" aria-hidden="true" />,
          track: "Agency / Inhouse"
       },
    ]
@@ -100,22 +108,22 @@ const AboutPage = ({ data }: AboutPageProps) => {
    const freelanceTrackEvents: TimelineEvent[] = [
       {
          year: "2019",
-         title: "Launching my first Web-Project",
-         description: "Started building and publishing my own web projects and apps. In 2019 I published my first app for Quizzes like Buzzfeed. In 2020 I published my first app for Tarot Card Meanings and beautiful Illustrations.",
+         title: "Launching my first web projects",
+         description: "Started designing, building, and publishing my own digital products: a quiz app in 2019, followed by an illustrated tarot app in 2020. These projects brought interface design and frontend development together from the start.",
          icon: <Calendar className="w-5 h-5" />,
          track: "Freelance / Studio"
       },
       {
          year: "2019 - Present",
-         title: "Freelance Creative Developer",
-         description: "Developing responsive web apps in React, Next.js, and TypeScript for SMEs. Researching and designing wireframes, prototypes, and user-centered design solutions while tightly integrating design and development workflows.",
+         title: "Freelance Designer & Developer",
+         description: "Designing and building websites and apps, from brand identity and UX/UI to frontend development. For Rechtsklarheit, I brought brand, interface, and a CMS-backed website together. I also offer motion design and video production, including the producer role.",
          icon: <Briefcase className="w-5 h-5" />,
          track: "Freelance / Studio"
       },
       {
          year: "2025",
-         title: "Launching Creative Studio DUO",
-         description: "Publishing Apps and Websites for Clients.",
+         title: "Launching Creative Studio DODO",
+         description: "Founded DODO to bring brand identity, UI design, and development together for clients. The studio focuses on websites and apps, complemented by motion design and video production.",
          icon: <Calendar className="w-5 h-5" />,
          track: "Freelance / Studio"
       }
@@ -178,15 +186,15 @@ const AboutPage = ({ data }: AboutPageProps) => {
                            </h2>
                            <div className="prose prose-lg text-neutral-600 font-inter leading-relaxed">
                               <p>
-                                 I am a creative and tech-savvy Berlin-based Senior Designer & Developer with over 8 years of experience. My journey began in this vibrant city, where I studied <strong>Media Management & Communication Design</strong> and soaked in the diverse culture that continues to inspire my work today.
+                                 I am a Berlin-based <strong>UI/UX Designer & Developer</strong> with a background in brand design and professional experience since 2019. I studied <strong>Media Management & Communication Design</strong>, and my work connects visual identity, thoughtful interfaces, and their technical implementation.
                               </p>
                               <br />
                               <p>
-                                 I specialize in crafting and implementing innovative visual concepts, bridging the gap between aesthetic beauty and functional code. Whether it&apos;s 3D motion graphics, complex frontend logic in React and Next.js, or integrating generative AI into modern web technologies, I approach every project with a solution-oriented mindset.
+                                 I design native apps and responsive websites that feel intuitive and true to their brand. My expertise lies in <strong>brand integration across native platforms</strong>, working with Apple&apos;s Human Interface Guidelines and Material Design, and collaborating closely with internal and external developers. For web projects, I also build what I design with React and Next.js. UI animation and motion design add the finishing touches, helping interactions feel clear and considered.
                               </p>
                               <br />
                               <p>
-                                 I am highly committed and enthusiastic about driving impactful, brand-defining projects. Outside of work, I&apos;m a maker at heart. You&apos;ll find me experimenting with <strong>3D printing</strong>, whipping up new recipes in the kitchen, or enjoying movie nights.
+                                 Through my studio <strong>DODO</strong>, I bring brand, UI, and development together for clients, with motion design and video production as complementary services. Outside of work, I&apos;m a maker at heart. You&apos;ll find me experimenting with <strong>3D printing</strong>, whipping up new recipes in the kitchen, or enjoying movie nights.
                               </p>
                            </div>
                         </motion.div>
@@ -437,7 +445,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                  Toolbox & <br /> Expertise
                               </h3>
                               <p className="text-neutral-400 text-lg max-w-lg mb-8">
-                                 I constantly explore new technologies to bring the best possible solutions to my clients. Here is what I work with most frequently.
+                                 My toolkit centers on UI design, native platform conventions, and bringing brands into digital products. Development and motion help me carry those ideas through to the finished experience.
                               </p>
 
                               <div className="flex flex-wrap gap-3">

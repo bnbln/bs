@@ -1,13 +1,13 @@
 ---
 id: 5
-title: Relaunching a Lawyer's Website with React
-subtitle: Frontend Development and Digital Transformation
+title: Brand Identity and UX/UI for Rechtsklarheit
+subtitle: From visual identity to a responsive website and CMS
 slug: relaunching-berlin-lawyers-corporate-design-and-website
 category: UX&UI, Development
 client:
   - Tarik Sharief
 collaboration: []
-excerpts: 'Future-proof, performant, and editor-friendly: This Berlin law firm now runs on Gatsby with Decap CMS, combining React components with simple content editing.'
+excerpts: 'Brand identity, UX/UI design, and frontend development for Berlin law firm Rechtsklarheit, bringing legal services, contact options, and content editing into one consistent website.'
 published: '2022-04-10'
 image: assets/rk/rk-main.png
 bgColor: '#47B7D7'
@@ -16,24 +16,55 @@ featured: false
 type:
   - UX/UI
   - Development
-description: 'Future-proof, performant, and editor-friendly: This Berlin law firm now runs on Gatsby with Decap CMS, combining React components with simple content editing.'
+description: 'Brand identity, UX/UI design, and frontend development for Berlin law firm Rechtsklarheit, bringing legal services, contact options, and content editing into one consistent website.'
 ---
 
-For the Berlin law firm Rechtsklarheit and lawyer Tarik Sharief, the relaunch wasn’t just about aesthetics - it was about building a fast, reliable, and editor-friendly digital foundation. The new brand identity set the tone, but the real strength lies in the **frontend stack: Gatsby, React, Netlify, and Decap CMS**.
+For Berlin law firm **Rechtsklarheit** and lawyer Tarik Sharief, I worked across **brand identity, UX/UI design, and frontend development**. The project connected the firm’s visual identity with a responsive website that presents legal services clearly and gives the team a way to maintain its own content.
+
+The design work and implementation informed each other: typography, color, and page structure became reusable patterns for service pages, legal content, and blog posts.
 
 ```mockup type="macbook" image="assets/rk-1.png" bgColor="#F5F5F7"
 ```
 
 ```small
-A rebranding and web development project where corporate gravitas meets the flexibility of a modern approach.
+A connected process from brand identity and interface design to a working website.
 ```
 
-# Why Gatsby & React make the perfect JAMstack.
+## Organizing services and content
 
-**Gatsby** delivers fast static pages with strong SEO benefits, while **React** components allow for a modular system: legal content, services, and blog posts all follow the same design logic.
+The website brings together practice areas, legal information, blog posts, and contact options. I used a modular page structure to keep these different content types visually related while giving each enough space for its own information.
+
+On mobile, readable text and a clear hierarchy were central to the UI. The same layout patterns carry through the site, helping visitors find their bearings as they move between service pages and articles.
+
+## Bringing the brand into the interface
 
 ```small
-Hosting on **Netlify** ensures global CDN delivery, continuous deployment from Git, and automated builds - meaning every change goes live within minutes.
+Deep blue and turquoise form the core of the visual identity, paired with a logo designed for use across formats. On the website, the colors help distinguish headings, links, and accents. Typography and spacing give long legal texts a readable hierarchy on desktop and mobile.
+```
+
+```palette scales="true"
+name="Dark-Blue" hex="#172340" rgb="23,35,64" usage="Primary" rank="1"
+name="Cyan-Blue" hex="#258EA6" rgb="37, 142, 166" usage="Secondary" rank="1"
+name="Light-Blue" hex="#33457C" rgb="51,69,124" usage="Highlight" rank="3"
+name="Paper" hex="#E9ECF6" rgb="233,236,246" usage="Fond/Background" rank="3"
+name="White" hex="#FFFFFF" rgb="255,255,255" rank="4"
+```
+
+```small
+The interface uses shared layouts for service pages, legal content, and blog posts. Consistent headings, content sections, and contact options let visitors move between different subjects without having to learn a new page structure.
+```
+
+```mockup type="iphone" bgColor="#F5F5F7" image="assets/rk/rk.png"
+```
+
+These patterns connect the brand to everyday use: reading about a legal service, browsing an article, or finding a way to contact the firm. Reusable layouts also support additional topics and content over time.
+
+## Developing the website
+
+I implemented the website with **Gatsby and React**, translating the interface into reusable components for legal content, services, and blog posts.
+
+```small
+**Netlify** handles hosting and deployments from Git, while **Decap CMS** gives the team an editing interface for maintaining content.
 ```
 
 ```mockup type="safari-tab" bgColor="#F5F5F7" image="https://f33qiggog7gxjoua.public.blob.vercel-storage.com/projects/decap-cms-mmjiomas-dc9185.webp"
@@ -57,37 +88,14 @@ Behind the scenes, **Decap CMS** empowers the firm’s team to manage their own 
 
 ![assets/upload/bildschirmfoto-2026-03-09-um-12-33-18-mmj3vpmk-14c3de.webp]
 
-The result is a site that looks professional, performs brilliantly, and is easy for the firm to maintain long term.
-
-## Confidence meets Clarity in Design
-
-```small
-The visual language is simple and strong: A deep blue establishes trust and reliability, while subtle turquoise accents add a modern twist. The logo feels calm and confident, designed for flexible use across all media. The typography is clean and structured, ensuring excellent readability – especially on mobile.
-```
-
-```palette
-name="Dark-Blue" hex="#172340" rgb="23,35,64" usage="Primary" rank="1"
-name="Cyan-Blue" hex="#258EA6" rgb="37, 142, 166" usage="Secondary" rank="1"
-name="Light-Blue" hex="#33457C" rgb="51,69,124" usage="Highlight" rank="3"
-name="Paper" hex="#E9ECF6" rgb="233,236,246" usage="Fond/Background" rank="3"
-name="White" hex="#FFFFFF" rgb="255,255,255" rank="4"
-```
-
-```small
-The design system is modular, allowing dynamic layouts for service pages, legal content, or blog posts. The site is built and hosted with Netlify for top performance, and content can be edited easily via a lightweight CMS.
-```
-
-```mockup type="iphone" bgColor="#F5F5F7" image="assets/rk/rk.png"
-```
-
-The result: A consistent, flexible system that looks professional and can grow with the firm's needs – whether it’s expanding legal topics, adding blog posts or publishing updates.
+The result brings brand identity, responsive UI, and content management together in a website the firm can maintain over time.
 
 Check it out here: [rechtsklarheit.de](https://rechtsklarheit.de)
 
 ## Update: 2026
 
 ```small
-For the coming future a redesign of the page is in the works as of 2026. We are developing a Brand Identity reflecting on the transparancy element of the name Rechtsklarheit (legal certainty/transparency).
+A further redesign is in progress in 2026. The new visual identity explores the idea of transparency in the name Rechtsklarheit, with corresponding updates to the website’s UI.
 ```
 
 ![assets/rk-5.png]

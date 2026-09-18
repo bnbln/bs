@@ -10,6 +10,7 @@ import { resolveAssetPath } from '../lib/assets'
 import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
 import CodeBlock from './CodeBlock'
 import ColorPalette from './ColorPalette'
+import { parsePaletteSteps } from '../lib/color-palette'
 import Callout, { CalloutVariant } from './Callout'
 import Navigation from './Navigation'
 import ScrollScrubVideo from './ScrollScrubVideo'
@@ -1221,6 +1222,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                 rgb: attrs.rgb || rgbFnMatch?.[1],
                 usage: attrs.usage || (usageMatch?.[1] || usageMatch?.[2] || '').trim(),
                 rank,
+                steps: parsePaletteSteps(attrs.steps),
               }
             })
           }
@@ -1248,7 +1250,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                   If no header, margins applies to Palette.
               */}
               <div className={`${colWide} ${(attrs.title || attrs.description) ? 'mb-16' : margins}`}>
-                <ColorPalette hideHeader title={attrs.title} description={attrs.description} colors={colors} />
+                <ColorPalette hideHeader title={attrs.title} description={attrs.description} scales={attrs.scales === 'true'} colors={colors} />
               </div>
             </React.Fragment>
           )

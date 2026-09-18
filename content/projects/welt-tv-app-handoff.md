@@ -45,10 +45,10 @@ A polished interface is only successful if it can be implemented reliably. Clear
 
 The foundation of the project was a documented **design system** that structured the visual language and interaction patterns of the app. Rather than designing isolated layouts, UI elements were organized into reusable components and states that could scale across the entire product.
 
-```palette
-name="Blartz" hex="#171B2D" rgb="23,27,45" rank="1"
-name="Orange" hex="#F18825" rgb="241,136,37" rank="1"
-name="Background" hex="#0E101B" rgb="14,16,27" rank="3"
+```palette scales="true"
+name="Blartz" hex="#171B2D" rgb="23,27,45" usage="Brand" rank="1"
+name="Orange" hex="#F18825" rgb="241,136,37" usage="Accent" rank="1"
+name="Background" hex="#0E101B" rgb="14,16,27" usage="Surface" rank="3"
 ```
 
 - Brand-aligned color, typography and spacing systems

@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 export type BrandLogo = {
     src: string;
     padding?: string;
+    alt?: string;
 } | string;
 
 const GAP = 19;
@@ -20,16 +21,18 @@ interface BrandsProps {
 }
 
 /** Normalize a BrandLogo entry (string or object) into { src, padding } */
-function normalize(entry: BrandLogo): { src: string; padding: string } {
+function normalize(entry: BrandLogo): { src: string; padding: string; alt: string } {
     if (typeof entry === "string") {
         return {
             src: entry.startsWith("/") ? entry : `/${entry}`,
             padding: DEFAULT_PADDING,
+            alt: "Brand logo",
         };
     }
     return {
         src: entry.src.startsWith("/") ? entry.src : `/${entry.src}`,
         padding: entry.padding ?? DEFAULT_PADDING,
+        alt: entry.alt ?? "Brand logo",
     };
 }
 
@@ -193,7 +196,7 @@ export default function Brands({ logos: logosRaw, title }: BrandsProps) {
                                     >
                                         <Image
                                             src={logo.src}
-                                            alt="Brand logo"
+                                            alt={logo.alt}
                                             fill
                                             sizes="(max-width: 768px) 33vw, 25vw"
                                             className="object-contain pointer-events-none"

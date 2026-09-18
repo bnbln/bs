@@ -14,15 +14,15 @@ type: [Design]
 ---
 # Strong brands don’t happen by accident: they grow through thousands of decisions.
 
-I started working with WELT in 2019, when I joined Brand Communication as a design intern. Back then, my job was to translate the direction of our Head of Brand into production-ready assets across teams and formats. Over the years, that role shifted: from executing the system to actively shaping it as the Senior Brand Designer. 
+During my time at WELT from 2019, I worked across UI and motion design, translating the brand’s visual language into apps, broadcast graphics, and other formats. Working with the brand team, I also helped develop practical guidelines for colleagues and external partners.
 
-By 2023, the brand’s design direction and day-to-day stewardship sat with me.
+The 2023 Brand Manual brought these rules together to support consistent design decisions across everyday production.
 
 ```mockup type="tv" image="assets/welt-brand/230413_WELT_Brand Manual-_Seite_23.jpg" bgColor="#F5F5F7"
 ```
 
 
-That’s what this project really is: not a rebrand, not a flashy makeover: but a clear, practical framework that helps WELT stay unmistakably WELT across print, TV, and digital.
+The manual provides a practical framework for applying WELT’s identity across print, TV, and digital products.
 
 # One brand. Many touchpoints.
 

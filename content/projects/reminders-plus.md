@@ -87,7 +87,7 @@ So Reminders+ is built on React Native and local-first by design:
 - “Data not collected” (App Store privacy)
 - Fast & lightweight, with smooth navigation and animations
 
-```palette
+```palette scales="true"
 name="iOS-Blue" hex="#007EFF" rgb="0,126,255" usage="Primary" rank="1"
 name="Off-White" hex="#F5F7FA" rgb="245,247,250" usage="Light Mode" rank="2"
 name="Ink" hex="#0B1220" rgb="11,18,32" usage="Dark Mode" rank="2"

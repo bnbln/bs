@@ -13,6 +13,7 @@ import BubbleRotatingText from '../components/BubbleRotatingText'
 import Callout from '../components/Callout'
 import CodeBlock from '../components/CodeBlock'
 import ColorPalette from '../components/ColorPalette'
+import type { PaletteColor } from '../lib/color-palette'
 import Contact from '../components/Contact'
 import ContactForm from '../components/ContactForm'
 import Create from '../components/Create'
@@ -545,7 +546,8 @@ type ColorPaletteArgs = {
   title: string
   description: string
   hideHeader: boolean
-  colors: Array<{ name: string; hex: string; rgb?: string; usage?: string; rank?: number }>
+  scales?: boolean
+  colors: PaletteColor[]
 }
 
 export const ColorPaletteComponent: StoryObj<ColorPaletteArgs> = {
@@ -553,6 +555,7 @@ export const ColorPaletteComponent: StoryObj<ColorPaletteArgs> = {
     title: 'Brand Colors',
     description: 'Beispielhafte Farbrampen',
     hideHeader: false,
+    scales: true,
     colors: [
       { name: 'Midnight', hex: '#1C1D20', usage: 'Background', rank: 1 },
       { name: 'Sky', hex: '#3DB1FF', usage: 'Primary Accent', rank: 2 },
@@ -565,6 +568,7 @@ export const ColorPaletteComponent: StoryObj<ColorPaletteArgs> = {
     title: { control: 'text' },
     description: { control: 'text' },
     hideHeader: { control: 'boolean' },
+    scales: { control: 'boolean' },
     colors: { control: 'object' },
   },
   render: (args) => (
@@ -574,6 +578,57 @@ export const ColorPaletteComponent: StoryObj<ColorPaletteArgs> = {
       </div>
     </Padded>
   ),
+  play: async ({ canvas, userEvent }) => {
+    const toggle = canvas.getByRole('button', { name: 'Hide tonal scale for Sky' })
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(toggle)
+    await expect(canvas.getByRole('button', { name: 'Show tonal scale for Sky' })).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.getByRole('button', { name: 'Hide tonal scale for Mint' })).toHaveAttribute('aria-expanded', 'true')
+    await expect(canvas.queryByRole('button', { name: 'Copy Sky 100, #ECF7FF', exact: true })).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Show tonal scale for Sky' }))
+    await expect(canvas.getByRole('button', { name: 'Copy Sky 100, #ECF7FF', exact: true })).toBeVisible()
+
+    const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    const writeText = fn(async () => {})
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+    try {
+      await userEvent.click(canvas.getByRole('button', { name: 'Copy Sky, #3DB1FF', exact: true }))
+      await expect(writeText).toHaveBeenCalledWith('#3DB1FF')
+      await expect(canvas.getByRole('status')).toHaveTextContent('#3DB1FF copied.')
+      writeText.mockRejectedValueOnce(new Error('Clipboard unavailable'))
+      await userEvent.click(canvas.getByRole('button', { name: 'Copy Mint, #8AE9C1', exact: true }))
+      await expect(canvas.getByRole('status')).toHaveTextContent('Could not copy.')
+    } finally {
+      if (original) Object.defineProperty(navigator, 'clipboard', original)
+      else Reflect.deleteProperty(navigator, 'clipboard')
+    }
+  },
+}
+
+export const DefinedColorScale: StoryObj<ColorPaletteArgs> = {
+  ...ColorPaletteComponent,
+  args: {
+    title: 'Defined color scale',
+    description: 'An example with authored steps rather than generated variants.',
+    hideHeader: false,
+    scales: true,
+    colors: [{
+      name: 'Blue', hex: '#2563EB', usage: 'Primary',
+      steps: [
+        { label: '100', hex: '#DBEAFE' },
+        { label: '300', hex: '#93C5FD' },
+        { label: '500', hex: '#2563EB' },
+        { label: '700', hex: '#1D4ED8' },
+        { label: '900', hex: '#1E3A8A' },
+      ],
+    }],
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole('button', { name: 'Hide tonal scale for Blue' })).toHaveTextContent('Defined')
+    await expect(canvas.queryByText('Preview', { exact: true })).not.toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Copy Blue 500, #2563EB, base color', exact: true })).toBeVisible()
+    await expect(canvas.getByText('Black · 4.06:1 · Below AA')).toBeVisible()
+  },
 }
 
 export const ContactSection: StoryObj = {

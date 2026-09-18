@@ -4,11 +4,11 @@ skillsTitle: UX/UI
 skillsSubtitle: Architecture
 pageTitle: UX/UI Architecture
 subtitle: Translating product complexity into clear user decisions.
-description: Designing intuitive, accessible, and pixel-perfect interfaces. Focused on human-centered experiences that look stunning and convert.
+description: Designing interfaces for native apps and the web, from user flows and prototypes to reusable components and documented handoffs for developers.
 seoTitle: UX/UI Architecture Work
 seoDescription: UX/UI case studies and product interface work with strong information architecture, usability, and design systems.
 projectsHeading: UX/UI Projects
-cardDescription: UX/UI work with clear architecture, scalable systems, and conversion-focused user flows.
+cardDescription: UX/UI projects covering navigation, interaction design, reusable components, and collaboration with developers.
 articleTitle: How This UX/UI Hub Works
 headerColor: '#38BDF8'
 canvasColor: '#0284C7'
@@ -47,6 +47,6 @@ deliverables:
   - Scalable Design Systems
   - Web App Interfaces & SaaS
   - High-Fidelity Prototypes
-  - User Personas & Conversion Flows
+  - User Personas & User Flows
   - iOS & Mobile Interfaces
 ---
