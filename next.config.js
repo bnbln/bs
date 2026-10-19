@@ -7,7 +7,14 @@ const nextConfig = {
   distDir: isAdminBackend ? '.next-backend' : '.next',
   reactStrictMode: true,
   images: {
-    unoptimized: true
+    // Serve resized AVIF/WebP instead of the original JPG/PNG files.
+    formats: ['image/avif', 'image/webp'],
+    // Source files in /public are immutable, so optimized variants can be cached long.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+    remotePatterns: [
+      // Project media hosted on Vercel Blob (keep in sync with src/lib/image.ts).
+      { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
+    ],
   },
   trailingSlash: true,
   i18n: {

@@ -7,6 +7,7 @@ import { Project } from '../lib/markdown'
 const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
 const ThreeScene = dynamic(() => import('./ThreeScene'), { ssr: false })
 import { resolveAssetPath } from '../lib/assets'
+import { getOptimizedImageProps } from '../lib/image'
 import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
 import CodeBlock from './CodeBlock'
 import ColorPalette from './ColorPalette'
@@ -372,13 +373,13 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
       }
     }, [isDragging])
 
-    const getItemEls = () => {
+    const getItemEls = React.useCallback(() => {
       const el = scrollerRef.current
       if (!el) return [] as HTMLElement[]
       return Array.from(el.querySelectorAll('[data-row-gallery-item="1"]')) as HTMLElement[]
-    }
+    }, [])
 
-    const getNearestIndex = (scrollLeft: number) => {
+    const getNearestIndex = React.useCallback((scrollLeft: number) => {
       const els = getItemEls()
       if (!els.length) return 0
       let bestIdx = 0
@@ -391,7 +392,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         }
       }
       return bestIdx
-    }
+    }, [getItemEls])
 
     useEffect(() => {
       const el = scrollerRef.current
@@ -423,7 +424,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         el.removeEventListener('scroll', update as any)
         window.removeEventListener('resize', update)
       }
-    }, [])
+    }, [getNearestIndex])
 
     const scrollToIndex = (idx: number) => {
       const el = scrollerRef.current
@@ -561,7 +562,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                       </div>
                     ) : (
                       <img
-                        src={path}
+                        {...getOptimizedImageProps(path, '(max-width: 768px) 92vw, 840px')}
                         alt={altText}
                         className="block h-auto max-h-[90vh] w-auto max-w-[92vw] sm:max-w-[78vw] md:max-w-[720px] lg:max-w-[840px] object-contain"
                         loading="lazy"
@@ -1009,7 +1010,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                       <div className="aspect-video relative overflow-hidden">
                         {ref.image && (
                           <img
-                            src={resolveAssetPath(ref.image)}
+                            {...getOptimizedImageProps(resolveAssetPath(ref.image), '(max-width: 768px) 100vw, 50vw')}
                             alt={ref.title}
                             className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
                             loading="lazy"
@@ -1504,7 +1505,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                         </div>
                       ) : (
                         <img
-                          src={path}
+                          {...getOptimizedImageProps(path, '(max-width: 1200px) 100vw, 1200px')}
                           alt={(item.caption || item.alt || `Gallery image ${idx + 1}`).trim()}
                           className="block w-auto max-w-full h-auto max-h-[90vh] object-contain"
                           loading="lazy"
@@ -1577,7 +1578,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                     />
                   ) : (
                     <img
-                      src={path}
+                      {...getOptimizedImageProps(path, '(max-width: 1200px) 100vw, 1200px')}
                       alt={(mediaAlt || 'Project image').trim()}
                       className="block w-auto max-w-full h-auto max-h-[90vh] object-contain mx-auto"
                       loading="lazy"

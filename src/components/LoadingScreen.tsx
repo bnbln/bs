@@ -39,7 +39,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadingComplete, projec
       
       try {
         await preloader.preloadAll();
-        console.log(`Successfully preloaded ${loadedAssets}/${totalAssets} assets`);
+        console.log(`Successfully preloaded ${assets.length} assets`);
       } catch (error) {
         console.warn('Some assets failed to load:', error);
       }

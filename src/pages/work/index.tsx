@@ -9,6 +9,7 @@ import { getAllProjects, Project } from '../../lib/markdown'
 import { getAllWorkHubContent, type WorkHubContent } from '../../lib/work-hub-content'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { getOptimizedImageUrl } from '../../lib/image'
 import { buildPageSeo, getSeoConfig } from '../../lib/seo'
 import {
   FILTER_OPTIONS,
@@ -137,7 +138,7 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
                           {project.image && (
                             <div
                               className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105"
-                              style={{ backgroundImage: `url('${project.image}')` }}
+                              style={{ backgroundImage: `url('${getOptimizedImageUrl(project.image, 1200)}')` }}
                             />
                           )}
                           {project.heroLottie && mounted && (

@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { FaPause, FaPlay, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
+import { getOptimizedImageUrl } from '../lib/image';
 import dynamic from 'next/dynamic';
 
 const LottiePlayer = dynamic(() => import('./LottiePlayer'), { ssr: false })
@@ -1641,7 +1642,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       setCurrentFrame(clampedFrame);
       lastFrameTime.current = currentTime;
     }
-  }, [loadedImages.length, showAnimation]);
+  }, [loadedImages.length, showAnimation, remapAnimationProgress]);
 
   const updateSpritesheetFrame = useCallback((scrollProgress: number) => {
     if (
@@ -1776,6 +1777,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     };
   }, [project.slug, setActiveFeaturedProjectId, setCountdownFeaturedProjectId]);
 
+  // React detaches element refs before unmount cleanups run, so remember the
+  // last rendered video elements to be able to pause them on unmount.
+  const lastVideoElementRef = useRef<HTMLVideoElement | null>(null);
+  const lastFeaturedVideoElementRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    lastVideoElementRef.current = videoRef.current;
+    lastFeaturedVideoElementRef.current = featuredVideoRef.current;
+  });
+
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
     return () => {
@@ -1801,12 +1811,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       spritesheetFrameRef.current = -1;
 
       // Stop video if playing
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      if (featuredVideoRef.current) {
-        featuredVideoRef.current.pause();
-      }
+      lastVideoElementRef.current?.pause();
+      lastFeaturedVideoElementRef.current?.pause();
     };
   }, []);
 
@@ -1862,7 +1868,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <div
           className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('${project.image}')`,
+            backgroundImage: `url('${getOptimizedImageUrl(project.image, 1920)}')`,
             opacity: shouldHideCardMedia
               ? 0
               : useSafariMobileFreezeFrame
@@ -1889,7 +1895,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               muted
               playsInline
               preload="auto"
-              poster={project.image}
+              poster={getOptimizedImageUrl(project.image, 1920)}
               webkit-playsinline="true"
               x-webkit-airplay="allow"
               onLoadedMetadata={handleVideoLoad}
@@ -2029,7 +2035,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 <video
                   ref={featuredVideoRef}
                   src={featuredMedia.videoSrc}
-                  poster={featuredMedia.posterSrc || project.image}
+                  poster={getOptimizedImageUrl(featuredMedia.posterSrc || project.image, 1920)}
                   className="w-full h-full object-cover bg-black pointer-events-none"
                   autoPlay
                   muted={isFeaturedMuted}
