@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Environment, Float, Preload, useGLTF } from '@react-three/drei'
+import { useReducedMotion } from 'framer-motion'
 
 interface ThreeSceneProps {
     modelPath?: string
@@ -46,8 +47,11 @@ export default function ThreeScene({
     position = [0, 0, 0],
     rotation = [0, 0, 0]
 }: ThreeSceneProps) {
+    const prefersReducedMotion = useReducedMotion()
     return (
         <div
+            role="img"
+            aria-label="Interactive 3D model"
             className={`w-full relative overflow-hidden bg-[#F5F5F7] shadow-xl shadow-black/10 ring-1 ring-black/5 rounded-2xl ${className}`}
             style={{ height }}
         >
@@ -70,7 +74,7 @@ export default function ThreeScene({
                     <OrbitControls
                         enablePan={false}
                         enableZoom={false}
-                        autoRotate={autoRotate}
+                        autoRotate={autoRotate && !prefersReducedMotion}
                         autoRotateSpeed={1.5}
                         minPolarAngle={Math.PI / 3}
                         maxPolarAngle={Math.PI / 1.5}

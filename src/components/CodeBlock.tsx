@@ -88,7 +88,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
       highlighted = replaceOutsideSpans(
         highlighted,
         /(\s)([A-Za-z_:][\w:.-]*)(=)/g,
-        '$1<span class="text-[#00838F]">$2<\/span>$3'
+        '$1<span class="text-[#007A85]">$2<\/span>$3'
       )
 
       // Punctuation
@@ -125,21 +125,29 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             </div>
             <div className="flex items-center gap-2">
               {githubUrl && (
-                <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-[#6e6e73] hover:text-[#1D1D1F] transition-colors p-1.5 rounded hover:bg-black/5">
-                  <ExternalLink className="w-4 h-4" />
+                <a href={githubUrl} target="_blank" rel="noopener noreferrer" aria-label="View on GitHub (opens in a new tab)" className="text-[#6e6e73] hover:text-[#1D1D1F] transition-colors p-1.5 rounded hover:bg-black/5">
+                  <ExternalLink className="w-4 h-4" aria-hidden="true" />
                 </a>
               )}
               <button 
+                type="button"
                 onClick={copyToClipboard} 
+                aria-label={copied ? 'Code copied' : 'Copy code'}
                 className="text-[#6e6e73] hover:text-[#1D1D1F] transition-colors p-1.5 rounded hover:bg-black/5"
               >
-                {copied ? <Check className="w-4 h-4 text-[#28C840]" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4 text-[#28C840]" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
           </div>
           
           {/* Code Area */}
-          <div className="p-5 md:p-6 overflow-x-auto bg-[#FAFAFA]">
+          {/* Focusable so keyboard users can scroll long lines (WCAG 2.1.1) */}
+          <div
+            className="p-5 md:p-6 overflow-x-auto bg-[#FAFAFA]"
+            tabIndex={0}
+            role="group"
+            aria-label={filename ? `Code: ${filename}` : 'Code'}
+          >
             <pre className="text-[13px] md:text-[14px] leading-[1.6] font-mono font-normal text-[#1D1D1F] whitespace-pre tab-[2]">
               <code dangerouslySetInnerHTML={{ __html: highlightCode(code, language) }} />
             </pre>

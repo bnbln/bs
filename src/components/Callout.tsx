@@ -36,9 +36,9 @@ export default function Callout({ variant, accentColor, title, children }: Callo
             </span>
           </div>
           {title && (
-            <h4 className="text-[24px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk tracking-tight text-[#1D1D1F]">
+            <h3 className="text-[24px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk tracking-tight text-[#1D1D1F]">
               {title}
-            </h4>
+            </h3>
           )}
         </div>
 

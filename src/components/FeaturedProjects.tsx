@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 import Image from 'next/image'
 import { Project } from '../lib/markdown'
 import MagneticButton from './MagneticButton'
@@ -271,7 +272,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                   <MagneticButton>
                     <motion.button
                       type="button"
-                      aria-label="More Projects"
+                      aria-label="View all work"
                       className="w-16 h-16 rounded-full border border-neutral-200/80 bg-white group-hover:bg-black group-hover:text-white group-hover:border-black flex items-center justify-center transition-all text-black hover:text-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -286,7 +287,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                     </motion.button>
                   </MagneticButton>
                   <div className="mt-6 text-center">
-                    <div className="text-[14px] font-bold uppercase tracking-widest text-neutral-500 font-inter">
+                    <div className="text-[14px] font-bold uppercase tracking-widest text-neutral-600 font-inter">
                       View All Work
                     </div>
                   </div>
@@ -323,6 +324,19 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                 whileHover="hover"
                 animate="initial"
               >
+                {/* Keyboard- and screen-reader-accessible link covering the card */}
+                <Link
+                  href={`/project/${project.slug}`}
+                  className="focus-inset absolute inset-0 z-20 rounded-3xl"
+                  draggable={false}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    if (dragMovedRef.current > 5) event.preventDefault()
+                  }}
+                >
+                  <span className="sr-only">{project.title}</span>
+                </Link>
+
                 {/* Background Image */}
                 <div className="absolute inset-0 overflow-hidden bg-neutral-100 border-none">
                   {project.image ? (
@@ -336,7 +350,7 @@ const FeaturedProjects = ({ data }: { data: Project[] }) => {
                     >
                       <Image
                         src={project.image}
-                        alt={project.title}
+                        alt=""
                         fill
                         sizes={imageSizes}
                         className={isLandscapeCard ? 'object-cover object-right' : 'object-cover object-center'}

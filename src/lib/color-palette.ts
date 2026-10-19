@@ -37,6 +37,30 @@ export function readableText(hex: string): '#000000' | '#FFFFFF' {
   return contrastRatio(hex, '#000000') >= contrastRatio(hex, '#FFFFFF') ? '#000000' : '#FFFFFF'
 }
 
+/**
+ * Darkens a brand/accent color just enough to be readable as text on `background`
+ * (WCAG 1.4.3: 4.5:1 for body text, 3:1 for large text). Fills keep the original color.
+ */
+export function accessibleTextColor(hex: string, minRatio = 4.5, background = '#FFFFFF', opacity = 1): string {
+  const base = normalizeHex(hex)
+  if (!base) return hex
+  const [r, g, b] = hexToRgb(base)
+  const bg = hexToRgb(normalizeHex(background) || '#FFFFFF')
+  const toHex = (channels: number[]) => '#' + channels
+    .map(channel => Math.round(channel).toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase()
+  for (let step = 0; step <= 20; step++) {
+    const factor = 1 - step * 0.05
+    const shaded = [r, g, b].map(channel => channel * factor)
+    const candidate = toHex(shaded)
+    // Text inside a faded container renders blended with the background.
+    const rendered = toHex(shaded.map((channel, i) => channel * opacity + bg[i] * (1 - opacity)))
+    if (contrastRatio(rendered, background) >= minRatio) return candidate
+  }
+  return '#000000'
+}
+
 // Illustrative tints and shades, not a project's authored design tokens.
 export function deriveScale(hex: string): PaletteStep[] {
   const base = hexToRgb(hex)

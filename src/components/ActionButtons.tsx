@@ -70,9 +70,9 @@ export const SocialActionButton = ({
         'group flex flex-col items-center justify-center w-[56px] h-[56px] sm:w-[60px] sm:h-[60px] md:w-[68px] md:h-[68px] rounded-full border border-neutral-200 hover:border-black hover:bg-black transition-all text-black hover:text-white bg-white shadow-sm',
         className
       )}
-      aria-label={label}
+      aria-label={external ? `${label} (opens in a new tab)` : label}
     >
-      <Icon className="w-5 h-5 lg:w-6 lg:h-6 mb-0.5" />
+      <Icon className="w-5 h-5 lg:w-6 lg:h-6 mb-0.5" aria-hidden="true" />
     </a>
   </MagneticButton>
 )

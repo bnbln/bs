@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Loader2, AlertCircle } from 'lucide-react'
 import MagneticButton from './MagneticButton'
@@ -12,6 +12,12 @@ const ContactForm = () => {
   })
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const successHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  // The form is replaced by the confirmation, so move focus there (otherwise it is lost).
+  useEffect(() => {
+    if (status === 'success') successHeadingRef.current?.focus()
+  }, [status])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,16 +57,18 @@ const ContactForm = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             className="bg-[#1C1D20] text-white p-8 rounded-2xl flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]"
+            role="status"
           >
             <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-2">
-              <Check className="w-8 h-8 text-white" />
+              <Check className="w-8 h-8 text-white" aria-hidden="true" />
             </div>
-            <h3 className="text-2xl font-space-grotesk font-bold">Message sent!</h3>
+            <h3 ref={successHeadingRef} tabIndex={-1} className="text-2xl font-space-grotesk font-bold">Message sent!</h3>
             <p className="text-neutral-400 max-w-sm font-inter">
               Thanks for reaching out. I&apos;ll get back to you as soon as possible.
             </p>
             <MagneticButton>
               <button
+                type="button"
                 onClick={() => setStatus('idle')}
                 className="mt-6 px-8 py-4 rounded-full border border-white/20 hover:bg-white/10 transition-colors font-inter font-medium text-sm group"
               >
@@ -83,10 +91,12 @@ const ContactForm = () => {
                   <input
                     type="text"
                     id="name"
+                    name="name"
+                    autoComplete="name"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-neutral-100 border-none rounded-xl p-4 font-inter focus:ring-2 focus:ring-black/5 transition-all outline-none"
+                    className="w-full bg-neutral-100 border border-neutral-500 rounded-xl p-4 font-inter transition-all"
                     placeholder="John Doe"
                   />
                 </div>
@@ -95,10 +105,12 @@ const ContactForm = () => {
                   <input
                     type="email"
                     id="email"
+                    name="email"
+                    autoComplete="email"
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-neutral-100 border-none rounded-xl p-4 font-inter focus:ring-2 focus:ring-black/5 transition-all outline-none"
+                    className="w-full bg-neutral-100 border border-neutral-500 rounded-xl p-4 font-inter transition-all"
                     placeholder="john@example.com"
                   />
                 </div>
@@ -108,11 +120,12 @@ const ContactForm = () => {
                 <label htmlFor="message" className="text-sm font-inter text-neutral-600 uppercase tracking-widest font-semibold">Message</label>
                 <textarea
                   id="message"
+                  name="message"
                   required
                   rows={6}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full bg-neutral-100 border-none rounded-xl p-4 font-inter focus:ring-2 focus:ring-black/5 transition-all outline-none resize-none cool-scrollbar"
+                  className="w-full bg-neutral-100 border border-neutral-500 rounded-xl p-4 font-inter transition-all resize-none cool-scrollbar"
                   placeholder="Tell me about your project..."
                 />
               </div>
@@ -125,19 +138,19 @@ const ContactForm = () => {
                     required
                     checked={formData.privacy}
                     onChange={(e) => setFormData({ ...formData, privacy: e.target.checked })}
-                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-neutral-300 bg-white checked:bg-black checked:border-black transition-all"
+                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-neutral-500 bg-white checked:bg-black checked:border-black transition-all"
                   />
-                  <Check className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                  <Check aria-hidden="true" className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
                 </div>
                 <label htmlFor="privacy" className="text-sm text-neutral-500 font-inter cursor-pointer select-none leading-tight pt-0.5">
-                  I agree to the <a href="/datenschutzerklaerung" target="_blank" className="text-black underline underline-offset-2 hover:opacity-70">Privacy Policy</a> and consent to having my data processed for the purpose of this inquiry.
+                  I agree to the <a href="/datenschutzerklaerung" target="_blank" className="text-black underline underline-offset-2 hover:opacity-70">Privacy Policy<span className="sr-only"> (opens in a new tab)</span></a> and consent to having my data processed for the purpose of this inquiry.
                 </label>
               </div>
             </div>
 
             {status === 'error' && (
-              <div className="flex items-center gap-2 text-red-500 bg-red-50 p-4 rounded-xl text-sm font-inter">
-                <AlertCircle className="w-5 h-5 shrink-0" />
+              <div role="alert" className="flex items-center gap-2 text-red-700 bg-red-50 p-4 rounded-xl text-sm font-inter">
+                <AlertCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
                 <span>{errorMessage}</span>
               </div>
             )}
@@ -150,7 +163,7 @@ const ContactForm = () => {
               >
                 {status === 'submitting' ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
                     Sending...
                   </>
                 ) : (

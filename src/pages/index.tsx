@@ -52,15 +52,17 @@ export default function Home({ data, hubContent }: HomeProps) {
       />
       <div className="min-h-screen bg-[#1C1D20] w-full">
         {/* Main Content - Slides over the footer on desktop, sits above it on mobile */}
-        <div className="relative z-10 bg-[#FAFAFA] shadow-2xl mb-0 md:mb-[500px] pb-24 md:pb-40">
+        <div className="relative z-10 bg-[#FAFAFA] shadow-2xl mb-0 reveal:mb-[500px] pb-24 md:pb-40">
           <Navigation />
-          <Hero />
-          <About />
-          <Work data={data.projects} />
-          {/* <Create /> */}
-          <Skills hubContent={hubContent} />
-          <Contact />
-          <FeaturedProjects data={data.featuredProjects} />
+          <main id="main-content" tabIndex={-1}>
+            <Hero />
+            <About />
+            <Work data={data.projects} />
+            {/* <Create /> */}
+            <Skills hubContent={hubContent} />
+            <Contact />
+            <FeaturedProjects data={data.featuredProjects} />
+          </main>
         </div>
 
         {/* Footer - Relative on Mobile, Fixed Reveal on Desktop */}

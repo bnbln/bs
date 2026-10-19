@@ -13,10 +13,10 @@ const Impressum = () => {
       <NextSeo {...seo} />
       
       <div className="bg-[#1C1D20] min-h-screen">
-        <div className="bg-white min-h-screen flex flex-col justify-between relative z-10 shadow-2xl mb-0 md:mb-[500px]">
+        <div className="bg-white min-h-screen flex flex-col justify-between relative z-10 shadow-2xl mb-0 reveal:mb-[500px]">
           <Navigation theme="light" />
 
-          <main className="flex-grow pt-32 pb-20 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden">
+          <main id="main-content" tabIndex={-1} lang="de" className="flex-grow pt-32 pb-20 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden">
             <div className="max-w-[800px] mx-auto relative z-10">
               {/* Content */}
               <div className="prose prose-lg max-w-none prose-headings:font-space-grotesk prose-p:font-inter prose-a:text-black">

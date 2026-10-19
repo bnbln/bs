@@ -111,10 +111,10 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
       />
 
       <div className="min-h-screen bg-[#1C1D20] w-full">
-        <div className="relative z-10 bg-[#F5F5F5] shadow-2xl mb-0 md:mb-[500px] min-h-screen flex flex-col">
+        <div className="relative z-10 bg-[#F5F5F5] shadow-2xl mb-0 reveal:mb-[500px] min-h-screen flex flex-col">
           <Navigation theme="light" />
 
-          <main className="relative flex-grow pt-[160px] pb-24 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] w-full overflow-x-hidden">
+          <main id="main-content" tabIndex={-1} className="relative flex-grow pt-[160px] pb-24 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] w-full overflow-x-hidden">
             <div
               className="absolute top-0 left-0 w-full h-[48vh] pointer-events-none -z-0"
               style={{
@@ -216,7 +216,7 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
             <section className="relative z-10 mb-14 md:mb-16">
               <div className="mt-2 grid grid-cols-1 lg:grid-cols-12 gap-x-5 gap-y-12 md:gap-x-6 md:gap-y-8 lg:gap-y-6">
                 <div className="lg:col-span-6 p-1">
-                  <h2 className="text-neutral-500 font-space-grotesk text-xs font-semibold uppercase tracking-[0.18em] mb-4">
+                  <h2 className="text-neutral-600 font-space-grotesk text-xs font-semibold uppercase tracking-[0.18em] mb-4">
                     Core Methods
                   </h2>
                   <div className="flex flex-wrap gap-2.5">
@@ -232,7 +232,7 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
                 </div>
 
                 <div className="lg:col-span-6 p-1">
-                  <h2 className="text-neutral-500 font-space-grotesk text-xs font-semibold uppercase tracking-[0.18em] mb-3">
+                  <h2 className="text-neutral-600 font-space-grotesk text-xs font-semibold uppercase tracking-[0.18em] mb-3">
                     What I Build
                   </h2>
                   <ul className="w-full flex flex-col border-t border-black/10">
@@ -241,7 +241,7 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
                         key={item}
                         className="flex items-start gap-5 py-4 border-b border-black/10 group hover:bg-neutral-50/60 transition-colors duration-300"
                       >
-                        <span className="text-neutral-300 font-mono text-sm tracking-widest pt-1">
+                        <span className="text-neutral-600 font-mono text-sm tracking-widest pt-1">
                           {(index + 1).toString().padStart(2, '0')}
                         </span>
                         <span className="text-[18px] md:text-[21px] leading-[1.38] text-neutral-800 font-semibold tracking-[-0.01em]">
@@ -334,7 +334,7 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
                               </h3>
                               {project.subtitle && !isFeatured && (
                                 <p
-                                  className={`mt-3 text-neutral-500 text-sm md:text-base font-inter leading-relaxed ${
+                                  className={`mt-3 text-neutral-600 text-sm md:text-base font-inter leading-relaxed ${
                                     !isFeatured ? 'md:w-[85%] font-bold' : ''
                                   }`}
                                 >
@@ -343,7 +343,7 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
                               )}
                               {project.excerpts && !isFeatured && (
                                 <p
-                                  className={`mt-3 text-neutral-500 text-sm md:text-base font-inter leading-relaxed ${
+                                  className={`mt-3 text-neutral-600 text-sm md:text-base font-inter leading-relaxed ${
                                     !isFeatured ? 'md:w-[85%]' : ''
                                   }`}
                                 >
@@ -360,7 +360,7 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
               </motion.div>
 
               {projects.length === 0 && (
-                <div className="py-24 text-center text-neutral-400 font-inter">No projects found for this hub.</div>
+                <div className="py-24 text-center text-neutral-600 font-inter">No projects found for this hub.</div>
               )}
             </section>
 

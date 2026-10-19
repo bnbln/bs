@@ -1,13 +1,39 @@
 import React from 'react'
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
+import { motion, useScroll, useTransform, useMotionValue, useSpring, useReducedMotion, MotionValue } from 'framer-motion'
 import Image from 'next/image'
+import { Pause, Play } from 'lucide-react'
 import ScrollVelocity from './ScrollVelocity'
 const locationIcon = '/assets/locationBackground.svg'
 const worldIcon = '/assets/World Icon.svg'
 const arrowIcon = '/assets/arrow.svg'
 
+// WCAG 2.2.2: moving content needs a way to pause it. Kept separate so toggling
+// does not re-render (and restart) the marquee itself.
+const MarqueeToggle = ({ pausedValue }: { pausedValue: MotionValue<number> }) => {
+  const [paused, setPaused] = React.useState(false)
+  const toggle = () => {
+    const next = !paused
+    pausedValue.set(next ? 1 : 0)
+    setPaused(next)
+  }
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-pressed={paused}
+      aria-label={paused ? 'Play name animation' : 'Pause name animation'}
+      className="pointer-events-auto flex items-center justify-center w-9 h-9 rounded-full backdrop-blur-md bg-black/20 border border-white/10 text-white/90 hover:bg-black/40 transition-colors"
+      style={{ WebkitBackdropFilter: "blur(12px)" }}
+    >
+      {paused ? <Play className="w-3.5 h-3.5" aria-hidden="true" /> : <Pause className="w-3.5 h-3.5" aria-hidden="true" />}
+    </button>
+  )
+}
+
 const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { title?: string, location?: string }) => {
   const containerRef = React.useRef<HTMLElement>(null)
+  const prefersReducedMotion = useReducedMotion()
+  const marqueePaused = useMotionValue(0)
 
   // Vertical scroll parallax for background and floating elements
   const { scrollYProgress } = useScroll({
@@ -35,6 +61,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
   const fgY = useTransform(smoothMouseY, [-0.5, 0.5], ["-1%", "1%"])
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (prefersReducedMotion) return
     const { clientX, clientY } = e
     const { innerWidth, innerHeight } = window
     // Normalize coordinates to -0.5 to 0.5
@@ -53,11 +80,13 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className="relative h-[90vh] min-h-[600px] md:h-[100vh] md:min-h-0 w-full overflow-hidden bg-[#1C1D20]"
+      aria-labelledby="hero-title"
     >
+      <h1 id="hero-title" className="sr-only">{title}, Senior Designer &amp; Developer from {location}</h1>
       {/* 1. LAYER 0: Background Image (Slight Parallax on Scroll) */}
       <motion.div
         className="absolute inset-0 z-0 origin-center"
-        style={{ y: bgY, scale: 1.05 }}
+        style={{ y: prefersReducedMotion ? 0 : bgY, scale: 1.05 }}
       >
         <Image
           src="/assets/heroimage-bg.webp"
@@ -112,6 +141,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
             fontWeight: 'inherit'
           }}
           numCopies={8}
+          pausedValue={marqueePaused}
         />
       </motion.div>
 
@@ -134,27 +164,30 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
       {/* 5. LAYER 4: Info Section (Minimalist Redesign) */}
       <div className="absolute md:bottom-[60px] bottom-[30px] left-6 right-6 z-30 flex flex-col md:flex-row items-start md:items-end justify-between gap-8 pointer-events-none">
 
-        {/* Minimalist Location */}
-        <motion.div
-          className="flex items-center gap-3 backdrop-blur-md bg-black/20 px-4 py-2 rounded-full border border-white/10 pointer-events-auto"
-          initial={{ y: 50, opacity: 0, z: 0 }}
-          animate={{ y: 0, opacity: 1, z: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          style={{ WebkitBackdropFilter: "blur(12px)", willChange: "transform, opacity" }}
-        >
-          <img
-            src={worldIcon}
-            alt="World Icon"
-            className="w-5 h-5 opacity-80"
-          />
-          <p className="text-white/90 font-space-grotesk tracking-wide font-medium text-sm">
-            From {location}
-          </p>
-        </motion.div>
+        <div className="flex items-center gap-2">
+          {/* Minimalist Location */}
+          <motion.div
+            className="flex items-center gap-3 backdrop-blur-md bg-black/20 px-4 py-2 rounded-full border border-white/10 pointer-events-auto"
+            initial={{ y: 50, opacity: 0, z: 0 }}
+            animate={{ y: 0, opacity: 1, z: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            style={{ WebkitBackdropFilter: "blur(12px)", willChange: "transform, opacity" }}
+          >
+            <img
+              src={worldIcon}
+              alt=""
+              className="w-5 h-5 opacity-80"
+            />
+            <p className="text-white/90 font-space-grotesk tracking-wide font-medium text-sm">
+              From {location}
+            </p>
+          </motion.div>
+          <MarqueeToggle pausedValue={marqueePaused} />
+        </div>
 
         {/* Minimalist Role Text */}
         <motion.div
-          className="flex flex-col items-start md:items-end gap-[2px] text-white/90 font-inter font-normal text-xl md:text-2xl tracking-tight backdrop-blur-md bg-black/10 px-5 py-3 rounded-2xl border border-white/10 pointer-events-auto"
+          className="flex flex-col items-start md:items-end gap-[2px] text-white/90 font-inter font-normal text-xl md:text-2xl tracking-tight backdrop-blur-md bg-black/25 px-5 py-3 rounded-2xl border border-white/10 pointer-events-auto"
           initial={{ y: 50, opacity: 0, z: 0 }}
           animate={{ y: 0, opacity: 1, z: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}

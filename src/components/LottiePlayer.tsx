@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Lottie from 'lottie-react'
+import { useReducedMotion } from 'framer-motion'
 
 interface LottiePlayerProps {
     src: string
@@ -12,6 +13,8 @@ interface LottiePlayerProps {
 export default function LottiePlayer({ src, loop = true, autoplay = true, className = '', style }: LottiePlayerProps) {
     const [animationData, setAnimationData] = useState<any>(null)
     const [error, setError] = useState<boolean>(false)
+    // Respect the OS "reduce motion" setting: show the first frame instead of playing.
+    const prefersReducedMotion = useReducedMotion()
 
     useEffect(() => {
         let active = true
@@ -40,13 +43,13 @@ export default function LottiePlayer({ src, loop = true, autoplay = true, classN
 
     if (!animationData) {
         return (
-            <div className={`flex items-center justify-center bg-black/5 rounded-2xl animate-pulse ${className}`} style={style} />
+            <div aria-hidden="true" className={`flex items-center justify-center bg-black/5 rounded-2xl animate-pulse ${className}`} style={style} />
         )
     }
 
     return (
         <div className={`flex items-center justify-center ${className}`} style={style}>
-            <Lottie animationData={animationData} loop={loop} autoplay={autoplay} style={{ width: '100%', height: '100%' }} />
+            <Lottie animationData={animationData} loop={loop} autoplay={autoplay && !prefersReducedMotion} style={{ width: '100%', height: '100%' }} />
         </div>
     )
 }

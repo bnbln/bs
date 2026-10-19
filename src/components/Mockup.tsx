@@ -365,7 +365,13 @@ export default function Mockup(props: MockupProps) {
             className="w-full relative rounded-3xl overflow-hidden shadow-sm ring-1 ring-black/5 px-2 sm:px-3 md:px-5 py-8 sm:py-10 md:py-12"
             style={{ backgroundColor: containerBg }}
         >
-            <div className="overflow-x-auto overflow-y-visible pb-1 [-webkit-overflow-scrolling:touch]">
+            {/* Focusable so keyboard users can scroll the row (WCAG 2.1.1) */}
+            <div
+                className="overflow-x-auto overflow-y-visible pb-1 [-webkit-overflow-scrolling:touch]"
+                tabIndex={0}
+                role="group"
+                aria-label="Screens"
+            >
                 <div className="w-max min-w-full flex flex-nowrap items-end justify-center gap-3 sm:gap-4 md:gap-6 px-1 sm:px-2 md:px-3 py-1">
                     {validItems.map((item, index) => renderGroupedItem(item, index))}
                 </div>

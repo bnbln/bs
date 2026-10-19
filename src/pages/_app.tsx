@@ -2,6 +2,7 @@ import type { AppProps } from 'next/app'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { DefaultSeo } from 'next-seo'
+import { MotionConfig } from 'framer-motion'
 import '../index.css'
 import LoadingScreen from '../components/LoadingScreen'
 import { AssetPreloader } from '../utils/assetPreloader'
@@ -57,11 +58,16 @@ export default function App({ Component, pageProps }: AppProps) {
 
   // Skip loading screen entirely
   return (
-    <main className={`${spaceGrotesk.variable} ${inter.variable}`}>
-       <DefaultSeo {...defaultSeo} />
-      <Component {...pageProps} />
+    // Not a <main>: each page renders its own main landmark (#main-content).
+    <div className={`${spaceGrotesk.variable} ${inter.variable}`}>
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <DefaultSeo {...defaultSeo} />
+      {/* Honour the OS "reduce motion" setting for all framer-motion animations. */}
+      <MotionConfig reducedMotion="user">
+        <Component {...pageProps} />
+      </MotionConfig>
       <Analytics />
       <SpeedInsights />
-    </main>
+    </div>
   )
 }
