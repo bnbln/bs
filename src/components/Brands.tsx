@@ -152,7 +152,7 @@ export default function Brands({ logos: logosRaw, title }: BrandsProps) {
     return (
         <div className="flex flex-col gap-6 w-full">
             {title && (
-                <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 font-inter px-2">
+                <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600 font-inter px-2">
                     {title}
                 </h4>
             )}

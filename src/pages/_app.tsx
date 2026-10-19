@@ -2,6 +2,7 @@ import type { AppProps } from 'next/app'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { DefaultSeo } from 'next-seo'
+import { MotionConfig } from 'framer-motion'
 import '../index.css'
 import LoadingScreen from '../components/LoadingScreen'
 import { AssetPreloader } from '../utils/assetPreloader'
@@ -17,6 +18,8 @@ import { buildDefaultSeo, getSeoConfig } from '../lib/seo'
 let globalAssetsLoaded = false;
 let globalProjects: any[] = [];
 const seoConfig = getSeoConfig()
+
+const ROUTES_WITHOUT_MAIN = ['/admin/editor/[slug]', '/r/[slug]', '/_error']
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
@@ -54,14 +57,21 @@ export default function App({ Component, pageProps }: AppProps) {
 
   const path = router.asPath.split('?')[0];
   const defaultSeo = buildDefaultSeo(seoConfig, path);
+  // Routes without a #main-content landmark get no skip link.
+  const hasMainContent = !ROUTES_WITHOUT_MAIN.includes(router.pathname);
 
   // Skip loading screen entirely
   return (
-    <main className={`${spaceGrotesk.variable} ${inter.variable}`}>
-       <DefaultSeo {...defaultSeo} />
-      <Component {...pageProps} />
+    // Not a <main>: each page renders its own main landmark (#main-content).
+    <div className={`${spaceGrotesk.variable} ${inter.variable}`}>
+      {hasMainContent && <a href="#main-content" className="skip-link">Skip to content</a>}
+      <DefaultSeo {...defaultSeo} />
+      {/* Honour the OS "reduce motion" setting for all framer-motion animations. */}
+      <MotionConfig reducedMotion="user">
+        <Component {...pageProps} />
+      </MotionConfig>
       <Analytics />
       <SpeedInsights />
-    </main>
+    </div>
   )
 }

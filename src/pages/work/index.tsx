@@ -63,10 +63,10 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
       <NextSeo {...seo} />
 
       <div className="min-h-screen bg-[#1C1D20] w-full">
-        <div className="relative z-10 bg-[#F5F5F5] shadow-2xl mb-0 md:mb-[500px] min-h-screen flex flex-col">
+        <div className="relative z-10 bg-[#F5F5F5] shadow-2xl mb-0 reveal:mb-[500px] min-h-screen flex flex-col">
           <Navigation theme="light" />
 
-          <main className="flex-grow pt-[160px] pb-24 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] w-full">
+          <main id="main-content" tabIndex={-1} className="flex-grow pt-[160px] pb-24 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] w-full">
             {/* Header & Filter */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 md:mb-16">
               <motion.div
@@ -76,7 +76,7 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
               >
                 <h1 className="text-[10vw] sm:text-[8vw] md:text-[6vw] leading-[0.9] tracking-tight font-bold font-space-grotesk text-black mb-4">
                   Selected
-                  <span className="block text-neutral-400">Work</span>
+                  <span className="block text-[#8A8A8A]">Work</span>
                 </h1>
               </motion.div>
 
@@ -90,6 +90,8 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
                 {FILTER_OPTIONS.map((f) => (
                   <button
                     key={f}
+                    type="button"
+                    aria-pressed={filter === f}
                     onClick={() => setFilter(f)}
                     className={`relative whitespace-nowrap px-4 sm:px-5 md:px-6 py-1.5 sm:py-2 rounded-full transition-colors duration-300 font-inter text-xs sm:text-sm md:text-base z-10 ${
                       filter === f ? 'text-white font-medium' : 'text-neutral-500 hover:text-black'
@@ -109,6 +111,7 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
             </div>
 
             {/* Projects Grid */}
+            <h2 className="sr-only">Projects</h2>
             <motion.div layout className="grid grid-cols-1 md:grid-cols-3 gap-y-16 gap-x-8 w-full grid-flow-row-dense">
               <AnimatePresence mode="popLayout">
                 {filteredProjects.map((project) => {
@@ -163,7 +166,7 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
                             </h3>
                             {project.excerpts && !isFeatured && (
                               <p
-                                className={`mt-3 text-neutral-500 text-sm md:text-base font-inter leading-relaxed ${
+                                className={`mt-3 text-neutral-600 text-sm md:text-base font-inter leading-relaxed ${
                                   !isFeatured ? 'md:w-[85%]' : ''
                                 }`}
                               >
@@ -180,7 +183,7 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
             </motion.div>
 
             {filteredProjects.length === 0 && (
-              <div className="py-24 text-center text-neutral-400 font-inter">No projects found for {filter}.</div>
+              <div className="py-24 text-center text-neutral-600 font-inter">No projects found for {filter}.</div>
             )}
 
             <section className="mt-20 md:mt-24 border-t border-neutral-200 pt-10 md:pt-12">
@@ -188,7 +191,7 @@ const WorkPage = ({ projects, hubContent }: WorkPageProps) => {
                 <h2 className="font-space-grotesk text-xl md:text-2xl font-bold tracking-tight text-black">
                  Core Disciplines
                 </h2>
-                <p className="hidden md:block text-sm text-neutral-500 font-inter">
+                <p className="hidden md:block text-sm text-neutral-600 font-inter">
                   Explore one focused content hub.
                 </p>
               </div>

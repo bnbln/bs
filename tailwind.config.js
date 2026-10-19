@@ -6,6 +6,11 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        // Fixed "reveal" footer only when it fits the viewport; otherwise it scrolls
+        // normally so nothing is cut off at high zoom (WCAG 1.4.4 / 1.4.10).
+        'reveal': { 'raw': '(min-width: 768px) and (min-height: 540px)' },
+      },
       fontFamily: {
         'space-grotesk': ['var(--font-space-grotesk)', 'sans-serif'],
         'inter': ['var(--font-inter)', 'sans-serif'],

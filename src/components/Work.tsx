@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { motion, useScroll, useTransform, MotionValue, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue, useMotionValue, useSpring, useMotionTemplate, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { FaPause, FaPlay, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
 const arrowSvg = '/assets/arrow.svg';
 import { Project } from '../lib/markdown';
@@ -114,6 +115,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const [preferNativeVideoScrub, setPreferNativeVideoScrub] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  // "Reduce motion": reuse the static iOS stack and show still images instead of scroll-scrubbed animation.
+  const prefersReducedMotion = Boolean(useReducedMotion());
+  const useStaticStack = isIOS || prefersReducedMotion;
   const [isSafariDesktop, setIsSafariDesktop] = useState(false);
   const featuredMedia = useMemo(() => parseFeaturedMedia(project.featuredMedia), [project.featuredMedia]);
   const hasFeaturedMedia = Boolean(featuredMedia?.videoSrc);
@@ -611,7 +615,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   // so their callbacks never fire during scroll. Instead, a single lightweight callback (below)
   // computes y + scale and writes two MotionValues directly.
   const frozenProgress = useMotionValue(0);
-  const desktopProgress = isIOS ? frozenProgress : sectionProgress;
+  const desktopProgress = useStaticStack ? frozenProgress : sectionProgress;
 
   // Entrance: 0 → 1  (settling into stack)
   const entranceT = useTransform(desktopProgress, [0, 0.18], [0, 1], { clamp: true });
@@ -924,6 +928,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   }, [isFeaturedFadingOut]);
 
   const canAutoStartFeaturedCountdown =
+    !prefersReducedMotion &&
     isDesktopFeaturedMediaEnabled &&
     isCardInViewport &&
     cardViewportRatio >= FEATURED_MEDIA_PRIMARY_VISIBLE_RATIO &&
@@ -1813,7 +1818,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   // Only use clip-path crop on Safari desktop; on Safari mobile (iOS) it causes scroll lag when items scale/crop.
   const useSafariClipPath = isSafariDesktop && !useVideoScrubbing;
   // Safari mobile: freeze frame disabled — stack perf is now handled by frozen MotionValue chain + single callback.
-  const useSafariMobileFreezeFrame = false;
+  // Still used for "reduce motion": only the static image is shown.
+  const useSafariMobileFreezeFrame = prefersReducedMotion;
 
   // iOS: static border radius (no animation) — value matches the desktop entrance radius.
   const iosBorderRadius = 20;
@@ -1829,25 +1835,25 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     <div
       ref={scrollTrackRef}
       className="relative w-full aspect-[16/10] md:aspect-video"
-      style={isIOS ? { marginBottom: iosCardGap, width: 'auto', marginLeft: pageMargin, marginRight: pageMargin, aspectRatio: '16 / 9' } : undefined}
+      style={useStaticStack ? { marginBottom: iosCardGap, width: 'auto', marginLeft: pageMargin, marginRight: pageMargin, aspectRatio: '16 / 9' } : undefined}
     >
       <motion.div
         ref={containerRef}
-        className={`sticky w-full h-full cursor-pointer group ${isIOS ? '' : 'shadow-xl'}`}
+        className={`sticky w-full h-full cursor-pointer group ${useStaticStack ? '' : 'shadow-xl'}`}
         data-featured-item-id={project.slug}
         data-featured-order={index}
         data-featured-autoplay-candidate={canAutoStartFeaturedCountdown ? 'true' : 'false'}
         style={{
           zIndex: index + 1,
           top: stickyTop,
-          borderRadius: useSafariClipPath ? 0 : (isIOS ? iosBorderRadius : cardBorderRadius),
+          borderRadius: useSafariClipPath ? 0 : (useStaticStack ? iosBorderRadius : cardBorderRadius),
           // iOS: permanent page margin (no animation) — cards always have horizontal inset.
-          marginLeft: useSafariClipPath ? 0 : (isIOS ? 0 : cardMargin),
-          marginRight: useSafariClipPath ? 0 : (isIOS ? 0 : cardMargin),
+          marginLeft: useSafariClipPath ? 0 : (useStaticStack ? 0 : cardMargin),
+          marginRight: useSafariClipPath ? 0 : (useStaticStack ? 0 : cardMargin),
           clipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
           WebkitClipPath: useSafariClipPath ? (safariCardClipPath as any) : undefined,
-          y: isIOS ? iosY : cardY,
-          scale: isIOS ? iosScale : cardScale,
+          y: useStaticStack ? iosY : cardY,
+          scale: useStaticStack ? iosScale : cardScale,
           transformOrigin: 'top center',
           overflow: 'hidden',
           width: 'auto',
@@ -1858,6 +1864,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         onMouseLeave={hasFinePointer ? handleMouseLeave : undefined}
         onClick={handleProjectClick}
       >
+        {/* Keyboard- and screen-reader-accessible link covering the card; mouse clicks keep using the card handler. */}
+        <Link
+          href={`/project/${project.slug}`}
+          className="focus-inset absolute inset-0 z-[35] rounded-[inherit]"
+          onClick={stopClickPropagation}
+        >
+          <span className="sr-only">{project.title}</span>
+        </Link>
+
         {/* Static Background Image (Fallback); on Safari mobile freeze-frame this is the only visible layer for animations */}
         <div
           className="absolute right-0 bottom-0 w-full h-full bg-cover bg-center bg-no-repeat"
@@ -1944,7 +1959,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               <img
                 ref={spritesheetImageRef}
                 src={selectedSpritesheetPath}
-                alt={`${project.title} animation sequence`}
+                alt=""
+                aria-hidden="true"
                 loading="eager"
                 decoding="async"
                 onLoad={handleSpritesheetElementLoad}
@@ -1969,7 +1985,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             {showAnimation && (
               <img
                 src={loadedImages[currentFrame]}
-                alt={`Animation frame ${currentFrame + 1}`}
+                alt=""
+                aria-hidden="true"
                 className="w-full h-full object-cover"
                 style={{
                   // High-performance rendering optimizations
@@ -1996,7 +2013,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               src={project.heroLottie}
               className="w-full h-full absolute inset-0 mix-blend-normal"
               style={{ objectFit: 'cover' }}
-              autoplay={true}
+              autoplay={!prefersReducedMotion}
               loop={true}
             />
           </div>
@@ -2006,7 +2023,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         {project.video && !project.heroLottie && (
           <video
             className="absolute inset-0 w-full h-full object-cover"
-            autoPlay
+            autoPlay={!prefersReducedMotion}
             muted
             loop
             playsInline
@@ -2133,7 +2150,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         {/* Mobile arrow button (mobile only) */}
         {!showFeaturedPlayer && !isDesktopFeaturedMediaEnabled && (
           <motion.button
-            className="absolute bottom-4 right-4 md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
+            className="absolute bottom-4 right-4 z-[36] md:hidden bg-black/80 hover:bg-black text-white p-3 rounded-full shadow-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={{
@@ -2151,7 +2171,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           >
             <img
               src={arrowSvg}
-              alt="View project"
+              alt=""
               className="w-4 h-4"
               style={{ filter: 'brightness(0) invert(1)', transform: 'rotate(-180deg)' }} // Ensure white arrow
             />
@@ -2237,6 +2257,7 @@ const Work: React.FC<WorkProps> = ({ data }) => {
 
   return (
     <section ref={sectionRef} className="w-full relative" id="work">
+      <h2 className="sr-only">Selected work</h2>
       {data.map((project, index) => (
         <ProjectCard
           key={`${project.id}-${index}`}
@@ -2255,6 +2276,8 @@ const Work: React.FC<WorkProps> = ({ data }) => {
 
       {/* Global Cursor for all Work Projects */}
       <motion.div
+        aria-hidden="true"
+        tabIndex={-1}
         className="fixed top-0 left-0 pointer-events-none z-[100] hidden md:flex items-center gap-2 will-change-transform"
         style={{
           x: cursorX,

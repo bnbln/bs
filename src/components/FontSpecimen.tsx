@@ -83,8 +83,10 @@ export default function FontSpecimen({
                             className="text-5xl sm:text-7xl md:text-[6rem] lg:text-[7rem] leading-[0.9] font-bold tracking-tighter"
                             style={{ fontFamily: name, color: color }}
                         >
+                            {titleSvgUrl && <span className="sr-only">{name}</span>}
                             {titleSvgUrl ? (
                                 <div
+                                    aria-hidden="true"
                                     className="w-full h-20 sm:h-28 md:h-32 lg:h-40"
                                     style={{
                                         backgroundColor: color,

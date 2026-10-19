@@ -18,10 +18,10 @@ const ContactPage = () => {
       <NextSeo {...seo} />
 
       <div className="bg-[#1C1D20] min-h-screen">
-        <div className="bg-white min-h-screen flex flex-col justify-between relative z-10 shadow-2xl mb-0 md:mb-[500px]">
+        <div className="bg-white min-h-screen flex flex-col justify-between relative z-10 shadow-2xl mb-0 reveal:mb-[500px]">
           <Navigation theme="light" />
 
-          <main className="flex-grow pt-32 pb-20 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden">
+          <main id="main-content" tabIndex={-1} className="flex-grow pt-32 pb-20 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] relative w-full overflow-hidden">
             <div className="max-w-[1400px] mx-auto relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
 
@@ -45,7 +45,7 @@ const ContactPage = () => {
 
                     <div className="flex flex-col gap-6">
                       <div className="space-y-2">
-                        <div className="text-xs font-semibold uppercase tracking-widest text-neutral-400 font-inter">Email</div>
+                        <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500 font-inter">Email</div>
                         <MagneticButton className="inline-block">
                           <a href="mailto:mail@benediktschnupp.com" className="inline-flex items-center gap-3 px-6 py-4 bg-white text-black rounded-full border border-neutral-200/80 hover:bg-neutral-50 transition-all shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md font-inter font-medium block group">
                             <Mail className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
@@ -54,11 +54,11 @@ const ContactPage = () => {
                         </MagneticButton>
                       </div>
                       <div className="space-y-2">
-                        <div className="text-xs font-semibold uppercase tracking-widest text-neutral-400 font-inter">Socials</div>
+                        <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500 font-inter">Socials</div>
                         <div className="flex gap-4">
                           <MagneticButton>
                             <a href="https://linkedin.com/in/benedikt-schnupp-928112116" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 px-6 py-4 bg-white text-black rounded-full border border-neutral-200/80 hover:bg-neutral-50 transition-all shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-md font-inter font-medium flex items-center gap-2 group">
-                              <Linkedin className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" /> LinkedIn
+                              <Linkedin className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" aria-hidden="true" /> LinkedIn<span className="sr-only"> (opens in a new tab)</span>
                             </a>
                           </MagneticButton>
                         </div>

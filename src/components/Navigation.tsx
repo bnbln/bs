@@ -54,6 +54,9 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
     Contact: null
   })
   const [pillRect, setPillRect] = useState<PillRect | null>(null)
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null)
+  const drawerRef = useRef<HTMLDivElement | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const didRunInitialRouteAnimation = useRef(false)
   const routeAnimationFrameRef = useRef<number | null>(null)
 
@@ -175,6 +178,48 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
     }
   }, [isMenuOpen])
 
+  // Treat the open menu as a modal dialog: page behind is inert, focus moves in,
+  // Escape closes, and focus returns to the menu button afterwards.
+  useEffect(() => {
+    if (!isMenuOpen) return
+
+    const pageRoot = document.getElementById('__next')
+    const menuButton = menuButtonRef.current
+    pageRoot?.setAttribute('inert', '')
+    const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 50)
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setIsMenuOpen(false)
+        return
+      }
+      if (event.key !== 'Tab' || !drawerRef.current) return
+
+      const focusable = Array.from(
+        drawerRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.clearTimeout(focusTimer)
+      document.removeEventListener('keydown', handleKeyDown)
+      pageRoot?.removeAttribute('inert')
+      menuButton?.focus()
+    }
+  }, [isMenuOpen])
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
   }
@@ -203,6 +248,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
     <>
       {/* Desktop Navigation */}
       <motion.nav
+        aria-label="Main"
         className={`hidden lg:flex fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-fit pl-6 pr-2 py-1.5 rounded-full items-center justify-center pointer-events-auto backdrop-blur-md border shadow-sm ${navBgColor} transition-colors duration-500 overflow-hidden`}
         style={{ WebkitBackdropFilter: "blur(12px)", willChange: "transform, opacity" }}
       >
@@ -223,8 +269,11 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                   itemRefs.current[link.name] = node
                 }}
                 className={`relative px-4 py-2 rounded-full font-inter font-medium text-[13.5px] transition-colors duration-500 z-10 ${unselectedTextClass}`}
+                aria-current={activeNavItem === link.name ? 'page' : undefined}
                 onMouseEnter={() => setHoveredNavItem(link.name)}
                 onMouseLeave={() => setHoveredNavItem(null)}
+                onFocus={() => setHoveredNavItem(link.name)}
+                onBlur={() => setHoveredNavItem(null)}
               >
                 {link.name}
               </a>
@@ -239,15 +288,19 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
               className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-500 z-10 ${unselectedTextClass}`}
               onMouseEnter={() => setHoveredNavItem('Contact')}
               onMouseLeave={() => setHoveredNavItem(null)}
+              onFocus={() => setHoveredNavItem('Contact')}
+              onBlur={() => setHoveredNavItem(null)}
               aria-label="Contact"
+              aria-current={activeNavItem === 'Contact' ? 'page' : undefined}
             >
-              <Mail className="w-[18px] h-[18px]" strokeWidth={1.8} />
+              <Mail className="w-[18px] h-[18px]" strokeWidth={1.8} aria-hidden="true" />
             </a>
           </Link>
 
           {/* Active Highlight Pill / Mask */}
           {pillRect && (
             <motion.div
+              aria-hidden="true"
               className={`absolute top-0 left-0 rounded-full z-20 pointer-events-none overflow-hidden ${pillBgClass}`}
               initial={false}
               animate={{
@@ -286,6 +339,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
       {/* Mobile Navigation */}
       <motion.nav
+        aria-label="Main"
         className={`lg:hidden fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] flex items-center justify-between pointer-events-none transition-colors duration-500`}
       >
         {/* Title Pill */}
@@ -296,13 +350,17 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
         {/* Mobile Hamburger Button */}
         <button
+          ref={menuButtonRef}
           onClick={toggleMenu}
-          aria-label="Toggle menu"
+          aria-label="Open menu"
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-menu"
+          aria-haspopup="dialog"
           style={{ WebkitBackdropFilter: "blur(12px)" }}
           className={`pointer-events-auto w-[46px] h-[46px] flex items-center justify-center rounded-full backdrop-blur-md border shadow-sm ${navBgColor} ${unselectedTextClass} hover:opacity-70 transition-colors duration-500 z-10 relative overflow-hidden`}
         >
           <BlendLayer />
-          <Menu className="w-5 h-5 relative z-10" />
+          <Menu className="w-5 h-5 relative z-10" aria-hidden="true" />
         </button>
       </motion.nav>
 
@@ -322,6 +380,11 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
               <motion.div
                 key="drawer"
+                ref={drawerRef}
+                id="mobile-menu"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Menu"
                 className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-[#1C1D20] shadow-2xl flex flex-col z-[9999]"
                 initial={{ x: '100%' }}
                 animate={{ x: 0 }}
@@ -336,8 +399,8 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                       Benedikt Schnupp
                     </a>
                   </Link>
-                  <button onClick={closeMenu} className="text-white hover:text-white/70 transition-colors p-2 -mr-2">
-                    <X className="w-6 h-6" />
+                  <button ref={closeButtonRef} onClick={closeMenu} aria-label="Close menu" className="text-white hover:text-white/70 transition-colors p-2 -mr-2">
+                    <X className="w-6 h-6" aria-hidden="true" />
                   </button>
                 </div>
 
@@ -354,7 +417,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                   }}
                 >
                   {/* Navigation Links */}
-                  <div className="flex flex-col gap-6 mb-12 pt-10">
+                  <nav aria-label="Menu" className="flex flex-col gap-6 mb-12 pt-10">
                     {[
                       { name: 'Home', href: '/' },
                       { name: 'About', href: '/about' },
@@ -367,6 +430,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                         <Link href={item.href} passHref legacyBehavior>
                           <a
                             className={`font-inter font-bold text-4xl transition-colors ${activeNavItem === item.name ? 'text-white' : 'text-white/70 hover:text-white'}`}
+                            aria-current={activeNavItem === item.name ? 'page' : undefined}
                             onClick={closeMenu}
                           >
                             {item.name}
@@ -374,23 +438,23 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
                         </Link>
                       </motion.div>
                     ))}
-                  </div>
+                  </nav>
 
-                  <motion.div className="w-12 h-[1px] bg-white/20 mb-10" variants={{ hidden: { scaleX: 0 }, visible: { scaleX: 1, transition: { duration: 0.5 } } }}></motion.div>
+                  <motion.div aria-hidden="true" className="w-12 h-[1px] bg-white/20 mb-10" variants={{ hidden: { scaleX: 0 }, visible: { scaleX: 1, transition: { duration: 0.5 } } }}></motion.div>
 
                   {/* Footer Style Links */}
                   <div className="grid grid-cols-2 gap-x-4 gap-y-10">
 
                     {/* Socials */}
                     <motion.div className="flex flex-col gap-4" variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Socials</h3>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-white/60 font-inter mb-2">Socials</h3>
                       <a
                         href="https://linkedin.com/in/benedikt-schnupp-928112116"
                         target="_blank"
                         rel="noopener"
                         className="group flex items-center gap-1 text-white/70 font-inter text-[15px] hover:text-white transition-colors w-fit"
                       >
-                        LinkedIn <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
+                        LinkedIn <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span>
                       </a>
                       <a
                         href="mailto:mail@benediktschnupp.com"
@@ -402,7 +466,7 @@ const Navigation: React.FC<NavigationProps> = ({ theme = 'dark' }) => {
 
                     {/* Legal */}
                     <motion.div className="flex flex-col gap-4" variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Legal</h3>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-white/60 font-inter mb-2">Legal</h3>
                       <Link href="/datenschutzerklaerung" passHref legacyBehavior>
                         <a className="text-white/70 font-inter text-[15px] hover:text-white transition-colors w-fit" onClick={closeMenu}>Privacy</a>
                       </Link>

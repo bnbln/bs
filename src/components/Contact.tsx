@@ -114,7 +114,7 @@ const Contact = () => {
                 <span>LET&apos;S</span>
                 <span>CREATE</span>
                 <span>SOMETHING</span>
-                <span className="flex items-center text-neutral-300 w-full justify-center mt-2 gap-[2vw]">
+                <span className="flex items-center text-[#8A8A8A] w-full justify-center mt-2 gap-[2vw]">
                   <span className="flex items-center">
                     {/* Circle 1: The Portrait */}
                     <span className="relative z-10 inline-block w-[1em] h-[1em] rounded-full overflow-hidden border-[0.05em] border-[#FAFAFA] shadow-sm shrink-0 bg-neutral-100">
@@ -126,7 +126,7 @@ const Contact = () => {
                     </span>
                   </span>
                   <motion.span
-                    className="flex cursor-default text-neutral-300"
+                    className="flex cursor-default text-[#8A8A8A]"
                     variants={togetherContainerVariants}
                     initial="rest"
                     animate={togetherControls}
@@ -149,7 +149,7 @@ const Contact = () => {
               {/* Redistributed Identity Info */}
               <div className="flex flex-col items-center mt-8 md:mt-12">
                 <span className="text-base md:text-lg font-space-grotesk font-semibold text-black">Benedikt Schnupp</span>
-                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 font-inter mt-1">
+                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-neutral-500 font-inter mt-1">
                   Motion, UX/UI Design & Development
                 </span>
               </div>
@@ -157,7 +157,7 @@ const Contact = () => {
               <div className="flex flex-col items-center lg:items-start gap-6 w-full lg:w-auto mt-8">
 
                 {/* Redistributed Location & Time */}
-                <div className="flex items-center gap-3 text-center lg:text-left text-neutral-500 font-medium bg-neutral-50/50 px-4 py-2 rounded-full border border-neutral-200/50">
+                <div className="flex items-center gap-3 text-center lg:text-left text-neutral-600 font-medium bg-neutral-50/50 px-4 py-2 rounded-full border border-neutral-200/50">
                   <span className="text-[10px] md:text-xs font-inter">
                     Berlin, Germany
                   </span>

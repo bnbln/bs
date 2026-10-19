@@ -420,27 +420,33 @@ const Skills = ({ hubContent }: SkillsProps) => {
                             >
                                 {/* Collapsed Header Area (Always visible) */}
                                 <div className="flex items-center justify-between gap-4 md:gap-6 px-5 md:px-9 lg:px-12 py-5 md:py-6">
+                                    <h3 className="flex-1 min-w-0">
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            if (!isExpanded) openDrawer(index)
+                                            if (isExpanded) {
+                                                closeDrawer()
+                                            } else {
+                                                openDrawer(index)
+                                            }
                                         }}
                                         aria-expanded={isExpanded}
                                         aria-controls={`skill-panel-${index}`}
-                                        className={`flex-1 min-w-0 text-left ${isExpanded ? 'cursor-default' : 'cursor-pointer'}`}
+                                        className={`w-full text-left ${isExpanded ? 'cursor-default' : 'cursor-pointer'}`}
                                     >
                                         <div className="flex items-center gap-3 md:gap-7">
-                                            <div className="font-space-grotesk font-medium text-[#939393] text-sm md:text-base">
+                                            <span className="font-space-grotesk font-medium text-[#939393] text-sm md:text-base">
                                                 {skill.num}
-                                            </div>
-                                            <h3 className="font-space-grotesk font-semibold tracking-tight text-xl md:text-2xl lg:text-[2.25rem] text-white leading-[1.08]">
+                                            </span>
+                                            <span className="block font-space-grotesk font-semibold tracking-tight text-xl md:text-2xl lg:text-[2.25rem] text-white leading-[1.08]">
                                                 {skill.title}
                                                 {skill.subtitle && (
                                                     <span className="block md:inline text-neutral-300 md:ml-2">{skill.subtitle}</span>
                                                 )}
-                                            </h3>
+                                            </span>
                                         </div>
                                     </button>
+                                    </h3>
 
                                     <motion.button
                                         type="button"
@@ -455,7 +461,9 @@ const Skills = ({ hubContent }: SkillsProps) => {
                                         animate={{ rotate: isExpanded ? 45 : 0 }}
                                         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                                         className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#353941] hover:bg-[#3F4450] flex items-center justify-center shrink-0 transition-colors"
-                                        aria-label={`${isExpanded ? 'Close' : 'Open'} ${skill.title} ${skill.subtitle}`}
+                                        // Mouse shortcut only; the header button above is the accessible control.
+                                        tabIndex={-1}
+                                        aria-hidden="true"
                                     >
                                         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
                                             <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

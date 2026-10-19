@@ -30,7 +30,7 @@ const HubLinkCard = ({
       <div className="relative flex h-full min-h-[250px] sm:min-h-[280px] md:min-h-[300px] lg:min-h-[320px] flex-col justify-between p-7 sm:p-8 md:p-9 lg:p-10">
         <div>
           {eyebrow && (
-            <p className="font-space-grotesk text-[11px] uppercase tracking-[0.18em] text-black/50 mb-5">
+            <p className="font-space-grotesk text-[11px] uppercase tracking-[0.18em] text-neutral-600 mb-5">
               {eyebrow}
             </p>
           )}

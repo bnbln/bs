@@ -16,14 +16,16 @@ const Footer = () => {
   
   // Check for desktop environment and handle scroll logic
   useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768)
+    // Same query as the Tailwind `reveal` screen: fixed reveal only when the footer fits.
+    const revealQuery = window.matchMedia('(min-width: 768px) and (min-height: 540px)')
+    const checkDesktop = () => setIsDesktop(revealQuery.matches)
     checkDesktop()
     
     window.addEventListener('resize', checkDesktop)
     
     // Scroll listener to update reveal progress based on distance to bottom
     const handleScroll = () => {
-        if (window.innerWidth < 768) return
+        if (!revealQuery.matches) return
         
         const scrollY = window.scrollY
         const windowHeight = window.innerHeight
@@ -112,12 +114,11 @@ const Footer = () => {
       setNewsletterMessage('Subscription failed. Please try again.')
     }
   }
-  const hasNewsletterInput = newsletterEmail.trim().length > 0
 
   return (
     <footer
       ref={footerRef}
-      className="w-full bg-[#1C1D20] flex flex-col justify-between py-12 md:py-20 relative z-10 md:fixed md:bottom-0 md:left-0 md:-z-10 md:h-[500px]"
+      className="w-full bg-[#1C1D20] flex flex-col justify-between py-12 md:py-20 relative z-10 reveal:fixed reveal:bottom-0 reveal:left-0 reveal:-z-10 reveal:h-[500px]"
     >
       <motion.div 
         className="w-full max-w-[1400px] mx-auto px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] pointer-events-auto grid grid-cols-1 md:grid-cols-12 gap-12"
@@ -139,7 +140,7 @@ const Footer = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
             {/* Links Column: Sitemap */}
             <div className="flex flex-col gap-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Sitemap</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/60 font-inter mb-2">Sitemap</h3>
                 <div className="flex flex-col gap-4">
                   <Link href="/about" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">
                     About
@@ -155,14 +156,14 @@ const Footer = () => {
 
             {/* Links Column: Socials */}
             <div className="flex flex-col gap-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Socials</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/60 font-inter mb-2">Socials</h3>
                 <a 
                     href="https://linkedin.com/in/benedikt-schnupp-928112116" 
                     target="_blank" 
                     rel="noopener"
                     className="group flex items-center gap-1 text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit"
                 >
-                    LinkedIn <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" />
+                    LinkedIn <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span>
                 </a>
                 <a 
                     href="mailto:mail@benediktschnupp.com"
@@ -174,7 +175,7 @@ const Footer = () => {
 
             {/* Links Column: Legal */}
             <div className="flex flex-col gap-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Legal</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/60 font-inter mb-2">Legal</h3>
                 <Link href="/datenschutzerklaerung" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Privacy</Link>
                 <Link href="/impressum" className="text-white/70 font-space-grotesk text-[15px] hover:text-white transition-colors w-fit">Imprint</Link>
             </div>
@@ -182,16 +183,22 @@ const Footer = () => {
 
           {/* Newsletter Row */}
           <div className="flex flex-col gap-4 my-12">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/30 font-inter mb-2">Mailing List</h3>
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/60 font-inter mb-2">
+              <label htmlFor="newsletter-email">Mailing List</label>
+            </h3>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 w-full md:max-w-2xl">
                 <input
+                  id="newsletter-email"
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   required
                   value={newsletterEmail}
                   onChange={(event) => setNewsletterEmail(event.target.value)}
                   placeholder="your@email.com"
-                  className="w-full rounded-full bg-white/5 border border-white/15 px-5 py-3 text-white placeholder:text-white/35 font-inter text-base md:text-sm focus:outline-none focus:border-white/40 transition-colors sm:max-w-[350px]"
+                  aria-describedby="newsletter-privacy newsletter-status"
+                  className="w-full rounded-full bg-white/5 border border-white/40 px-5 py-3 text-white placeholder:text-white/60 font-inter text-base md:text-sm focus:border-white/70 transition-colors sm:max-w-[350px]"
                 />
                 <button
                   type="submit"
@@ -201,47 +208,27 @@ const Footer = () => {
                   {newsletterStatus === 'submitting' ? 'Submitting...' : 'Subscribe'}
                 </button>
               </form>
-              <div className="hidden md:flex md:flex-col md:gap-2 shrink-0">
-                {newsletterMessage && (
-                  <p
-                    className={`font-inter text-xs ${
-                      newsletterStatus === 'error' ? 'text-red-300' : 'text-white/55'
-                    }`}
-                    aria-live="polite"
-                  >
-                    {newsletterMessage}
-                  </p>
-                )}
-                {hasNewsletterInput && (
-                  <p className="font-inter text-[11px] text-white/35">
-                    By subscribing, you agree to our{' '}
-                    <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
-                      Privacy Policy
-                    </Link>
-                    .
-                  </p>
-                )}
+              <div className="flex flex-col gap-2 shrink-0">
+                {/* Always rendered so screen readers announce status changes (WCAG 4.1.3) */}
+                <p
+                  id="newsletter-status"
+                  role={newsletterStatus === 'error' ? 'alert' : 'status'}
+                  className={`font-inter text-xs empty:hidden ${
+                    newsletterStatus === 'error' ? 'text-red-300' : 'text-white/70'
+                  }`}
+                >
+                  {newsletterMessage}
+                </p>
+                {/* Shown up front, not only after typing (WCAG 3.3.2) */}
+                <p id="newsletter-privacy" className="font-inter text-[11px] text-white/60">
+                  By subscribing, you agree to our{' '}
+                  <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white transition-colors">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
-            {newsletterMessage && (
-              <p
-                className={`font-inter text-xs ${
-                  newsletterStatus === 'error' ? 'text-red-300' : 'text-white/55'
-                } md:hidden`}
-                aria-live="polite"
-              >
-                {newsletterMessage}
-              </p>
-            )}
-            {hasNewsletterInput && (
-              <p className="md:hidden font-inter text-[11px] text-white/35">
-                By subscribing, you agree to our{' '}
-                <Link href="/datenschutzerklaerung" className="underline underline-offset-2 hover:text-white/60 transition-colors">
-                  Privacy Policy
-                </Link>
-                .
-              </p>
-            )}
           </div>
         </motion.div>
 
@@ -254,10 +241,10 @@ const Footer = () => {
         {...mobileProps}
         // Force override variants for bottom bar if needed, but inheriting is fine
       >
-         <div className="text-white/30 font-inter text-[12px]">
+         <div className="text-white/60 font-inter text-[12px]">
             © {currentYear} Benedikt Schnupp. All rights reserved.
          </div>
-         <div className="text-white/30 font-inter text-[12px]">
+         <div className="text-white/60 font-inter text-[12px]">
             Berlin, Germany
          </div>
       </motion.div>

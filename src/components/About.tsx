@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { Mail, Linkedin } from 'lucide-react'
 
 import { PrimaryActionButton, SocialActionButton } from './ActionButtons'
@@ -17,10 +17,12 @@ const ScrubWord = ({
 }) => {
   const start = index / total
   const end = start + (1 / total)
-  const opacity = useTransform(progress, [start, end], [0.15, 1])
+  // Dimmed words start at 0.5 so even unrevealed text keeps >= 3:1 contrast (large text, WCAG 1.4.3).
+  const opacity = useTransform(progress, [start, end], [0.5, 1])
+  const prefersReducedMotion = useReducedMotion()
 
   return (
-    <motion.span style={{ opacity }} className="relative text-black">
+    <motion.span style={{ opacity: prefersReducedMotion ? 1 : opacity }} className="relative text-black">
       {word}
     </motion.span>
   )

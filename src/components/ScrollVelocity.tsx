@@ -7,6 +7,8 @@ import {
   useMotionValue,
   useVelocity,
   useAnimationFrame,
+  useReducedMotion,
+  MotionValue,
 } from "framer-motion";
 
 interface VelocityMapping {
@@ -42,6 +44,8 @@ interface ScrollVelocityProps {
   scrollerClassName?: string;
   parallaxStyle?: React.CSSProperties;
   scrollerStyle?: React.CSSProperties;
+  /** When set to 1 the marquee stops moving (e.g. via a pause button). */
+  pausedValue?: MotionValue<number>;
 }
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -76,7 +80,10 @@ export const ScrollVelocity: React.FC<ScrollVelocityProps> = ({
   scrollerClassName,
   parallaxStyle,
   scrollerStyle,
+  pausedValue,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
+
   function VelocityText({
     children,
     baseVelocity = velocity,
@@ -124,6 +131,7 @@ export const ScrollVelocity: React.FC<ScrollVelocityProps> = ({
 
     const directionFactor = useRef<number>(1);
     useAnimationFrame((t, delta) => {
+      if (prefersReducedMotion || pausedValue?.get() === 1) return;
       let moveBy = directionFactor.current * baseVelocity * (delta / 1000);
 
       if (velocityFactor.get() < 0) {
@@ -164,8 +172,9 @@ export const ScrollVelocity: React.FC<ScrollVelocityProps> = ({
     );
   }
 
+  // Purely decorative: the repeated copies would otherwise be read out several times.
   return (
-    <section>
+    <div aria-hidden="true">
       {texts.map((text: string, index: number) => (
         <VelocityText
           key={index}
@@ -184,7 +193,7 @@ export const ScrollVelocity: React.FC<ScrollVelocityProps> = ({
           {text}&nbsp;
         </VelocityText>
       ))}
-    </section>
+    </div>
   );
 };
 

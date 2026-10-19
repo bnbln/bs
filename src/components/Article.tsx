@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { motion, useScroll } from 'framer-motion'
+import { motion, useScroll, useReducedMotion } from 'framer-motion'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { Project } from '../lib/markdown'
@@ -10,7 +10,7 @@ import { resolveAssetPath } from '../lib/assets'
 import AdaptiveVideoPlayer from './AdaptiveVideoPlayer'
 import CodeBlock from './CodeBlock'
 import ColorPalette from './ColorPalette'
-import { parsePaletteSteps } from '../lib/color-palette'
+import { parsePaletteSteps, accessibleTextColor } from '../lib/color-palette'
 import Callout, { CalloutVariant } from './Callout'
 import Navigation from './Navigation'
 import ScrollScrubVideo from './ScrollScrubVideo'
@@ -21,6 +21,9 @@ import MagneticButton from './MagneticButton'
 
 import { useTransform } from 'framer-motion'
 
+// Not-yet-revealed text starts at this opacity; high enough for 4.5:1 (WCAG 1.4.3).
+const REVEAL_START_OPACITY = 0.75
+
 // Paragraph that acts like ScrubText, using continuous scroll progress to reveal
 const ScrubParagraph = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => {
   const ref = useRef<HTMLParagraphElement>(null)
@@ -29,12 +32,13 @@ const ScrubParagraph = ({ children, className = '' }: { children: React.ReactNod
     offset: ["start 90%", "start 40%"]
   })
 
-  const opacity = useTransform(scrollYProgress, [0, 1], [0.2, 1])
+  const opacity = useTransform(scrollYProgress, [0, 1], [REVEAL_START_OPACITY, 1])
+  const prefersReducedMotion = useReducedMotion()
 
   return (
     <motion.p
       ref={ref}
-      style={{ opacity }}
+      style={{ opacity: prefersReducedMotion ? 1 : opacity }}
       className={className}
     >
       {children}
@@ -95,7 +99,9 @@ const SeniorList = ({
     offset: ["start 95%", "end 80%"]
   })
 
-  const opacity = useTransform(scrollYProgress, [0, 1], [0.2, 1])
+  const opacity = useTransform(scrollYProgress, [0, 1], [REVEAL_START_OPACITY, 1])
+  const prefersReducedMotion = useReducedMotion()
+  const numberColor = accessibleTextColor(accentColor, 4.5, '#FFFFFF', REVEAL_START_OPACITY)
   const normalizedSplitAfter = parsePositiveInt(splitAfter, splitMode === 'height' ? 12 : 6)
   const normalizedShortWords = parsePositiveInt(shortWords, 4)
   const isShortList = rawItems.every((entry) => countWords(entry) <= normalizedShortWords)
@@ -124,7 +130,7 @@ const SeniorList = ({
         return (
           <li key={absoluteIndex} className="flex items-start gap-6 py-6 border-b border-black/10 group hover:bg-neutral-50/50 transition-colors duration-300">
             {styleVariant === 'numbered' ? (
-              <span className="text-neutral-300 font-mono text-sm tracking-widest pt-1" style={{ color: accentColor }}>
+              <span className="text-neutral-300 font-mono text-sm tracking-widest pt-1" style={{ color: numberColor }}>
                 {numberLabel}
               </span>
             ) : (
@@ -142,7 +148,7 @@ const SeniorList = ({
   )
 
   return (
-    <motion.div ref={ref} style={{ opacity }} className={`w-full ${className}`}>
+    <motion.div ref={ref} style={{ opacity: prefersReducedMotion ? 1 : opacity }} className={`w-full ${className}`}>
       {hasDesktopSplit ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10">
           {renderColumn(items.slice(0, splitIndex), 0)}
@@ -527,6 +533,9 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
         <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw]">
           <div
             ref={scrollerRef}
+            tabIndex={0}
+            role="group"
+            aria-label="Image gallery"
             className={[
               'scrollbar-hide flex gap-4 sm:gap-6 overflow-x-auto pb-2',
               disableSnap ? '' : 'snap-x snap-mandatory',
@@ -905,9 +914,10 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
               target="_blank"
               rel="noopener"
               className="underline decoration-2 underline-offset-2 transition-colors font-medium hover:opacity-70"
-              style={{ color: accentColor, textDecorationColor: `${accentColor}40` }}
+              style={{ color: accentColor ? accessibleTextColor(accentColor, 4.5, '#FFFFFF', REVEAL_START_OPACITY) : undefined, textDecorationColor: `${accentColor}40` }}
             >
               {match[1]}
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>
           )
           lastIndex = match.index + match[0].length
@@ -1004,7 +1014,7 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                       key={ref.slug}
                       href={`/project/${ref.slug}`}
                       className="group flex flex-col rounded-3xl overflow-hidden bg-neutral-50 hover:bg-neutral-100 transition-colors duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                      style={{ ['--ref-accent' as any]: ref.bgColor || accentColor }}
+                      style={{ ['--ref-accent' as any]: accessibleTextColor(ref.bgColor || accentColor, 3) }}
                     >
                       <div className="aspect-video relative overflow-hidden">
                         {ref.image && (
@@ -1018,9 +1028,9 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
                         )}
                       </div>
                       <div className="p-8 flex flex-col gap-2">
-                        <h4 className="font-space-grotesk font-bold text-[28px] leading-[1.1] text-neutral-900 group-hover:text-[var(--ref-accent)] transition-colors duration-300">
+                        <h3 className="font-space-grotesk font-bold text-[28px] leading-[1.1] text-neutral-900 group-hover:text-[var(--ref-accent)] transition-colors duration-300">
                           {ref.title}
-                        </h4>
+                        </h3>
                         <span className="text-[18px] leading-tight font-medium text-neutral-500 group-hover:text-black transition-colors duration-300">
                           {ref.subtitle || ref.excerpts}
                         </span>
@@ -1048,7 +1058,10 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
           3: "text-[28px] md:text-[40px] leading-[1.1] tracking-[-0.01em] font-black font-space-grotesk mt-12 md:mt-16 mb-0",
           4: "text-[22px] md:text-[28px] leading-[1.2] font-bold font-space-grotesk mt-8 md:mt-10 mb-3 md:mb-4 text-[#1D1D1F]"
         }
-        const headerStyle = level === 3 ? { color: accentColor || '#1D1D1F' } : undefined
+        const headerStyle = level === 3 ? { color: accentColor ? accessibleTextColor(accentColor, 3) : '#1D1D1F' } : undefined
+        // Real heading elements (WCAG 1.3.1). The page title is the h1, so markdown "#" and "##"
+        // (styled identically) become h2, "###" h3 and "####" h4.
+        const HeadingTag = (level <= 2 ? 'h2' : level === 3 ? 'h3' : 'h4') as 'h2' | 'h3' | 'h4'
 
         // @ts-ignore
         let headerClass = sizes[level] || sizes[1]
@@ -1060,9 +1073,9 @@ const MarkdownRenderer = ({ content, project, accentColor, allProjects }: { cont
 
         currentElements.push(
           // @ts-ignore
-          <div key={`h-${currentIndex++}`} className={`${colText} ${headerClass}`} style={headerStyle}>
+          <HeadingTag key={`h-${currentIndex++}`} className={`${colText} ${headerClass}`} style={headerStyle}>
             {text}
-          </div>
+          </HeadingTag>
         )
         lastElementType = 'text'
       }
@@ -1710,10 +1723,10 @@ export default function Article({ project, allProjects, heroPriority = false }: 
         className={`group flex flex-col justify-center w-full min-h-[200px] p-8 md:p-12 rounded-3xl bg-neutral-50 hover:bg-neutral-100 transition-colors duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isNewer ? 'items-end text-right' : 'items-start text-left'}`}
       >
         <div className="flex flex-col gap-2 relative z-10">
-          <span className="text-[14px] md:text-[16px] uppercase tracking-widest font-bold text-neutral-400 group-hover:text-black transition-colors duration-300">
+          <span className="text-[14px] md:text-[16px] uppercase tracking-widest font-bold text-neutral-500 group-hover:text-black transition-colors duration-300">
             {label}
           </span>
-          <span className="text-[28px] md:text-[40px] leading-[1.1] font-space-grotesk font-bold text-neutral-900 group-hover:text-[var(--ref-accent)] transition-colors duration-300" style={{ ['--ref-accent' as any]: p.bgColor || accentColor }}>
+          <span className="text-[28px] md:text-[40px] leading-[1.1] font-space-grotesk font-bold text-neutral-900 group-hover:text-[var(--ref-accent)] transition-colors duration-300" style={{ ['--ref-accent' as any]: accessibleTextColor(p.bgColor || accentColor, 3) }}>
             {p.title}
           </span>
         </div>
@@ -1722,14 +1735,14 @@ export default function Article({ project, allProjects, heroPriority = false }: 
   }
 
   return (
-    <div className="min-h-screen bg-[#1C1D20] text-[#1D1D1F] selection:bg-[var(--accent)] selection:text-white" style={{ ['--accent' as any]: accentColor }}>
+    <div className="min-h-screen bg-[#1C1D20] text-[#1D1D1F] selection:bg-[var(--accent)] selection:text-white" style={{ ['--accent' as any]: accentColor, ['--accent-text' as any]: accessibleTextColor(accentColor) }}>
 
       {/* Main Content Wrapper - Slides over the footer */}
-      <div className="relative z-10 bg-white shadow-2xl mb-0 md:mb-[500px] min-h-screen flex flex-col">
+      <div className="relative z-10 bg-white shadow-2xl mb-0 reveal:mb-[500px] min-h-screen flex flex-col">
         {/* Navigation - Apple Style: Minimal, Blur */}
         <Navigation theme="light" />
 
-        <main className="w-full pb-0 flex-grow">
+        <main id="main-content" tabIndex={-1} className="w-full pb-0 flex-grow">
           {/* Ambient Glow */}
           <div
             className="absolute top-0 left-0 w-full h-[50vh] opacity-20 pointer-events-none z-0"
@@ -1758,7 +1771,7 @@ export default function Article({ project, allProjects, heroPriority = false }: 
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
                     className="text-2xl md:text-3xl lg:text-[2.2rem] font-medium leading-tight max-w-3xl"
-                    style={{ color: accentColor }}
+                    style={{ color: accessibleTextColor(accentColor, 3) }}
                   >
                     {project.subtitle || project.excerpts}
                   </motion.p>
@@ -1802,9 +1815,10 @@ export default function Article({ project, allProjects, heroPriority = false }: 
                                     href={c.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[15px] font-medium text-[#1d1d1f] hover:text-[var(--accent)] transition-colors underline decoration-1 underline-offset-2 decoration-black/20 hover:decoration-[var(--accent)]"
+                                    className="text-[15px] font-medium text-[#1d1d1f] hover:text-[var(--accent-text)] transition-colors underline decoration-1 underline-offset-2 decoration-black/20 hover:decoration-[var(--accent)]"
                                   >
                                     {c.name}
+                                    <span className="sr-only"> (opens in a new tab)</span>
                                   </a>
                                 ) : (
                                   <span className="text-[15px] font-medium text-[#1d1d1f]">{c.name}</span>

@@ -100,7 +100,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
          year: "Next up",
          title: "A new chapter is taking off",
          description: "A change of perspective. More soon.",
-         icon: <Plane className="w-5 h-5 text-neutral-400" aria-hidden="true" />,
+         icon: <Plane className="w-5 h-5 text-neutral-500" aria-hidden="true" />,
          track: "Agency / Inhouse"
       },
    ]
@@ -137,10 +137,10 @@ const AboutPage = ({ data }: AboutPageProps) => {
 
          <div className="min-h-screen bg-[#1C1D20] w-full">
             {/* Main Content - Slides over the footer on desktop, sits above it on mobile */}
-            <div className="relative z-10 bg-[#F5F5F5] shadow-2xl mb-0 md:mb-[500px] min-h-screen flex flex-col">
+            <div className="relative z-10 bg-[#F5F5F5] shadow-2xl mb-0 reveal:mb-[500px] min-h-screen flex flex-col">
                <Navigation theme="light" />
 
-               <main className="w-full">
+               <main id="main-content" tabIndex={-1} className="w-full">
                   {/* Header Section */}
                   <section className="relative pt-[200px] pb-24 px-4 sm:px-8 md:px-12 lg:px-[100px] xl:px-[140px] max-w-[1600px] mx-auto">
                      <motion.div
@@ -150,6 +150,9 @@ const AboutPage = ({ data }: AboutPageProps) => {
                      >
                         <h1 className="text-[10vw] sm:text-[8vw] md:text-[6vw] lg:text-[5vw] leading-[0.9] tracking-tight font-bold font-space-grotesk mb-8">
                            <div>Designing the Future</div>
+                           {/* The shuffle effect splits the text into many spans; screen readers get the plain text instead. */}
+                           <span className="sr-only">one Pixel at a Time.</span>
+                           <span aria-hidden="true">
                            <Shuffle
                               text="one Pixel at a Time."
                               tag="span"
@@ -166,6 +169,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                               textAlign="left"
                               className="!text-[10vw] !sm:text-[8vw] !md:text-[6vw] !lg:text-[5vw] !leading-[0.9] !tracking-tight font-bold font-space-grotesk !normal-case"
                            />
+                           </span>
                         </h1>
                      </motion.div>
                   </section>
@@ -256,8 +260,8 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                           {event.icon}
                                           <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
                                        </div>
-                                       {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
-                                       {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                       {event.subject && <div className="text-neutral-600 font-medium">{event.subject}</div>}
+                                       {event.location && <div className="text-sm text-neutral-500 mb-2">{event.location}</div>}
                                        <p className="text-neutral-600 leading-relaxed text-sm">
                                           {event.description}
                                        </p>
@@ -277,7 +281,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                  <div className="relative pr-12 space-y-14">
                                     <div className="absolute right-0 top-10 bottom-0 w-[2px] bg-neutral-100" />
                                     <div className="mr-8 text-right">
-                                       <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em]">
+                                       <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-600 uppercase tracking-[0.14em]">
                                           Agency / Inhouse
                                        </span>
                                     </div>
@@ -300,8 +304,8 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                                 <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
                                                 {event.icon}
                                              </div>
-                                             {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
-                                             {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                             {event.subject && <div className="text-neutral-600 font-medium">{event.subject}</div>}
+                                             {event.location && <div className="text-sm text-neutral-500 mb-2">{event.location}</div>}
                                              <p className="text-neutral-600 leading-relaxed text-sm">
                                                 {event.description}
                                              </p>
@@ -313,7 +317,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                  <div className="relative pl-12 space-y-14">
                                     <div className="absolute left-0 top-10 bottom-0 w-[2px] bg-neutral-100" />
                                     <div className="ml-8">
-                                       <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em]">
+                                       <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-600 uppercase tracking-[0.14em]">
                                           Freelance / Studio
                                        </span>
                                     </div>
@@ -336,8 +340,8 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                                 {event.icon}
                                                 <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
                                              </div>
-                                             {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
-                                             {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                             {event.subject && <div className="text-neutral-600 font-medium">{event.subject}</div>}
+                                             {event.location && <div className="text-sm text-neutral-500 mb-2">{event.location}</div>}
                                              <p className="text-neutral-600 leading-relaxed text-sm">
                                                 {event.description}
                                              </p>
@@ -368,8 +372,8 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                     {event.icon}
                                     <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
                                  </div>
-                                 {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
-                                 {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                 {event.subject && <div className="text-neutral-600 font-medium">{event.subject}</div>}
+                                 {event.location && <div className="text-sm text-neutral-500 mb-2">{event.location}</div>}
                                  <p className="text-neutral-600 leading-relaxed text-sm">
                                     {event.description}
                                  </p>
@@ -384,10 +388,10 @@ const AboutPage = ({ data }: AboutPageProps) => {
                               transition={{ duration: 0.6, delay: 0.2 }}
                            >
                               <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-black border-4 border-white z-10" />
-                              <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em]">
+                              <span className="inline-block px-3 py-1 bg-neutral-100 rounded-full text-[11px] font-mono font-medium text-neutral-600 uppercase tracking-[0.14em]">
                                  Branching Paths
                               </span>
-                              <p className="text-sm text-neutral-500 mt-2">
+                              <p className="text-sm text-neutral-600 mt-2">
                                  After graduation, my journey continues on two parallel tracks.
                               </p>
                            </motion.div>
@@ -404,7 +408,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                  <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-black border-4 border-white z-10" />
 
                                  {(index === 0 || event.track !== mobileBranchEvents[index - 1].track) && (
-                                    <span className="inline-block text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-[0.14em] mb-2">
+                                    <span className="inline-block text-[11px] font-mono font-medium text-neutral-600 uppercase tracking-[0.14em] mb-2">
                                        {event.track}
                                     </span>
                                  )}
@@ -417,8 +421,8 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                        {event.icon}
                                        <h4 className="text-xl font-space-grotesk font-bold">{event.title}</h4>
                                     </div>
-                                    {event.subject && <div className="text-neutral-500 font-medium">{event.subject}</div>}
-                                    {event.location && <div className="text-sm text-neutral-400 mb-2">{event.location}</div>}
+                                    {event.subject && <div className="text-neutral-600 font-medium">{event.subject}</div>}
+                                    {event.location && <div className="text-sm text-neutral-500 mb-2">{event.location}</div>}
                                     <p className="text-neutral-600 leading-relaxed text-sm">
                                        {event.description}
                                     </p>
@@ -482,7 +486,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                                        className="flex items-center justify-center gap-2 py-4 rounded-xl border border-white/20 hover:bg-white hover:text-black transition-colors"
                                     >
                                        <Linkedin className="w-5 h-5" />
-                                       <span>LinkedIn</span>
+                                       <span>LinkedIn</span><span className="sr-only"> (opens in a new tab)</span>
                                     </a>
                                     <a
                                        href="/assets/resume.pdf" // Hypothetical resume link

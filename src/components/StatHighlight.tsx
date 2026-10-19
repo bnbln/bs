@@ -24,7 +24,7 @@ export default function StatHighlight({ stats, accentColor = '#000' }: StatHighl
                         <div className="text-5xl md:text-6xl font-bold font-space-grotesk text-black mb-3 tracking-tighter group-hover:text-[var(--stat-accent)] transition-colors duration-500" style={{ ['--stat-accent' as any]: accentColor }}>
                             {stat.value}
                         </div>
-                        <div className="text-sm md:text-base text-neutral-500 font-inter font-medium tracking-wide">
+                        <div className="text-sm md:text-base text-neutral-600 font-inter font-medium tracking-wide">
                             {stat.label}
                         </div>
                         {/* Subtle hover gradient wash */}
