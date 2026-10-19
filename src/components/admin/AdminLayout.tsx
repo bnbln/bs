@@ -171,7 +171,7 @@ export default function AdminLayout({
             </header>
           )}
 
-          <main className="flex-1 w-full mx-auto pb-10">
+          <main id="main-content" tabIndex={-1} className="flex-1 w-full mx-auto pb-10">
             {children}
           </main>
         </div>

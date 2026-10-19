@@ -19,6 +19,8 @@ let globalAssetsLoaded = false;
 let globalProjects: any[] = [];
 const seoConfig = getSeoConfig()
 
+const ROUTES_WITHOUT_MAIN = ['/admin/editor/[slug]', '/r/[slug]', '/_error']
+
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false); // Disabled loading screen
@@ -55,12 +57,14 @@ export default function App({ Component, pageProps }: AppProps) {
 
   const path = router.asPath.split('?')[0];
   const defaultSeo = buildDefaultSeo(seoConfig, path);
+  // Routes without a #main-content landmark get no skip link.
+  const hasMainContent = !ROUTES_WITHOUT_MAIN.includes(router.pathname);
 
   // Skip loading screen entirely
   return (
     // Not a <main>: each page renders its own main landmark (#main-content).
     <div className={`${spaceGrotesk.variable} ${inter.variable}`}>
-      <a href="#main-content" className="skip-link">Skip to content</a>
+      {hasMainContent && <a href="#main-content" className="skip-link">Skip to content</a>}
       <DefaultSeo {...defaultSeo} />
       {/* Honour the OS "reduce motion" setting for all framer-motion animations. */}
       <MotionConfig reducedMotion="user">
