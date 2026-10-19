@@ -1,5 +1,6 @@
 import React from 'react'
 import { resolveAssetPath } from '../lib/assets'
+import { getOptimizedImageProps } from '../lib/image'
 
 export type MockupType = 'iphone' | 'macbook' | 'tv' | 'ipad' | 'android' | 'safari' | 'safari-tab'
 type NormalizedMockupType = 'iphone' | 'macbook' | 'tv' | 'ipad' | 'android' | 'safari-tab'
@@ -137,7 +138,7 @@ const MockupMedia = ({
             />
         )
     }
-    return <img src={path} alt={alt} className={`w-full h-full ${imageClassName}`} loading="lazy" />
+    return <img {...getOptimizedImageProps(path, '(max-width: 768px) 90vw, 1200px')} alt={alt} className={`w-full h-full ${imageClassName}`} loading="lazy" />
 }
 
 const MockupDevice = ({

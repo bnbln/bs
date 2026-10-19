@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next build && next export",
     "backend": "rm -rf .next-backend && NEXT_PUBLIC_ADMIN=true next dev",
     "make:spritesheet": "node scripts/make-spritesheet.mjs",
     "storybook": "storybook dev -p 6006",
@@ -73,6 +72,9 @@
     "extends": [
       "next/core-web-vitals",
       "plugin:storybook/recommended"
-    ]
+    ],
+    "rules": {
+      "@next/next/no-img-element": "off"
+    }
   }
 }

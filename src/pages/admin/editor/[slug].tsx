@@ -1103,6 +1103,9 @@ function FrontmatterEditor({
                 }
             })
             .catch(() => setRawMode(true));
+        // Parse only when a different block is opened; re-parsing on every content
+        // change would overwrite the form state while the user is typing.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [block.id]);
 
     const handleChange = (key: string, value: any) => {

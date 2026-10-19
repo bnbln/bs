@@ -4,17 +4,17 @@ import localFont from 'next/font/local'
 export const spaceGrotesk = localFont({
   src: [
     {
-      path: '../../public/fonts/SpaceGrotesk-Regular.ttf',
+      path: '../../public/fonts/SpaceGrotesk-Regular.woff2',
       weight: '400',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/SpaceGrotesk-Medium.ttf',
+      path: '../../public/fonts/SpaceGrotesk-Medium.woff2',
       weight: '500',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/SpaceGrotesk-Bold.ttf',
+      path: '../../public/fonts/SpaceGrotesk-Bold.woff2',
       weight: '700',
       style: 'normal',
     },
@@ -27,27 +27,27 @@ export const spaceGrotesk = localFont({
 export const inter = localFont({
   src: [
     {
-      path: '../../public/fonts/Inter-ExtraLight.ttf',
+      path: '../../public/fonts/Inter-ExtraLight.woff2',
       weight: '200',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/Inter-Regular.ttf',
+      path: '../../public/fonts/Inter-Regular.woff2',
       weight: '400',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/Inter-Medium.ttf',
+      path: '../../public/fonts/Inter-Medium.woff2',
       weight: '500',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/Inter-SemiBold.ttf',
+      path: '../../public/fonts/Inter-SemiBold.woff2',
       weight: '600',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/Inter-Bold.ttf',
+      path: '../../public/fonts/Inter-Bold.woff2',
       weight: '700',
       style: 'normal',
     },

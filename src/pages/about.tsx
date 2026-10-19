@@ -12,6 +12,7 @@ const Shuffle = dynamic(() => import('../components/Shuffle'), { ssr: false })
 import { getProjectsData, Project } from '../lib/markdown'
 import { ArrowUpRight, Linkedin, Copy, Calendar, Award, Briefcase, GraduationCap, Plane } from 'lucide-react'
 import { buildPageSeo, getSeoConfig } from '../lib/seo'
+import { getOptimizedImageProps } from '../lib/image'
 
 interface AboutPageProps {
    data: {
@@ -97,10 +98,11 @@ const AboutPage = ({ data }: AboutPageProps) => {
          track: "Agency / Inhouse"
       },
       {
-         year: "Next up",
-         title: "A new chapter is taking off",
-         description: "A change of perspective. More soon.",
-         icon: <Plane className="w-5 h-5 text-neutral-400" aria-hidden="true" />,
+         year: "Sep 2026 - Present",
+         title: "Product Designer UX/UI Apps (iOS & Android)",
+         location: "fluege.de",
+         description: "Designing the fluege.de apps for iOS and Android, from user flows to the final interface.",
+         icon: <Plane className="w-5 h-5" aria-hidden="true" />,
          track: "Agency / Inhouse"
       },
    ]
@@ -210,7 +212,7 @@ const AboutPage = ({ data }: AboutPageProps) => {
                            transition={{ duration: 0.8 }}
                         >
                            <img
-                              src="/assets/IMG_8494.JPG"
+                              {...getOptimizedImageProps('/assets/IMG_8494.JPG', '(max-width: 768px) 100vw, 500px')}
                               alt="Benedikt Schnupp"
                               className="w-full h-full object-cover"
                            />

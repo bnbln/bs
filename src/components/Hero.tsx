@@ -136,7 +136,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
 
         {/* Minimalist Location */}
         <motion.div
-          className="flex items-center gap-3 backdrop-blur-md bg-black/20 px-4 py-2 rounded-full border border-white/10 pointer-events-auto"
+          className="flex items-center gap-3 backdrop-blur-md bg-black/35 px-4 py-2 rounded-full border border-white/10 pointer-events-auto"
           initial={{ y: 50, opacity: 0, z: 0 }}
           animate={{ y: 0, opacity: 1, z: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
@@ -154,7 +154,7 @@ const Hero = ({ title = "Benedikt Schnupp", location = "Berlin, Germany" }: { ti
 
         {/* Minimalist Role Text */}
         <motion.div
-          className="flex flex-col items-start md:items-end gap-[2px] text-white/90 font-inter font-normal text-xl md:text-2xl tracking-tight backdrop-blur-md bg-black/10 px-5 py-3 rounded-2xl border border-white/10 pointer-events-auto"
+          className="flex flex-col items-start md:items-end gap-[2px] text-white/90 font-inter font-normal text-xl md:text-2xl tracking-tight backdrop-blur-md bg-black/35 px-5 py-3 rounded-2xl border border-white/10 pointer-events-auto"
           initial={{ y: 50, opacity: 0, z: 0 }}
           animate={{ y: 0, opacity: 1, z: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}

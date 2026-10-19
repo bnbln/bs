@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CustomVideoPlayer from './CustomVideoPlayer';
+import { getOptimizedImageUrl } from '../lib/image';
 
 interface AdaptiveVideoPlayerProps {
   videoUrl: string;
@@ -119,7 +120,7 @@ const AdaptiveVideoPlayer: React.FC<AdaptiveVideoPlayerProps> = ({
           aria-label="Play video"
           onClick={handleClick}
           className="absolute inset-0 cursor-pointer group"
-          style={thumbnailUrl ? { backgroundImage: `url('${thumbnailUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' } : { backgroundColor: '#000' }}
+          style={thumbnailUrl ? { backgroundImage: `url('${getOptimizedImageUrl(thumbnailUrl, 1920)}')`, backgroundSize: 'cover', backgroundPosition: 'center' } : { backgroundColor: '#000' }}
         >
           <div className="absolute inset-0 bg-[rgba(0,0,0,0.4)] group-hover:bg-[rgba(0,0,0,0.6)] transition-colors flex items-center justify-center">
             <div

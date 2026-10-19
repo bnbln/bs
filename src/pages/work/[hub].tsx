@@ -14,12 +14,13 @@ import {
   getWorkHubContentBySlug,
   type WorkHubContent,
 } from '../../lib/work-hub-content'
+import { getOptimizedImageUrl } from '../../lib/image'
 import { buildCanonical, getSeoConfig } from '../../lib/seo'
 import { getHubBySlug, getProjectsForHub, WORK_HUB_SLUGS } from '../../lib/work-hubs'
 
 const LottiePlayer = dynamic(() => import('../../components/LottiePlayer'), { ssr: false })
 const HubThreeDScene = dynamic(
-  () => import('../../components/Skills').then((mod) => mod.ThreeDScene),
+  () => import('../../components/SkillsScene'),
   { ssr: false }
 )
 
@@ -304,7 +305,7 @@ export default function WorkHubPage({ hubContent, allHubContent, projects }: Wor
                             {project.image && (
                               <div
                                 className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-105"
-                                style={{ backgroundImage: `url('${project.image}')` }}
+                                style={{ backgroundImage: `url('${getOptimizedImageUrl(project.image, 1200)}')` }}
                               />
                             )}
                             {project.heroLottie && mounted && (
